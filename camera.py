@@ -47,12 +47,12 @@ def _prepare_text_overlay(conf, picture_size):
 
     # Calcola la dimensione del testo con il padding
     text, text_size = _process_text(font, user_text, picture_size[1])
-    text_size = (text_size[0], text_size[1] + padding * 2)
+    text_size = (text_size[0] + padding * 2, text_size[1] + padding * 2)
     
     # Crea l'immagine
     font_color = conf.get("font_color", (0, 0, 0)) 
     background_color = conf.get("background_color", (255, 255, 255, 0)) 
-    label = Image.new("RGBA", text_size, color=font_color)
+    label = Image.new("RGBA", text_size, color=background_color)
     draw = ImageDraw.Draw(label)
     draw.text((padding, padding, padding), text, font_color, font=font)
     return label
