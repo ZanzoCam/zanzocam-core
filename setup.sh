@@ -198,7 +198,14 @@ network={
 ####################################
     echo " * STEP 5: Installazione del software per la webcam"
     echo ""
-
+    
+    # Per installare il software bisogna anche creare un venv con Python3! Facendolo a mano sul raspi ho dovuto installare:
+    
+    # python3-venv
+    # libopenjp2-7-dev (per PIL)
+    # libtiff-dev
+    # 
+    
 
 # Verifica dell'installazione
 #############################
