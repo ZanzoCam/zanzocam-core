@@ -2,6 +2,7 @@
 
 import math
 import json
+import requests
 import datetime
 import textwrap
 from picamera import PiCamera
@@ -19,16 +20,31 @@ def shoot_picture():
     
 
 def _process_text(font, user_text, max_line_length):
-    text = '\n'.join(['\n'.join(textwrap.wrap(line, max_line_length,
-                     break_long_words=False, replace_whitespace=False))
-                     for line in user_text.split("\n")])
-    # Crea l'immagine temporanea per ottenere la dimensione del testo
+    """ Misura e manda a capo il testo per farlo stare nell'immagine """
+    # Manda a capo il testo usando come riferimento la larghezza massima specificata
+    lines = []
+    for line in user_text.split("\n"):
+        if font.getsize(line)[0] <= max_line_length:
+            lines.append(line)
+        else:
+            new_line = ""
+            for word in line.split(" "):
+                if font.getsize(new_line + word)[0] <= max_line_length:
+                    new_line = new_line + word + " "
+                else:
+                    lines.append(new_line)
+                    new_line = word + " "
+            if new_line != "":
+                lines.append(new_line)                     
+    text = '\n'.join(lines)
+    # Crea l'immagine temporanea per ottenere la dimensione finali del testo
     _scratch = Image.new("RGBA", (1,1))
     _draw = ImageDraw.Draw(_scratch)
     return text, _draw.textsize(text, font)
     
     
 def _prepare_text_overlay(conf, picture_size):
+    """ Prepara un overlay contenente un'immagine """
     # Crea font e calcola l'altezza della riga
     font_size = conf.get("font_size", 25)
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
@@ -46,7 +62,7 @@ def _prepare_text_overlay(conf, picture_size):
     user_text = user_text.replace("%%DATE", datetime.datetime.now().strftime(date_format))
 
     # Calcola la dimensione del testo con il padding
-    text, text_size = _process_text(font, user_text, picture_size[1])
+    text, text_size = _process_text(font, user_text, picture_size[0])
     text_size = (text_size[0] + padding * 2, text_size[1] + padding * 2)
     
     # Crea l'immagine
@@ -59,6 +75,7 @@ def _prepare_text_overlay(conf, picture_size):
     
     
 def _prepare_image_overlay(conf):
+    """ Prepara un overlay contenente testo """
     # Calcola il padding come percentuale dell'altezza della dimensione dell'immagine
     picture_name = conf.get("image", "icona_cai.png")
     picture = Image.open(picture_name)
@@ -88,7 +105,7 @@ def _prepare_image_overlay(conf):
     
 
 def process_picture(raw_picture_name, conf):
-
+    """ Crea l'immagine finale aggiungendo testo e immagini come da configurazione """
     # Dimensioni della foto
     picture = Image.open(raw_picture_name)
     picture_size = picture.size
@@ -134,6 +151,8 @@ def process_picture(raw_picture_name, conf):
             x = 0
         if "right" in pos:
             x = image.size[0]-overlay.size[0]
+        if "center" in pos:
+            x = int((image.size[0]-overlay.size[0])/2)
         if "top" in pos:
             if over_picture:
                 y = border_top
@@ -148,19 +167,22 @@ def process_picture(raw_picture_name, conf):
 
     # Crea il nome dell'immagine
     image_name = conf.get("image_name", "image")
+    image_extension = conf.get("image_extension", "png")
     if not conf.get("add_date_to_image_name", "YES").upper() == "NO":
         image_name = image_name + "_" + datetime.datetime.now().strftime("%Y:%m:%d")
     if not conf.get("add_time_to_image_name", "YES").upper() == "NO":
         image_name = image_name + "_" + datetime.datetime.now().strftime("%H:%M:%S")
-    image_name = image_name + ".png"
+    image_name = image_name + "." + "png"
 
     # Salva l'immagine
     image.save(image_name)
+    return image_name
 
 
-
-def send_picture():
-    pass
+def send_picture(image_name, url):
+    """ Invia l'immagine al server con una POST. """
+    files = {'photo': open(image_name, 'rb')}
+    requests.post(url, files=files)    
 
 
 def main():
@@ -168,14 +190,15 @@ def main():
     with open("configurazione.json", 'r') as conf:
         configuration = json.load(conf)
 
-    # Scatta la foto
-    raw_picture_name = shoot_picture()
+        # Scatta la foto
+        raw_picture_name = shoot_picture()
 
-    # Scrive sopra
-    final_picture_name = process_picture(raw_picture_name, configuration)
-    
-    # Invia la foto e scarica la nuova configurazione
-    send_picture()
+        # Scrive sopra
+        final_picture_name = process_picture(raw_picture_name, configuration)
+        
+        # Invia la foto e scarica la nuova configurazione
+        url = configuration.get("remote_endpoint_url", "")
+        send_picture(final_picture_name, url)
 
 
 if "__main__" == __name__:
