@@ -58,6 +58,34 @@ def _prepare_text_overlay(conf, picture_size):
     return label
     
     
+def _prepare_image_overlay(conf):
+    # Calcola il padding come percentuale dell'altezza della dimensione dell'immagine
+    picture_name = conf.get("image", "icona_cai.png")
+    picture = Image.open(picture_name)
+    
+    # Calcola le nuove dimensioni, mantenendo l'aspect ratio se necessario
+    width = conf.get("width")
+    height = conf.get("height")
+    if width and not height:
+        old_aspect_ratio = picture.size[0]/picture.size[1]
+        height = math.ceil(width/old_aspect_ratio)
+    if not width and height:
+        old_aspect_ratio = picture.size[1]/picture.size[0]
+        width = math.ceil(height/old_aspect_ratio)
+    
+    picture = picture.resize((width, height))
+    
+    padding_ratio = conf.get("padding_ratio", 0.2)
+    padding_width = math.ceil(width*padding_ratio)
+    padding_height = math.ceil(height*padding_ratio)
+
+    image_size = (width+padding_width*2, height+padding_height*2) 
+    background_color = conf.get("background_color", (0, 0, 0, 0))
+    image = Image.new("RGBA", image_size, color=background_color)
+    image.paste(picture, (padding_width, padding_height), mask=picture)
+    
+    return image
+    
 
 def process_picture(raw_picture_name, conf):
 
@@ -67,13 +95,14 @@ def process_picture(raw_picture_name, conf):
         
     # Calcola i parametri degli oggetti da sovrapporre
     pieces_to_layout = []
-    for text_position, text_conf in conf.get("text", {}).items():
-        if text_conf.get("text", None):
-            overlay = _prepare_text_overlay(text_conf, picture_size)
-            pieces_to_layout.append((text_position, text_conf, overlay))
+    for piece_position, piece_conf in conf.get("text", {}).items():
+        if piece_conf.get("text", None):
+            overlay = _prepare_text_overlay(piece_conf, picture_size)
+            pieces_to_layout.append((piece_position, piece_conf, overlay))
             
-        elif text_conf.get("image", None):
-            pass
+        elif piece_conf.get("image", None):
+            overlay = _prepare_image_overlay(piece_conf)
+            pieces_to_layout.append((piece_position, piece_conf, overlay))
             
         else:
             pass
@@ -115,7 +144,7 @@ def process_picture(raw_picture_name, conf):
                 y = image.size[1]-overlay.size[1]-border_bottom
             else:
                 y = image.size[1]-overlay.size[1]
-        image.paste(overlay, (x, y))
+        image.paste(overlay, (x, y), mask=overlay)  # mask is to allow for transparent images
 
     # Crea il nome dell'immagine
     image_name = conf.get("image_name", "image")
