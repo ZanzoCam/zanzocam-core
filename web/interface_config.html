@@ -1,0 +1,172 @@
+<html>
+<head>
+  <title>ZANZOCAM - Impostazioni</title>
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="text/html; charset=ISO-8859-1">
+  <link rel="icon" href="/static/assets/images/favicon.gif" type="image/gif"/> 
+
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700&family=Roboto&display=swap" rel="stylesheet"> 
+
+  <link href="mg/milligram.css" rel="stylesheet">
+
+</head>
+<body>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-family: 'Raleway', sans-serif;
+}
+
+body {
+  background-attachment: fixed;
+  background-size: cover;
+  background-image: url("sfondo.jpg");
+}
+
+#container {
+  max-width: 800px;
+  margin: auto;
+  font-family: 'Raleway', sans-serif;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  background-color: white;
+  padding: 5%;
+}
+
+.center {
+    text-align: center;
+}
+
+hr {
+    border-bottom: 1px solid gray;
+    margin: 2em;
+}
+
+
+details > summary {
+  list-style: none;
+}
+
+</style>
+
+
+<div id="container">
+    
+    <div class="center">
+        <h1>ZANZOCAM</h1>
+        <h2>Impostazioni</h2>
+    </div>
+    
+    <form id="config">
+        <hr />        
+        <h3>Impostazioni generali:</h3>
+        
+        <form>
+          <fieldset>
+            <label for="url-field">Server URL:</label>
+            <input type="text" placeholder="https://example.com/foto" id="url-field">
+            
+            <label for="image-name">Nome Foto:</label>
+            <input type="text" placeholder="foto" id="image-name">
+            
+            <input type="checkbox" id="add-date">
+            <label class="label-inline" for="add-date">Aggiungi la data al nome della foto</label>
+            <br>
+            
+            <input type="checkbox" id="add-time">
+            <label class="label-inline" for="add-time">Aggiungi l'ora al nome della foto</label>
+            
+            <label for="image-extension">Estensione Foto:</label>
+            <select id="image-extension">
+              <option value="jpg">JPG</option>
+              <option value="png">PNG</option>
+              <option value="gif">GIF</option>
+            </select>
+            
+            <label>Colore di sfondo:</label>
+            
+             <div class="row">
+                <div class="column">
+                    <label class="label-inline">R:</label>
+                    <input type="text" placeholder="255" id="background-r">
+                </div>
+                <div class="column">
+                    <label class="label-inline">G:</label>
+                    <input type="text" placeholder="255" id="background-g">
+                </div>
+                <div class="column">
+                    <label class="label-inline">B:</label>
+                    <input type="text" placeholder="255" id="background-b">
+                </div>
+                <div class="column">
+                    <label class="label-inline">A:</label>
+                    <input type="text" placeholder="255" id="background-a">
+                </div>
+            </div>
+            
+            <hr />        
+            <h3>Testo e Immagini:</h3>
+
+
+            <details>
+            <summary><h4><a>Alto a destra</a></h4></summary>
+
+                <input type="radio" id="top-right-text" name="top-right-type" >
+                <label class="label-inline" for="top-right-text">Testo</label><br>
+                <input type="radio" id="top-right-image" name="top-right-type">
+                <label class="label-inline" for="female">Immagine</label><br>
+
+                <label for="top-right-text-content">Testo</label>
+                <textarea placeholder="Testo..." id="top-right-text"></textarea>
+
+                <label for="top-right-image-name">Immagine</label>
+                <input type="text" placeholder="logo.png" id="top-right-image">
+
+            </details>
+            
+            <details>
+            <summary><h4><a>Alto a destra</a></h4></summary>
+
+                <input type="radio" id="top-right-text" name="top-right-type" >
+                <label class="label-inline" for="top-right-text">Testo</label><br>
+                <input type="radio" id="top-right-image" name="top-right-type">
+                <label class="label-inline" for="female">Immagine</label><br>
+
+                <label for="top-right-text-content">Testo</label>
+                <textarea placeholder="Testo..." id="top-right-text"></textarea>
+
+                <label for="top-right-image-name">Immagine</label>
+                <input type="text" placeholder="logo.png" id="top-right-image">
+
+            </details>
+            
+            <details>
+            <summary><h4><a>Alto a destra</a></h4></summary>
+
+                <input type="radio" id="top-right-text" name="top-right-type" >
+                <label class="label-inline" for="top-right-text">Testo</label><br>
+                <input type="radio" id="top-right-image" name="top-right-type">
+                <label class="label-inline" for="female">Immagine</label><br>
+
+                <label for="top-right-text-content">Testo</label>
+                <textarea placeholder="Testo..." id="top-right-text"></textarea>
+
+                <label for="top-right-image-name">Immagine</label>
+                <input type="text" placeholder="logo.png" id="top-right-image">
+
+            </details>
+        
+            <input class="button-primary" type="submit" value="SALVA">
+          </fieldset>
+        </form>
+
+    
+    </form>
+    
+</div>
+
+
+</body>
+</html>

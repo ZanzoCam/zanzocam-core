@@ -1,0 +1,45 @@
+
+{
+    "remote_endpoint_url": "http://46.101.245.13/uploads/",
+    "image_name": "image",
+    "image_extension": "png",
+    "add_time_to_image_name": "NO",
+    "add_date_to_image_name": "NO",
+    "image_background_color": "gray",
+    "text": 
+    {
+        "top_left": 
+        {
+            "text" : "Questo e' fuori dalla foto ed e' un testo qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890...\nLunghissimo!",
+            "font_size" : 25,
+            "font_color" : "black",
+            "background_color": "white",
+            "over_the_picture" : "NO"
+        },
+        "top_right": 
+        {
+            "text" : "QUESTO E' SULLA FOTO",
+            "font_size" : 40,
+            "font_color" : "red",
+            "over_the_picture" : "YES"
+        },
+        "bottom_center": 
+        {
+            "image" : "icona_cai.png",
+            "width": 200,
+            "padding_ratio" : 0,
+            "over_the_picture" : "YES"
+        },
+        "bottom_right": 
+        {
+            "time_format" : "%H:%M",
+            "date_format" : "%d %B %Y",
+            "text" : "%%TIME del %%DATE",
+            "font_size" : 30,
+            "font_color" : "white",
+            "background_color": "black",
+            "over_the_picture" : "YES"
+        }
+    }
+}
+
