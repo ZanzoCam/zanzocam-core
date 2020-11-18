@@ -1,0 +1,12 @@
+# Disable the rainbow splash screen
+disable_splash=1
+
+# No boot delay
+boot_delay=0
+
+# Disable the LED
+dtparam=act_led_trigger=none
+dtparam=act_led_activelow=on
+
+start_x=1
+gpu_mem=128

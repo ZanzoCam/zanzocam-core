@@ -1,6 +1,6 @@
 
 {
-    "remote_endpoint_url": "http://46.101.245.13/uploads/",
+    "remote_endpoint_url": "%%SERVER_ADDRESS%%",
     "image_name": "image",
     "image_extension": "png",
     "add_time_to_image_name": "NO",

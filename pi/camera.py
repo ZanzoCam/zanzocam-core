@@ -122,8 +122,8 @@ def process_picture(raw_picture_name, conf):
             pieces_to_layout.append((piece_position, piece_conf, overlay))
             
         else:
-            pass
-            # FIXME REPORT THIS ERROR!!
+            print("==> ERRORE! <==")
+            print("Tipo di overlay non riconosciuto. Puoi usare 'text' o 'image'.")
     
     # Calcola i bordi da aggiungere
     border_top = 0
@@ -186,20 +186,27 @@ def send_picture(image_name, url):
 
 
 def main():
+    print(f"Avvio: {datetime.datetime.now()}")
     # Carica i parametri
-    with open("configurazione.json", 'r') as conf:
+    with open(Path(__file__) / "configurazione.json", 'r') as conf:
         configuration = json.load(conf)
+
+        print(f"File di configurazione utilizzato:")
+        print(json.dumps(configuration, indent=4))    
 
         # Scatta la foto
         raw_picture_name = shoot_picture()
+        print("Foto scattata: {datetime.datetime.now()} ")
 
         # Scrive sopra
         final_picture_name = process_picture(raw_picture_name, configuration)
+        print("Immagine finale pronta: {datetime.datetime.now()} ")
         
         # Invia la foto e scarica la nuova configurazione
         url = configuration.get("remote_endpoint_url", "")
         send_picture(final_picture_name, url)
-
+        print("Upload completato: {datetime.datetime.now()}")
+        
 
 if "__main__" == __name__:
     main()
