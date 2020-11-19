@@ -1,7 +1,12 @@
 
+# Forces the user to setup the password at the first login
+sudo passwd --expire pi
+
 # Install system packages and Python packages
-sudo apt-get -y install python3-pip libopenjp2-7-dev libtiff-dev
+sudo apt-get -y install python3-pip libopenjp2-7-dev libtiff-dev fonts-dejavu
 pip3 install Pillow picamera
+
+sudo chown pi:pi webcam
 
 # Installa il cronjob
 crontab -l > .temp-cronjob

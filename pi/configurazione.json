@@ -1,6 +1,6 @@
-
 {
-    "remote_endpoint_url": "%%SERVER_ADDRESS%%",
+    "remote_endpoint_url": "SERVER_ADDRESS",
+    "crontab_triggers": "*/2 * * * *",
     "image_name": "image",
     "image_extension": "png",
     "add_time_to_image_name": "NO",

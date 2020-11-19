@@ -159,7 +159,7 @@ nome_dispositivo=/dev/sda
     
     echo " - Installazione del software della webcam in /home/pi"
      while true; do
-        read -p "-> Inserisci l'indirizzo del server dove vuoi ricevere le foto, completo fino al nome della cartella (esempio: http://example.com/uploads/photos): " server
+        read -p "-> Inserisci l'indirizzo del server dove vuoi ricevere le foto, completo fino al nome della cartella dove hai caricato lo script PHP (esempio: http://example.com/uploads/photos): " server
         read -p "Confermi che l'indirizzo del server e' $server ? (Si/No) " conferma
         case $conferma in
             SI|si|Si|S|s ) break;;
@@ -169,7 +169,7 @@ nome_dispositivo=/dev/sda
     git clone -q https://github.com/ZanSara/remotecam.git .temporary_folder_webcam > /dev/null
     sudo mkdir -p /mnt/raspberry2/home/pi/webcam/
     sudo cp .temporary_folder_webcam/pi/* /mnt/raspberry2/home/pi/webcam/
-    sed -i -e 's/%%SERVER_ADDRESS%%/$server/g' /mnt/raspberry2/home/pi/webcam/configurazione.json
+    sudo awk '{if($2=="SERVER_ADDRESS") {$2=$server} print $0}' /mnt/raspberry2/home/pi/webcam/configurazione.json > /dev/null
     sudo rm -rf .temporary_folder_webcam/
     echo ""
     echo "   ******************* "

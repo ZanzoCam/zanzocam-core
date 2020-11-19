@@ -13,13 +13,10 @@
 # Disable the HDMI port (to save power)
 /usr/bin/tvservice -o
 
-# Forces the user to setup the password at the first login
-sudo passwd --expire pi
-
 # Initial setup
 $SETUP_FILE="/home/pi/onboard_setup.sh"
 if test -f "$SETUP_FILE"; then
-    chmod +x $SETUP_FILE
+    sudo chmod +x $SETUP_FILE
     $SETUP_FILE
     rm $SETUP_FILE
 fi

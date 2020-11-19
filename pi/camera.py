@@ -1,12 +1,18 @@
 #!/usr/bin/python3
 
+import os
 import math
 import json
+import shutil
 import requests
 import datetime
 import textwrap
+from pathlib import Path
 from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
+
+
+path = Path(__file__).parent
 
     
 def shoot_picture():
@@ -78,7 +84,7 @@ def _prepare_image_overlay(conf):
     """ Prepara un overlay contenente testo """
     # Calcola il padding come percentuale dell'altezza della dimensione dell'immagine
     picture_name = conf.get("image", "icona_cai.png")
-    picture = Image.open(picture_name)
+    picture = Image.open(path / picture_name)
     
     # Calcola le nuove dimensioni, mantenendo l'aspect ratio se necessario
     width = conf.get("width")
@@ -179,16 +185,29 @@ def process_picture(raw_picture_name, conf):
     return image_name
 
 
-def send_picture(image_name, url):
+def send_picture_and_get_config(image_name, url):
     """ Invia l'immagine al server con una POST. """
-    files = {'photo': open(image_name, 'rb')}
-    requests.post(url, files=files)    
-
+    files = {'photo': open(image_name, 'rb'), "logs": open(path / "logs.txt", 'rb')}
+    response = requests.post(url, files=files) 
+    
+    # Salva un backup del file di configurazione  
+    shutil.copy(path / "configurazione.json", path / "configurazione.prev.json")
+    
+    # Aggiorna il file di configurazione
+    try:
+        json.loads(response.content) 
+        with open(path / "configurazione.json", 'w') as conf:
+            conf.writelines(response.content)
+    except:
+        print("==> ERRORE! <==")
+        print("Qualcosa e' andato storto nello scaricare il file di configurazione! Il file contiene:")
+        print(response.content)
+        
 
 def main():
     print(f"Avvio: {datetime.datetime.now()}")
     # Carica i parametri
-    with open(Path(__file__) / "configurazione.json", 'r') as conf:
+    with open(path / "configurazione.json", 'r') as conf:
         configuration = json.load(conf)
 
         print(f"File di configurazione utilizzato:")
@@ -196,17 +215,23 @@ def main():
 
         # Scatta la foto
         raw_picture_name = shoot_picture()
-        print("Foto scattata: {datetime.datetime.now()} ")
+        print(f"Foto scattata: {datetime.datetime.now()} ")
 
         # Scrive sopra
         final_picture_name = process_picture(raw_picture_name, configuration)
-        print("Immagine finale pronta: {datetime.datetime.now()} ")
+        print(f"Immagine finale pronta: {datetime.datetime.now()} ")
         
         # Invia la foto e scarica la nuova configurazione
         url = configuration.get("remote_endpoint_url", "")
-        send_picture(final_picture_name, url)
-        print("Upload completato: {datetime.datetime.now()}")
+        send_picture_and_get_config(final_picture_name, url)
+        print(f"Upload completato: {datetime.datetime.now()}")
         
+        # Aggiorna il crontab
+        cronjob_triggers = configuration.get("cronjob_triggers", "")
+        os.system("crontab -l > .last-cronjob")
+        os.system(f"echo '{cronjob_triggers} python3 /home/pi/webcam/camera.py > /home/pi/logs.txt 2>&1' >> .last-cronjob")
+        os.system("crontab .last-cronjob")
+
 
 if "__main__" == __name__:
     main()
