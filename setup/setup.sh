@@ -32,45 +32,53 @@ echo ""
         exit 2
     fi	
     
-
-# Scarica la distro
-####################
-    echo " * STEP 1: Download del sistema operativo (Raspberry Pi OS)"
-    echo ""
-    echo "In totale circa 1GB, assicurati di avere abbastanza spazio sul disco."
-    echo "Se necessario, puoi interrompere il download: la prossima volta non ripartira' da zero."
-    wget -c https://downloads.raspberrypi.org/raspios_lite_armhf_latest -q --show-progress
-    cp raspios_lite_armhf_latest raspios_lite_armhf_latest.zip
-    echo "Download completato."
-    echo "Unzipping..."
     
-    unzip raspios_lite_armhf_latest.zip
-    mv $(unzip -Z1 raspios_lite_armhf_latest.zip) raspios.img
+# Raccoglie i dati
+################## 
+    echo ""
+    echo " * STEP 1: Raccolta dei dati"
+    echo ""
     
-    echo "File dezippato."
-    echo ""
-    echo "   ******************* "
+    # Posizione di questo script nel sistema    
+    setup_dir="$(dirname "$(readlink -f "$0")")"
+    # Per il pattern-matching
+    shopt -s extglob
     
-
-# Scrivi sulla SD
-##################
-    echo ""
-    echo " * STEP 2: Installazione del sistema operativo sulla schedina SD."
-    echo ""
-
-    # Ottiene il nome del dispositivo
-    while true; do   # Loop per la conferma
-        while true; do   # loop per il nome
+    # Dati della rete
+    while true; do
+        read -p " - Scrivi il nome della rete WiFi (il suo SSID): " ssid
+        read -p " - Scrivi la password della rete WiFi: " password
+        read -p "   Confermi i dati inseriti? (Si/No) " conferma
+        case $conferma in
+            SI|si|Si|S|s ) echo ""
+                           break;;
+            * ) echo "" ;;
+        esac
+    done
+    
+    # Dati del server
+    while true; do
+        echo " - Inserisci l'indirizzo del server dove vuoi ricevere le foto, completo fino al nome della cartella dove hai caricato lo script PHP (esempio: http://example.com/uploads/photos): " 
+        read -p " -> " server
+        read -p "   Confermi che l'indirizzo del server e' $server ? (Si/No) " conferma
+        case $conferma in
+            SI|si|Si|S|s ) echo ""
+                           break;;
+            * ) echo "Ok, riprova." ;;
+        esac
+    done
+    
+    # Disco da formattare
+    while true; do
+        while true; do
 
             lsblk -p
-
             echo ""
             echo "Qua sopra dovresti vedere la lista dei dispositivi presenti sul sistema. "
             echo "Una volta identificata la schedina SD, inserisci il nome del dispositivo, per esempio, '/dev/sdx'. "
             echo "Il nome deve finire con una LETTERA, non con un numero! Quindi, /dev/sdc1 e' sbagliato, mentre /dev/sdc e' corretto."
             echo ""
     
-            shopt -s extglob  # Per il pattern-matching
             read -p " -> Nome del dispositivo: " nome_dispositivo
  
             case $nome_dispositivo in
@@ -96,31 +104,43 @@ echo ""
                 echo "" ;;
         esac
     done
-            
     echo ""
-    echo "Formattazione in corso:"
-    echo " - Copia dei files..."
+    echo "   ******************* "
+    
+
+    echo ""
+    echo " * STEP 2: Setup del Raspberry Pi"
+    echo ""
+
+    # Scarica la distro
+    echo " - Download del sistema operativo (Raspberry Pi OS)"
+    echo ""
+    echo "In totale circa 1GB, assicurati di avere abbastanza spazio sul disco."
+    echo "Se necessario, puoi interrompere il download: la prossima volta non ripartira' da zero."
+    
+    wget -c https://downloads.raspberrypi.org/raspios_lite_armhf_latest -q --show-progress
+    cp raspios_lite_armhf_latest raspios_lite_armhf_latest.zip
+    
+    echo "Download completato."
+    echo "Unzipping..."
+    
+    unzip raspios_lite_armhf_latest.zip
+    mv $(unzip -Z1 raspios_lite_armhf_latest.zip) raspios.img
+    
+    echo "File dezippato."
+    echo ""
+    
+    # Formatta la scheda
+    echo " - Installazione del sistema operativo sulla schedina SD."
+    echo ""
+    echo "Formattazione in corso..."
     sudo dd bs=4M if=raspios.img of=$nome_dispositivo status=progress oflag=direct
     sync
     echo "Formattazione di $nome_dispositivo completata"
     echo ""
-    echo "   ******************* "
     
-    
-#COMMENT
-nome_dispositivo=/dev/sda 
 
-
-# Aggiungi il file di configurazione 
-####################################
-
-    echo ""
-    echo " * STEP 3: Copia dei files di configurazione e della webcam."
-    echo ""
-    
-    # Posizione di questo script nel sistema    
-    setup_dir="$(dirname "$(readlink -f "$0")")"
-    
+    # Aggiungi il file di configurazione 
     echo " - Mount di ${nome_dispositivo}1 (boot) sotto /mnt/raspberry1"
     sudo mkdir -p /mnt/raspberry1
     
@@ -141,10 +161,12 @@ nome_dispositivo=/dev/sda
         echo ""
     fi
     
+    echo " - Aggiornamento di /boot/config.txt"
+    sudo cp "$setup_dir/config.txt" /mnt/raspberry1/config.txt
+    
     echo " - Unmount di ${nome_dispositivo}1"
     sudo umount ${nome_dispositivo}1
     sudo rm -r /mnt/raspberry1
-    echo ""
     
     echo " - Mount di ${nome_dispositivo}2 (rootfs) sotto /mnt/raspberry2"
     sudo mkdir -p /mnt/raspberry2
@@ -156,53 +178,24 @@ nome_dispositivo=/dev/sda
         exit 1
     fi
     
-    echo " - Aggiornamento di /boot/config.txt"
-    sudo cp "$setup_dir/config.txt" /mnt/raspberry2/boot/config.txt
+    echo " - Aggiornamento di .bashrc in /home/pi"
+    sudo cat "$setup_dir/bashrc" | sudo tee /mnt/raspberry2/home/pi/.bashrc > /dev/null 
     
-    echo " - Aggiornamento di /etc/rc.local"
-    sudo  cp "$setup_dir/rc.local" /mnt/raspberry2/etc/rc.local
+    #echo " - Aggiornamento di rc.local in /etc"
+    #sudo cat "$setup_dir/rc.local" | sudo tee -a /mnt/raspberry2/etc/rc.local > /dev/null 
     
     echo " - Copia di onboard_setup.sh in /home/pi"
-    sudo  cp "$setup_dir/onboard_setup.sh" /mnt/raspberry2/home/pi/onboard_setup.sh
+    sudo cp "$setup_dir/onboard_setup.sh" /mnt/raspberry2/home/pi/onboard_setup.sh
     
     echo " - Installazione del software della webcam in /home/pi"
-     while true; do
-        echo "- Inserisci l'indirizzo del server dove vuoi ricevere le foto, completo fino al nome della cartella dove hai caricato lo script PHP (esempio: http://example.com/uploads/photos): " 
-        read -p " -> " server
-        read -p "Confermi che l'indirizzo del server e' $server ? (Si/No) " conferma
-        case $conferma in
-            SI|si|Si|S|s ) break;;
-            * ) echo "Ok, riprova." ;;
-        esac
-    done
-    echo " - Download dei files..."
     sudo mkdir -p /mnt/raspberry2/home/pi/webcam/
     sudo cp $setup_dir/../pi/* /mnt/raspberry2/home/pi/webcam/
-    
-    echo " - Setup..."
-    
     sudo chmod +x /mnt/raspberry2/home/pi/onboard_setup.sh    
     sudo awk '{if($2=="SERVER_ADDRESS") {$2=$server} print $0}' /mnt/raspberry2/home/pi/webcam/configurazione.json > /dev/null
     echo ""
-    echo "   ******************* "
     
-
-# Configurazione WiFi
-#####################
-    echo ""
-    echo " * STEP 4: Configurazione rete WiFi."
-    echo ""
-    while true; do
-        read -p " - Scrivi il nome della rete WiFi (il suo SSID): " ssid
-        read -p " - Scrivi la password della rete WiFi: " password
-        read -p " - Scrivi IT (il codice a due lettere del paese): " country
-        read -p "   Confermi i dati inseriti? (Si/No) " conferma
-        case $conferma in
-            SI|si|Si|S|s ) break;;
-            * ) echo "" ;;
-        esac
-    done
-    
+    # Configurazione WiFi
+    echo " - Configurazione rete WiFi."
     echo 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
@@ -211,8 +204,6 @@ network={
     psk="'$password'"
 }
 ' | sudo tee /mnt/raspberry2/etc/wpa_supplicant/wpa_supplicant.conf > /dev/null
-    echo "   Rete WiFi configurata."
-    echo ""
     
     echo " - Unmount di ${nome_dispositivo}2"
     sudo umount ${nome_dispositivo}2
@@ -220,12 +211,10 @@ network={
     echo ""
     echo "   ******************* "
 
-#COMMENT
-
 # Verifica dell'installazione
 #############################
     echo ""
-    echo " * STEP 5: Avvio del Raspberry Pi"
+    echo " * STEP 3: Avvio del Raspberry Pi"
     echo ""
     echo "La scheda SD e' completamente configurata."
     echo ""
@@ -236,7 +225,7 @@ network={
     echo ""
     echo "   ******************* "
     echo ""
-    echo " * STEP 6: Connessione."
+    echo " * STEP 4: Connessione."
     echo ""
     echo "Qua sotto dovrebbe apparire una riga con alcuni dati, tra cui l'indirizzo IP del Raspberry. Ignora gli IP di altri dispositivi."
     echo "Ci vuole qualche secondo..."
@@ -255,21 +244,27 @@ network={
                esac
         esac
     done
-    echo "Prima connessione SSH con il Raspberry: inserisci la password e poi digita:"
-    echo " exit"
+    echo " -> Prima connessione SSH con il Raspberry: la password e' 'raspberry'. Il sistema installera' automaticamente alcuni pacchetti e poi si disconnettera'."
+    read -p "Premi qualunque tasto per continuare "
+    echo ""
+    echo "   ******************* "
+    echo ""
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "pi@$indirizzo_ip"
         
     echo ""
-    echo "Seconda connessione SSH: ti verra' chiesto di impostare una nuova password."
+    echo "   ******************* "
     echo ""
-    sudo ssh "pi@$indirizzo_ip"
-    sudo mkdir -p /mnt/raspberry
-    
-    sudo sshfs "pi@$indirizzo_ip":/home/pi /mnt/raspberry
+    read -p "Aspetta che il Pi finisca il reboot (il led diventa stabile) e poi premi qualunque tasto per continuare."
+    echo ""
+    echo "Seconda connessione al Raspberry: ti verra' chiesto di impostare una nuova password."
+    echo ""
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "pi@$indirizzo_ip"
     
     echo ""
-    echo "Configurazione completata. La scheda e' configurata per inviare una foto e leggere il nuovo file di configurazione sul server ogni 5 minuti."
+    echo " *********** CONFIGURAZIONE COMPLETATA **************"
+    echo ""
+    echo "La scheda e' configurata per inviare una foto e leggere il nuovo file di configurazione sul server ogni 5 minuti."
         echo "Ora configura il server per ricevere le foto e modificare le impostazioni della scheda."
-    fi
     
     echo ""
     echo "   ******************* "
