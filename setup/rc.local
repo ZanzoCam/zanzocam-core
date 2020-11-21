@@ -13,12 +13,4 @@
 # Disable the HDMI port (to save power)
 /usr/bin/tvservice -o
 
-# Initial setup
-$SETUP_FILE="/home/pi/onboard_setup.sh"
-if test -f "$SETUP_FILE"; then
-    sudo chmod +x $SETUP_FILE
-    $SETUP_FILE
-    rm $SETUP_FILE
-fi
-
 exit 0
