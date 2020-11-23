@@ -3,7 +3,9 @@
 
 import os
 import re
+import subprocess
 import tkinter as tk
+from pathlib import Path
 
 class Wizard:
 
@@ -26,6 +28,21 @@ class Wizard:
         window.mainloop()
 
     def input_window(self, window):
+        result = subprocess.Popen("./check_deps.sh")
+        text = result.communicate()[0]
+        returncode = result.returncode
+        
+        if returncode != 0:
+            feedback = tk.Label(window, text="", fg="red")
+            feedback.config(text="Dipendenze mancanti! Esegui:\n\n"+
+            "sudo apt-get install lsblk dd git sshfs" +
+            "\n\ndopodiche' chiudi e riapri questo installer.")
+            feedback.grid(row=5, columnspan=2, padx=10, pady=10, sticky=tk.W + tk.E + tk.N + tk.S)
+            
+            esci = tk.Button(window, text="Esci", command=window.quit)
+            esci.grid(row=6, column=0, padx=20, pady=10, sticky=tk.W)
+            return
+    
         ssid_label = tk.Label(window, text="WiFi SSID")
         ssid_label.grid(row=1, column=0, padx=20, pady=10, sticky=tk.W)
         ssid = tk.Entry(window)
@@ -54,8 +71,6 @@ class Wizard:
             self.server = server.get()
             self.device = device.get()
             
-            feedback = tk.Label(window, text="", fg="red")
-
             if self.ssid is None or self.ssid == "":
                 feedback.config(text="SSID non puo' essere vuoto")
                 feedback.grid(row=5, columnspan=2, padx=10, pady=10, sticky=tk.W + tk.E) 
@@ -135,11 +150,18 @@ class Wizard:
             confirm3.grid_forget()
             yes.grid_forget()
             no.grid_forget()
+            self.install_window(window)
             
             
         yes = tk.Button(window, text="Si", command=yes)
         yes.grid(row=5, column=1, padx=20, pady=10, sticky=tk.E)
 
+
+    def install_window(self, window):
+        status = tk.Label(window, text="Installazione in corso...")
+        status.grid(row=1, padx=20, pady=0)
+        
+        
 
 if "__main__" == __name__:
     Wizard()

@@ -1,3 +1,4 @@
+#!/bin/sh
 ##########################################
 #
 #  SCRIPT DI INSTALLAZIONE RASPI WEBCAM

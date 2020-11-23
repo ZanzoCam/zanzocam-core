@@ -1,3 +1,4 @@
+#!/bin/sh
 
 # Verifica che tutti i comandi utili siano installati
 #####################################################
@@ -21,3 +22,4 @@ if ! command -v sshfs > /dev/null; then
     echo " --> ATTENZIONE! sshfs non e' installato. Per favore, installalo con 'sudo apt-get install sshfs' e riprova."
     exit 2
 fi	
+exit 0
