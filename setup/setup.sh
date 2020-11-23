@@ -14,93 +14,32 @@ echo ""
 
 # Verifica che tutti i comandi siano installati
 ###############################################
-
-    if ! command -v lsblk > /dev/null; then
-        echo " --> ATTENZIONE! lsblk non e' installato. Per favore, installalo con 'sudo apt-get install lsblk' e riprova."
-        exit 2
-    fi	
-    if ! command -v dd > /dev/null; then
-        echo " --> ATTENZIONE! dd non e' installato. Per favore, installalo con 'sudo apt-get install dd' e riprova."
-        exit 2
-    fi	
-    if ! command -v git > /dev/null; then
-        echo " --> ATTENZIONE! git non e' installato. Per favore, installalo con 'sudo apt-get install git' e riprova."
-        exit 2
-    fi	
-    if ! command -v sshfs > /dev/null; then
-        echo " --> ATTENZIONE! sshfs non e' installato. Per favore, installalo con 'sudo apt-get install sshfs' e riprova."
-        exit 2
-    fi	
-    
+    ./check_deps.sh
     
 # Raccoglie i dati
-################## 
-    echo ""
-    echo " * STEP 1: Raccolta dei dati"
-    echo ""
+##################
     
     # Posizione di questo script nel sistema    
     setup_dir="$(dirname "$(readlink -f "$0")")"
     # Per il pattern-matching
     shopt -s extglob
     
-    # Dati della rete
-    while true; do
-        read -p " - Scrivi il nome della rete WiFi (il suo SSID): " ssid
-        read -p " - Scrivi la password della rete WiFi: " password
-        read -p "   Confermi i dati inseriti? (Si/No) " conferma
-        case $conferma in
-            SI|si|Si|S|s ) echo ""
-                           break;;
-            * ) echo "" ;;
-        esac
-    done
+    ssid=$1
+    password=$2
+    server=$3
+    device=$4
     
-    # Dati del server
     while true; do
-        echo " - Inserisci l'indirizzo del server dove vuoi ricevere le foto, completo fino al nome della cartella dove hai caricato lo script PHP (esempio: http://example.com/uploads/photos): " 
-        read -p " -> " server
-        read -p "   Confermi che l'indirizzo del server e' $server ? (Si/No) " conferma
-        case $conferma in
-            SI|si|Si|S|s ) echo ""
-                           break;;
-            * ) echo "Ok, riprova." ;;
-        esac
-    done
-    
-    # Disco da formattare
-    while true; do
-        while true; do
-
-            lsblk -p
-            echo ""
-            echo "Qua sopra dovresti vedere la lista dei dispositivi presenti sul sistema. "
-            echo "Una volta identificata la schedina SD, inserisci il nome del dispositivo, per esempio, '/dev/sdx'. "
-            echo "Il nome deve finire con una LETTERA, non con un numero! Quindi, /dev/sdc1 e' sbagliato, mentre /dev/sdc e' corretto."
-            echo ""
-    
-            read -p " -> Nome del dispositivo: " nome_dispositivo
- 
-            case $nome_dispositivo in
-             /dev/*[a-z] ) echo "Il nome del dispositivo e' $nome_dispositivo"
-                           echo ""
-                           break;;
-
-             * ) echo "Il nome del dispositivo non e' corretto. Riprova."
-                 echo "" ;;
-            esac
-        done
         
-        # Conferma il dispositivo  
-        echo "ATTENZIONE: il dispositivo $nome_dispositivo sta per essere FORMATTATO."
-        echo "Questa operazione distruggera' tutti i dati all'interno del dispositivo."
-        echo "Sei SICURO/A che $nome_dispositivo e' il dispositivo giusto?"
-        echo ""
+        echo "Parametri:"
+        echo " - WIFI SSID: " $ssid
+        echo " - Server per l'upload: " $server
+        echo " - Dispositivo da formattare: " $device
         
-        read -p " -> Scrivi SI per FORMATTARE $nome_dispositivo: " conferma
+        read -p " -> Scrivi SI per confermare i dati e FORMATTARE $nome_dispositivo: " conferma
         case $conferma in
             SI|si|Si ) break;;
-            * ) echo "Non hai confermato il nome del dispositivo."
+            * ) echo "Modifica 'parametri.txt' e poi lancia di nuovo questo script."
                 echo "" ;;
         esac
     done
