@@ -2,9 +2,13 @@
 
 # Verifica che tutti i comandi utili siano installati
 #####################################################
-
 if ! command -v lsblk > /dev/null; then
     echo " --> ATTENZIONE! lsblk non e' installato. Per favore, installalo con 'sudo apt-get install lsblk' e riprova."
+    exit 2
+fi	
+
+if ! command -v 7z > /dev/null; then
+    echo " --> ATTENZIONE! 7z non e' installato. Per favore, installalo con 'sudo apt-get install 7z' e riprova."
     exit 2
 fi	
 
