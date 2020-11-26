@@ -1,3 +1,9 @@
+**/*.zip
+**/*.img
+**/wpa_supplicant.conf
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
