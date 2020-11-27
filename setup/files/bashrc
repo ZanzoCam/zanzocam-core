@@ -1,6 +1,0 @@
-
-
-# Runs the board initial setup
-if ! /home/pi/onboard_setup.sh; then
-    rm /home/pi/onboard_setup.sh
-fi

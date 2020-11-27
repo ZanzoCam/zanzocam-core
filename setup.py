@@ -222,8 +222,7 @@ class Wizard:
         prefix = " -> Formattazione scheda SD"
         t = threading.Thread(target=partial(execute_command, command, self.status, prefix, self.copy_files, sudo_pwd=self.sudo_pwd))
         t.setDaemon(True)
-        #t.start()
-        self.copy_files()
+        t.start()
         
     def echo_pwd(self):
         return subprocess.Popen(('echo', self.sudo_pwd), stdout=subprocess.PIPE).stdout
@@ -250,7 +249,7 @@ class Wizard:
             return
         
         # Write the files on boot
-        cp_config = subprocess.run(["sudo", "-S", "cp", Path(__file__).parent/"files"/"config.txt", mount_point/"config.txt"], stdin=self.echo_pwd(), stdout=subprocess.PIPE)
+        cp_config = subprocess.run(["sudo", "-S", "cp", Path(__file__).parent/"config.txt", mount_point/"config.txt"], stdin=self.echo_pwd(), stdout=subprocess.PIPE)
         touch_ssh = subprocess.run(["sudo", "-S", "touch", mount_point/"ssh"], stdin=self.echo_pwd(), stdout=subprocess.PIPE)
             
         # Unmount boot
@@ -272,7 +271,7 @@ class Wizard:
             return
 
         # Write wpa_supplicant.conf
-        with open(Path(__file__).parent/"files"/"wpa_supplicant.conf", "w") as f:
+        with open(Path(__file__).parent/"wpa_supplicant.conf", "w") as f:
             f.writelines("""
             ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
             update_config=1
@@ -282,7 +281,7 @@ class Wizard:
                 psk="{}"
             }}
             """.format(self.ssid, self.password))
-        wpa_conf = subprocess.run(["sudo", "-S", "cp", Path(__file__).parent/"files"/"wpa_supplicant.conf", mount_point/"etc"/"wpa_supplicant"/"wpa_supplicant.conf"], stdin=self.echo_pwd(), stdout=subprocess.PIPE)
+        wpa_conf = subprocess.run(["sudo", "-S", "cp", Path(__file__).parent/"wpa_supplicant.conf", mount_point/"etc"/"wpa_supplicant"/"wpa_supplicant.conf"], stdin=self.echo_pwd(), stdout=subprocess.PIPE)
         
         # Unmount rootfs 
         ps = subprocess.Popen(('echo', self.sudo_pwd), stdout=subprocess.PIPE)
@@ -309,9 +308,9 @@ class Wizard:
         search = tk.Label(self.window, text="Ricerca del Raspberry Pi", justify=tk.LEFT, anchor="w")
         search.grid(row=1, columnspan=2, padx=20, pady=10, sticky="ew")
         
-        
-        
-        
+        #############################
+        # TODO
+        #############################
         
         
         
@@ -347,7 +346,7 @@ def download(url, filename, output_label, prefix, next_function):
 def execute_command(commands, output_label, prefix, next_function, sudo_pwd=None):
     if sudo_pwd:
         ps = subprocess.Popen(('echo', sudo_pwd), stdout=subprocess.PIPE)
-        process = subprocess.Popen(["sudo", "-S"] + commands, stdin=self.echo_pwd(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(["sudo", "-S"] + commands, stdin=ps.stdout, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     else:
         process = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     string = ""
