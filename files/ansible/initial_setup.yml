@@ -2,7 +2,9 @@
   remote_user: "pi"
   become: yes
   vars:
-    server_url: "http://46.101.245.13/uploads/"
+    server_url: "{{ url }}"
+    server_username: "{{ server_username }}"
+    server_password: "{{ server_password }}"
     ansible_python_interpreter: /usr/bin/python3
     
   tasks:
@@ -49,12 +51,21 @@
         path: /home/pi/webcam/configurazione.json
         regexp: "SERVER_ADDRESS"
         replace: "{{ server_url }}"
+
+    - name: Append credentials to .bashrc
+      blockinfile:
+        path: /home/pi/.bashrc
+        marker: "# Zanzocam settings"
+        state: present
+        block: |
+            export RPICAM_SERVER_USERNAME={{ server_username }}"
+            export RPICAM_SERVER_PWD={{ server_password }}"
         
     - name: Setup camera cronjob
       cron:
         name: Zanzocam
         job: "cd /home/pi/webcam && /home/pi/webcam/venv/bin/python3 /home/pi/webcam/camera.py > /home/pi/webcam/logs.txt 2>&1"
-        minute: "*/2"
+        minute: "*/5"
         cron_file: zanzocam
         user: pi
         state: present
