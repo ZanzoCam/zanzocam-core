@@ -1,0 +1,88 @@
+# pi:$6$TcStb3ADs0Vmhl1P$HOz0afl84EFN0Ws4IFhEtgW6iFt3VbmI2u4Q6WsAy9IPeXiJRJ0vOhBPzGRNEOrR.gdI6jWe7Nmy8Ub1ZSRHY/:18494:0:99999:7:::
+
+# Connect as pi and add our public key to root user
+- name: Prepare keys for root (as 'pi', connect with password)
+  hosts: all
+  gather_facts: false
+  connection: pi
+  become: yes
+  gather_facts: no
+ 
+  vars:
+    ansible_user: pi
+    ansible_ssh_pass: raspberry
+  
+  tasks:
+    - name: Set authorized_key for root user
+      authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('file', '~/.ssh/zanzocam_id_rsa.pub') }}"
+      register: result
+      
+# Connect as root user and rename user and group of pi and set secure password.
+- name: Rename user (as 'root', connect with key)
+  hosts: all
+  connection: ssh
+  become: no
+  gather_facts: no
+
+  vars:
+    ansible_user: root
+
+  tasks:       
+  
+    - name: Check if 'pi' user exist
+      command: id -un 
+      register: piuser
+      ignore_errors: yes
+
+    - name: Kill all processes running for 'pi'
+      command: pkill -u pi
+      when:
+        piuser.rc == 0
+      
+    - name: Get default group name for 'pi'
+      command: id -gn pi
+      register: pigroup
+      when:
+        piuser.rc == 0
+
+    - name: Rename 'pi' group
+      command: groupmod -n '{{ rpi_user }}' '{{ pigroup.stdout }}'
+      when:
+        (piuser.rc == 0 and pigroup.stdout != rpi_user)
+      
+    - name: Rename 'pi' user into '{{ rpi_user }}'
+      command: usermod -l '{{ rpi_user }}' -d /home/'{{ rpi_user }}' -m pi
+      when:
+        piuser.rc == 0
+      
+    - name: Set new password for '{{ rpi_user }}'
+      user:
+        name: '{{ rpi_user }}'
+        password: '{{ rpi_hashed_password }}'
+      when:
+        piuser.rc == 0
+        
+    - name: Check if '{{ rpi_user }}' user exist
+      command: id -un 
+      register: newuser
+      ignore_errors: yes
+      
+    - name: Allow '{{ rpi_user }}' to SSH with a password
+      lineinfile: 
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^AllowUsers"  
+        line: "^AllowUsers {{ rpi_user }}"
+      when:
+        newuser.rc == 0        
+
+
+#    - name: Make '{{ newuser }}' a sudoer
+#      copy:
+#        dest: "/etc/sudoers.d/{{ newuser }}"
+#        content: "{{ newuser }} ALL=(ALL) NOPASSWD:ALL"
+
+
+        

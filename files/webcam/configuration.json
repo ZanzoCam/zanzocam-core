@@ -1,8 +1,9 @@
 {
     "server_url": "http://46.101.245.13/uploads/",
-    "server_needs_password": true,
+    "server_username": "zanzocam-bot",
+    "server_password": "esperimento",
     "crontab": {
-        "minutes": "*/2",
+        "minutes": "*/5",
         "hours": "*",
         "days": "*",
         "month": "*",
@@ -20,7 +21,7 @@
         "hor_flip": false,
         "ver_flip": false,
         "rotation": 0,
-        "background_color": "gray"
+        "background_color": "green"
     },
     "overlays": {
         "top_left": {

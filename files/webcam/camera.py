@@ -27,6 +27,7 @@ def shoot_picture(image_conf):
     camera.rotation = int(image_conf.get("rotation", 0))
     image_name = '.temp_image.jpg'
     camera.capture(image_name)
+    camera.close()
     return image_name
 
 
@@ -243,17 +244,15 @@ def process_picture(raw_picture_name, image_conf, overlays_conf):
     return image_name
 
 
-def send_picture(image_name, url, needs_auth) -> bool:
+def send_picture(image_name, url, user=None, pwd=None) -> bool:
     """
     Send POST request with the image to the server.
     """
+    raw_response = None
     try:
         files = {'photo': open(image_name, 'rb')}
     
-        response = None
-        if needs_auth:
-            user = os.environ.get("RPICAM_SERVER_USERNAME", "")
-            pwd = os.environ.get("RPICAM_SERVER_PWD", "")
+        if user:
             raw_response = requests.post(url, files=files, 
                                     auth=requests.auth.HTTPBasicAuth(user, pwd))
         else:
@@ -264,18 +263,20 @@ def send_picture(image_name, url, needs_auth) -> bool:
         reply = response.get("photo", "No field named 'photo' in the response")
         if reply != "":
             log("ERROR! The server replied with an error.")
-            log("Full server response: " + json.dumps(response))
-            log("The error is " + reply)
+            log("The server replied:")
+            print(raw_response.content.decode('utf-8'))  
+            log("The error is: " + reply)
             raise ValueError(reply)
             
         log("Pictures uploaded successfully.")
         
     except Exception as e:
         log("ERROR! Something happened uploading the pictures!")
+        log("The error is: " + str(e))
         raise e
         
         
-def send_logs(url, needs_auth=False):
+def send_logs(url, user=None, pwd=None):
     """ 
     Send the logs to the server. 
     Tries to never fail in order not to break the main routine if something 
@@ -297,9 +298,7 @@ def send_logs(url, needs_auth=False):
     # Prepare and send the request
     try:
         data = {'logs': logs}
-        if needs_auth:
-            user = os.environ.get("RPICAM_SERVER_USERNAME", "")
-            pwd = os.environ.get("RPICAM_SERVER_PWD", "")
+        if user:
             raw_response = requests.post(url, data=data, 
                                     auth=requests.auth.HTTPBasicAuth(user, pwd))
         else:
@@ -310,7 +309,8 @@ def send_logs(url, needs_auth=False):
         reply = response.get("logs", "No field named 'logs' in the response")
         if reply != "":
             log("ERROR! The server replied with an error.")
-            log("Full server response is: " + json.dumps(reply))
+            log("The server replied:")
+            print(response.content.decode('utf-8'))  
             log("The error is " + reply)
             log("This error will be ignored.")
             return
@@ -332,14 +332,17 @@ def get_configuration():
     """
     log(f"Fetching new configuration")
         
+    old_conf = {}
     try:
         # Get the server data from the old configuration file
-        conf = {}
         with open(path / "configuration.json", 'r') as c:
-            conf = json.load(c)
-        server_url = conf.get("server_url")
-        needs_auth = conf.get("server_needs_password", False)
-        log(f"Server URL: {server_url}")
+            old_conf = json.load(c)
+        url = old_conf.get("server_url")
+        user = old_conf.get("server_username")
+        pwd = old_conf.get("server_password")
+        log(f"Server URL: {url}")
+        
+        print(user, pwd)
                 
         # Backup the old config file
         shutil.copy(path / "configuration.json", path / "configuration.prev.json")
@@ -348,23 +351,21 @@ def get_configuration():
         log("ERROR! Something went wrong loading the old configuration file.")
         log("Exception is:" + str(e))
         log("This error is not recoverable. Exiting.")
-        return None        
+        return None
     
     try:
         # Fetch the new config
-        if needs_auth:
-            user = os.environ.get("RPICAM_SERVER_USERNAME", "")
-            pwd = os.environ.get("RPICAM_SERVER_PWD", "")
-            response = requests.get(server_url, auth=requests.auth.HTTPBasicAuth(user, pwd))
+        if user:
+            response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
         else:
-            response = requests.get(server_url)
+            response = requests.get(url)
 
         # Write the new config into the configuration file                    
         response_dict = json.loads(response.content.decode('utf-8'))
         new_config = response_dict["configuration"]
         
-        with open(path / "configuration.json", 'w') as conf:
-            json.dump(new_config, conf, indent=4)
+        with open(path / "configuration.json", 'w') as c:
+            json.dump(new_config, c, indent=4)
 
         log("Configuration downloaded successfully:")
         print(json.dumps(new_config, indent=4))
@@ -380,15 +381,18 @@ def get_configuration():
         log("ERROR! Something went wrong fetching the new config file from the server.")
         log("The exception is:" + str(e))
         log("The server replied:")
-        print(response.content.decode('utf-8'))            
+        print(response.content.decode('utf-8'))  
+        log("Falling back to old configuration file.") 
+        return old_conf         
     
 
 def main_procedure(conf, retrying=False):
     try:
         # Send logs of the previous run
         server_url = conf.get("server_url")
-        needs_auth = conf.get("server_needs_password", False)
-        send_logs(server_url, needs_auth)
+        server_user = conf.get("server_username")
+        server_pwd = conf.get("server_password")
+        send_logs(server_url, server_user, server_pwd)
         
         # Shoot picture
         log("Taking photo")
@@ -398,9 +402,9 @@ def main_procedure(conf, retrying=False):
         log("Rendering photo")
         final_pic_name = process_picture(raw_pic_name, conf.get("image", {}), conf.get("overlays", {}))
         
-        # upload picture
+        # Upload picture
         log("Uploading photo")
-        send_picture(final_pic_name, server_url, needs_auth)
+        send_picture(final_pic_name, server_url, server_user, server_pwd)
         
         # Clean up picture if everything worked out
         log("Cleaning up")
@@ -413,6 +417,7 @@ def main_procedure(conf, retrying=False):
             # Try again using the old config file
             log("ERROR! Something unexpected happened during the main routine!")
             log("The exception is: " + str(e))
+            log("+++++++++++++++++++++++++++++++++++++++++++")
             log("Discarding newest configuration and restoring the previous values.")
             
             shutil.copy(path / "configuration.prev.json", path / "configuration.json")
@@ -420,10 +425,8 @@ def main_procedure(conf, retrying=False):
             with open(path / "configuration.json", 'r') as c:
                 conf = json.load(c)
             
-            log("Waiting for 5 seconds before retrying to give a chance to the camera to unload if needed.")
-            time.sleep(5)
-            
             main_procedure(conf, retrying=True)
+            log("+++++++++++++++++++++++++++++++++++++++++++")
             return 
             
         # That's the second run that failed: give up.

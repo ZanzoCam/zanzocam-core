@@ -1,0 +1,89 @@
+- hosts: all
+  remote_user: "{{ rpi_user }}"
+  become: yes
+  vars:
+    ansible_user: "{{ rpi_user }}"
+    ansible_sudo_pass: "{{ rpi_plaintext_password }}"
+    ansible_ssh_pass: "{{ rpi_plaintext_password }}"
+    ansible_python_interpreter: /usr/bin/python3
+    
+  tasks:
+    - name: Install graphic libs
+      apt:
+        name: 
+          - libopenjp2-7-dev 
+          - libtiff-dev
+        state: present
+       
+    - name: Install DejaVu font
+      apt:
+        name: fonts-dejavu
+        state: present
+        
+    - name: Set timezone to Europe/Rome
+      community.general.timezone:
+        name: Europe/Rome
+    
+    - name: Install Python3
+      apt:
+        name: python3
+        state: present
+    
+    - name: Install pip3
+      apt:
+        name: python3-pip
+        state: present
+        
+    - name: Install venv module
+      apt:
+        name: python3-venv
+        state: present
+    
+    - name: Copy Zanzocam Python files in /home/{{ rpi_user }}/webcam
+      copy:
+        src: ../../webcam/
+        dest: /home/{{ rpi_user }}/webcam
+        
+    - name: Setup virtualenv
+      pip:
+        requirements: /home/{{ rpi_user }}/webcam/requirements.txt
+        virtualenv: /home/{{ rpi_user }}/webcam/venv
+        virtualenv_command: '/usr/bin/python3 -m venv'
+            
+    - name: Add server address to the configuration.json file
+      replace:
+        path: /home/{{ rpi_user }}/webcam/configuration.json
+        regexp: "RPICAM_SERVER_ADDRESS"
+        replace: "{{ server_url }}"
+
+    - name: Append server username to the configuration.json file
+      replace: 
+        dest: /home/{{ rpi_user }}/webcam/configuration.json
+        regexp: "RPICAM_SERVER_USERNAME"
+        replace: "{{ server_username }}"
+        
+    - name: Append server password to the configuration.json file
+      replace: 
+        dest: /home/{{ rpi_user }}/webcam/configuration.json
+        regexp: "RPICAM_SERVER_PWD"
+        replace: "{{ server_password }}"
+        
+    - name: Setup camera cronjob
+      cron:
+        name: Zanzocam
+        job: "cd /home/{{ rpi_user }}/webcam && /home/{{ rpi_user }}/webcam/venv/bin/python3 /home/{{ rpi_user }}/webcam/camera.py >> /home/{{ rpi_user }}/webcam/logs.txt 2&>1"
+        minute: "*/5"
+        cron_file: zanzocam
+        user: "{{ rpi_user }}"
+        state: present
+        
+    - name: Give '{{ rpi_user }}' ownership over the files in webcam
+      file:
+        path: /home/{{ rpi_user }}/webcam
+        owner: "{{ rpi_user }}"
+        group: "{{ rpi_user }}"
+        state: directory
+        recurse: yes
+        
+        
+    

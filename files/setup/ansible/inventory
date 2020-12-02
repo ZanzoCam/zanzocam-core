@@ -1,0 +1,15 @@
+
+            [all]
+            192.168.1.30
+            
+            [all:vars]
+            ansible_connection=ssh
+            ansible_user=zanzocam-rpi
+            ansible_ssh_pass=passwordfacile
+            server_url="http://46.101.245.13/uploads/"
+            server_username="zanzocam-bot"
+            server_password="esperimento"
+            rpi_user="zanzocam-rpi"
+            rpi_plaintext_password="passwordfacile"
+            rpi_hashed_password="$6$v5HVEr6JAniL1$ti1o8Miw0LXRMjuhfxye0tcSWGFZzhx3TB62Q5Lqqkr1rT7UNREUhqdfLtXAniOcBqPhW4dvZ5cFJ.0pkqZY60"
+            
