@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "8a909799-a9b5-4c12-827e-634acd72fef7", "counter": 14, "stdout": "\u001b[0;35m feature will be removed in version 2.12. Deprecation warnings can be disabled \u001b[0m", "start_line": 13, "end_line": 14, "runner_ident": "c2b1f01b-b162-48b0-b9f0-e7e769e5eff7"}

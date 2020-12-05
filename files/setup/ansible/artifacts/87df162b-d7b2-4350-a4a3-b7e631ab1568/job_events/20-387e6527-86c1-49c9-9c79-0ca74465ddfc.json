@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "387e6527-86c1-49c9-9c79-0ca74465ddfc", "counter": 20, "stdout": "\u001b[1;35m[WARNING]: The input password appears not to have been hashed. The 'password'\u001b[0m", "start_line": 20, "end_line": 21, "runner_ident": "87df162b-d7b2-4350-a4a3-b7e631ab1568"}

@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "7598b909-20ad-4dd3-a285-098cdf808294", "counter": 9, "stdout": "\u001b[0;31m    - name: Make '{{ newuser }}' a sudoer\u001b[0m", "start_line": 8, "end_line": 9, "runner_ident": "91f2b35e-d109-46b0-b874-561e98dbf186"}

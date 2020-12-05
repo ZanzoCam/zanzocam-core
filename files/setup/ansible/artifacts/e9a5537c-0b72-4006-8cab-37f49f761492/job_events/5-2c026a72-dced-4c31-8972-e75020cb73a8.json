@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "2c026a72-dced-4c31-8972-e75020cb73a8", "counter": 5, "stdout": "\u001b[1;35mwhile loading YAML.   did not find expected <document start>  The error appears\u001b[0m", "start_line": 4, "end_line": 5, "runner_ident": "e9a5537c-0b72-4006-8cab-37f49f761492"}

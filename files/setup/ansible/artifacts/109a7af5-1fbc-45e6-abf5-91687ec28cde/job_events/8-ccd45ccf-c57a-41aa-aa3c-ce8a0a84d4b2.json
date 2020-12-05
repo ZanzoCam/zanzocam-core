@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "ccd45ccf-c57a-41aa-aa3c-ce8a0a84d4b2", "counter": 8, "stdout": "\u001b[0;35mdiscovered platform python for this host. See https://docs.ansible.com/ansible/\u001b[0m", "start_line": 7, "end_line": 8, "runner_ident": "109a7af5-1fbc-45e6-abf5-91687ec28cde"}

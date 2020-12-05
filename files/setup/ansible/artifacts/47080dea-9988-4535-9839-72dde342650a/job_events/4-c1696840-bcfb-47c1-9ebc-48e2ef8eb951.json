@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "c1696840-bcfb-47c1-9ebc-48e2ef8eb951", "counter": 4, "stdout": "\u001b[1;35mgot from each: JSON: Expecting value: line 2 column 14 (char 14)  Syntax Error\u001b[0m", "start_line": 3, "end_line": 4, "runner_ident": "47080dea-9988-4535-9839-72dde342650a"}

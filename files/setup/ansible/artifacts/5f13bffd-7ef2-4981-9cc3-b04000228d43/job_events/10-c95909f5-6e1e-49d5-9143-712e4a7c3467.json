@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "c95909f5-6e1e-49d5-9143-712e4a7c3467", "counter": 10, "stdout": "\u001b[0;35m /usr/bin/python3, but is using /usr/bin/python for backward compatibility with\u001b[0m", "start_line": 9, "end_line": 10, "runner_ident": "5f13bffd-7ef2-4981-9cc3-b04000228d43"}

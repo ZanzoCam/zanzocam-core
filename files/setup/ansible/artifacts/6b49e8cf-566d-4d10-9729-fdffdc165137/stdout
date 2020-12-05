@@ -1,6 +1,0 @@
-
-PLAY [Prepare keys for root (as 'pi', connect with password)] ******************
-
-TASK [Set authorized_key for root user] ****************************************
-[1;35m[WARNING]: Unable to find '~/.ssh/zanzocam_id_rsa.pub' in expected paths (use[0m
-[1;35m-vvvvv to see paths)[0m
