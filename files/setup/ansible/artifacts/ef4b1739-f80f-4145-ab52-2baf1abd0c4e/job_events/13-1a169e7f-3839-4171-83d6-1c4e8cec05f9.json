@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "1a169e7f-3839-4171-83d6-1c4e8cec05f9", "counter": 13, "stdout": "\u001b[1;35mExpected key=value, got: server_url: \"http://46.101.245.13/uploads/\"\u001b[0m", "start_line": 12, "end_line": 13, "runner_ident": "ef4b1739-f80f-4145-ab52-2baf1abd0c4e"}

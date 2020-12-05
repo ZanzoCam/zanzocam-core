@@ -1,0 +1,8 @@
+[1;35m[WARNING]: While constructing a mapping from[0m
+[1;35m/home/s/projects/raspicam/remotecam/files/setup/ansible/rpi_custom_user.yml,[0m
+[1;35mline 26, column 3, found a duplicate dict key (gather_facts). Using last[0m
+[1;35mdefined value only.[0m
+
+PLAY [identify reachable hosts] ************************************************
+
+TASK [this does nothing] *******************************************************

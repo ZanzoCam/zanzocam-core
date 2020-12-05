@@ -1,0 +1,14 @@
+# Disable the rainbow splash screen
+disable_splash=1
+
+# No boot delay
+boot_delay=0
+
+# Disable the LED
+dtparam=act_led_trigger=none
+dtparam=act_led_activelow=on
+
+# Enable camera
+start_x=1             # essential
+gpu_mem=128           # at least, or maybe more if you wish
+disable_camera_led=1  # optional, if you don't want the led to glow

@@ -1,0 +1,25 @@
+
+PLAY [Prepare keys for root (as 'pi', connect with password)] ******************
+
+TASK [set authorized_key for root user] ****************************************
+[0;35m[DEPRECATION WARNING]: Distribution debian 10.4 on host 192.168.1.30 should use[0m
+[0;35m /usr/bin/python3, but is using /usr/bin/python for backward compatibility with[0m
+[0;35m prior Ansible releases. A future Ansible release will default to using the [0m
+[0;35mdiscovered platform python for this host. See https://docs.ansible.com/ansible/[0m
+[0;35m2.10/reference_appendices/interpreter_discovery.html for more information. This[0m
+[0;35m feature will be removed in version 2.12. Deprecation warnings can be disabled [0m
+[0;35mby setting deprecation_warnings=False in ansible.cfg.[0m
+[0;32mok: [192.168.1.30][0m
+
+PLAY [Rename user (as 'root', connect with key)] *******************************
+
+TASK [Check if 'pi' user exist] ************************************************
+[0;33mchanged: [192.168.1.30][0m
+
+TASK [Kill all processes running for 'pi'] *************************************
+[0;33mchanged: [192.168.1.30][0m
+
+TASK [Get default group name for 'pi'] *****************************************
+[0;33mchanged: [192.168.1.30][0m
+
+TASK [Rename 'pi' group] *******************************************************

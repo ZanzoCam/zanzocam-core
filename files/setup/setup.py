@@ -54,8 +54,7 @@ class Wizard:
         title.grid(row=0, columnspan=2, padx=20, pady=20, sticky=tk.W + tk.E + tk.N + tk.S)
         title.config(font=(None, 22))
 
-        #self.input_window()
-        self.confirm_window()
+        self.input_window()
         self.window.mainloop()
         
     def clean_window(self):
@@ -215,8 +214,7 @@ class Wizard:
         self.status.grid(row=2, columnspan=2, padx=20, pady=10, sticky="nsew") 
         self.status.bind("<Key>", lambda e: "break")
         
-        #self.download_os_window()
-        self.search_pi()
+        self.download_os_window()
         
         
     def download_os_window(self):
@@ -434,7 +432,6 @@ copialo nella casella di testo in basso e premi 'Continua.'\n\n"
             rpi_hashed_password="{hashed_password}"
             """
             i.writelines(inventory)
-            print(inventory)
             
         python_stdout = sys.stdout
         ansible_stdout = RedirectText(self.status)

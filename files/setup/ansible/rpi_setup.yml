@@ -3,7 +3,7 @@
   become: yes
   vars:
     ansible_user: "{{ rpi_user }}"
-    ansible_sudo_pass: "{{ rpi_plaintext_password }}"
+    ansible_become_pass: "{{ rpi_plaintext_password }}"
     ansible_ssh_pass: "{{ rpi_plaintext_password }}"
     ansible_python_interpreter: /usr/bin/python3
     
@@ -67,11 +67,17 @@
         dest: /home/{{ rpi_user }}/webcam/configuration.json
         regexp: "RPICAM_SERVER_PWD"
         replace: "{{ server_password }}"
+    
+    - name: Add user password to rpi_self_setup.yml file
+      replace: 
+        dest: /home/{{ rpi_user }}/webcam/rpi_self_setup.yml
+        regexp: "ansible_become_pass: {% raw %}{{ become_password }}{% endraw %}"
+        replace: "ansible_become_pass: \"{{ ansible_become_pass }}\""
         
     - name: Setup camera cronjob
       cron:
         name: Zanzocam
-        job: "cd /home/{{ rpi_user }}/webcam && /home/{{ rpi_user }}/webcam/venv/bin/python3 /home/{{ rpi_user }}/webcam/camera.py >> /home/{{ rpi_user }}/webcam/logs.txt 2&>1"
+        job: "source /home/{{ rpi_user }}/webcam/venv/bin/activate; cd /home/{{ rpi_user }}/webcam && /home/{{ rpi_user }}/webcam/venv/bin/python3 /home/{{ rpi_user }}/webcam/camera.py >> /home/{{ rpi_user }}/webcam/logs.txt 2&>1"
         minute: "*/5"
         cron_file: zanzocam
         user: "{{ rpi_user }}"
@@ -84,6 +90,18 @@
         group: "{{ rpi_user }}"
         state: directory
         recurse: yes
+        
+    - name: Disable the micro-HDMI port to save power
+      blockinfile: 
+        dest: "/etc/rc.local"
+        insertbefore: "exit 0"  
+        state: present
+        block: "
+        |
+        |# Disable the HDMI port (to save power)
+        |/usr/bin/tvservice -o
+        |"
+      
         
         
     

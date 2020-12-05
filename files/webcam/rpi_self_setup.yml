@@ -1,0 +1,21 @@
+- hosts: 127.0.0.1   
+  connection: local
+  gather_facts: no
+  become: yes
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+    ansible_python_interpreter: "{{ webcam_dir }}/venv/bin/python3"
+
+  tasks:
+    - name: Setup camera cronjob
+      cron:
+        name: "zanzocam"
+        job: "cd {{ webcam_dir }} && {{ webcam_dir }}/venv/bin/python3 {{ webcam_dir }}/camera.py >> {{ webcam_dir }}/logs.txt 2&>1"
+        minute: "{{ cron_minute }}"
+        hour: "{{ cron_hour }}"
+        day: "{{ cron_day }}"
+        month: "{{ cron_month }}"
+        weekday: "{{ cron_weekday }}"
+        cron_file: zanzocam
+        user: "{{ rpi_user }}"
+        state: present

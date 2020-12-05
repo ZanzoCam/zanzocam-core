@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "48c4848e-02e8-4a88-a500-8ddd00948901", "counter": 26, "stdout": "\u001b[0;35m[DEPRECATION WARNING]: Distribution debian 10.4 on host 192.168.1.30 should use\u001b[0m", "start_line": 25, "end_line": 26, "runner_ident": "086a1691-452a-4921-9a0c-d132f1a6abb1"}

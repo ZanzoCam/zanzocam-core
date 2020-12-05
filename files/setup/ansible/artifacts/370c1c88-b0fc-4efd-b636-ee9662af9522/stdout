@@ -1,0 +1,4 @@
+
+PLAY [Prepare keys for root (as 'pi', connect with password)] ******************
+
+TASK [Set authorized_key for root user] ****************************************

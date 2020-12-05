@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "60d23067-51b2-4047-9077-2c0a687a258c", "counter": 20, "stdout": "\u001b[1;35mline 2, column 3, found a duplicate dict key (gather_facts). Using last defined\u001b[0m", "start_line": 19, "end_line": 20, "runner_ident": "b7a2ef00-6461-4517-8fcc-8063c3a8427a"}

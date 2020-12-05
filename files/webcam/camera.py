@@ -8,6 +8,7 @@ import shutil
 import requests
 import datetime
 import textwrap
+import ansible_runner
 from pathlib import Path
 from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
@@ -285,8 +286,8 @@ def send_logs(url, user=None, pwd=None):
     log(f"Uploading logs to {url}")
         
     # Load the logs content
+    logs = " ==> No logs found!! <== "
     try:
-        logs = " ==> No logs found!! <== "
         with open(path/"logs.txt", "r+") as l:
             logs = l.readlines()
     except Exception as e:
@@ -294,10 +295,10 @@ def send_logs(url, user=None, pwd=None):
         log("The exception is " + str(e))
         log("This error will be ignored.")
         return
-                
+
     # Prepare and send the request
     try:
-        data = {'logs': logs}
+        data = {'logs': "".join(logs)}
         if user:
             raw_response = requests.post(url, data=data, 
                                     auth=requests.auth.HTTPBasicAuth(user, pwd))
@@ -310,8 +311,8 @@ def send_logs(url, user=None, pwd=None):
         if reply != "":
             log("ERROR! The server replied with an error.")
             log("The server replied:")
-            print(response.content.decode('utf-8'))  
-            log("The error is " + reply)
+            log(vars(raw_response))  
+            log("The error is " + str(reply))
             log("This error will be ignored.")
             return
             
@@ -342,8 +343,6 @@ def get_configuration():
         pwd = old_conf.get("server_password")
         log(f"Server URL: {url}")
         
-        print(user, pwd)
-                
         # Backup the old config file
         shutil.copy(path / "configuration.json", path / "configuration.prev.json")
 
@@ -356,34 +355,73 @@ def get_configuration():
     try:
         # Fetch the new config
         if user:
-            response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
+            raw_response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
         else:
-            response = requests.get(url)
+            raw_response = requests.get(url)
 
         # Write the new config into the configuration file                    
-        response_dict = json.loads(response.content.decode('utf-8'))
-        new_config = response_dict["configuration"]
+        response = json.loads(raw_response.content.decode('utf-8'))
+        new_conf = response["configuration"]
         
         with open(path / "configuration.json", 'w') as c:
-            json.dump(new_config, c, indent=4)
+            json.dump(new_conf, c, indent=4)
 
         log("Configuration downloaded successfully:")
-        print(json.dumps(new_config, indent=4))
+        print(json.dumps(new_conf, indent=4))
         
-        ################################################
-        # TODO Apply new system configs like crontab etc...
-        ################################################
-
+        # Apply the new system configuration if needed
+        log("Applying new system settings from the configuration file...")
+        try:  
+            apply_system_settings(new_conf)
+        except Exception as e:
+            log("ERROR! Something happened while applying the system "
+                "settings from the new configuration file.")
+            log("The exception is: " + str(e))
+            log("Re-applying the old system configuration:")
+            try:  
+                apply_system_settings(old_conf)
+            except Exception as e:
+                log("ERROR! Something unexpected occurred while re-applyign the "
+                    "old system settings!")
+                log("The exception is: "+ str(e))
+                log("This issue is not recoverable: ignoring the "
+                    "error and hope nothing is left insonsistent. "
+                    "Check the logs to make sure.")
+                    
         # Return the downloaded data
-        return new_config
+        return new_conf
         
     except Exception as e:
         log("ERROR! Something went wrong fetching the new config file from the server.")
         log("The exception is:" + str(e))
         log("The server replied:")
-        print(response.content.decode('utf-8'))  
+        print(var(raw_response))  
         log("Falling back to old configuration file.") 
-        return old_conf         
+        return old_conf  
+        
+        
+def apply_system_settings(conf):
+    webcam_path = Path(__file__).parent.absolute()
+    # home folder name = user name
+    username = str(Path(__file__).parent.parent.absolute()).split(os.path.sep)[-1]
+    cron = conf.get("crontab", {})
+    
+    with open(webcam_path/"inventory", "w") as i:
+        inventory = f"""
+        [all]
+        127.0.0.1
+        
+        [all:vars]
+        webcam_dir={webcam_path}
+        rpi_user={username}
+        cron_minute={cron.get('minute', '*')}
+        cron_hour={cron.get('hour', '*')}
+        cron_day={cron.get('day', '*')}
+        cron_month={cron.get('month', '*')}
+        cron_weekday={cron.get('weekday', '*')}
+        """
+        i.writelines(inventory)
+    r = ansible_runner.run(private_data_dir=str(webcam_path), playbook=str(webcam_path/"rpi_self_setup.yml"))
     
 
 def main_procedure(conf, retrying=False):

@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "97810e6b-51f8-4b5e-8624-6a25e3e484c5", "counter": 7, "stdout": "\u001b[1;35mline 3, column 13, but may be elsewhere in the file depending on the exact\u001b[0m", "start_line": 6, "end_line": 7, "runner_ident": "e9a5537c-0b72-4006-8cab-37f49f761492"}

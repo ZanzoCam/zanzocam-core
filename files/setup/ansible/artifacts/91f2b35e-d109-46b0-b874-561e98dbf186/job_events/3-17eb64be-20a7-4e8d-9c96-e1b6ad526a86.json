@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "17eb64be-20a7-4e8d-9c96-e1b6ad526a86", "counter": 3, "stdout": "\u001b[0;31mThe error appears to be in '/home/s/projects/raspicam/remotecam/files/setup/ansible/rpi_custom_user.yml': line 70, column 7, but may\u001b[0m", "start_line": 2, "end_line": 3, "runner_ident": "91f2b35e-d109-46b0-b874-561e98dbf186"}

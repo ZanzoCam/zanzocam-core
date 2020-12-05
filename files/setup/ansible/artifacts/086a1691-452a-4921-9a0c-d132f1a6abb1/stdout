@@ -1,0 +1,21 @@
+[1;35m[WARNING]:  * Failed to parse[0m
+[1;35m/home/s/projects/raspicam/remotecam/files/setup/ansible/inventory with yaml[0m
+[1;35mplugin: We were unable to read either as JSON nor YAML, these are the errors we[0m
+[1;35mgot from each: JSON: Expecting value: line 2 column 14 (char 14)  Syntax Error[0m
+[1;35mwhile loading YAML.   did not find expected <document start>  The error appears[0m
+[1;35mto be in '/home/s/projects/raspicam/remotecam/files/setup/ansible/inventory':[0m
+[1;35mline 3, column 13, but may be elsewhere in the file depending on the exact[0m
+[1;35msyntax problem.  The offending line appears to be:              [all][0m
+[1;35m192.168.1.30             ^ here[0m
+[1;35m[WARNING]:  * Failed to parse[0m
+[1;35m/home/s/projects/raspicam/remotecam/files/setup/ansible/inventory with ini[0m
+[1;35mplugin: /home/s/projects/raspicam/remotecam/files/setup/ansible/inventory:14:[0m
+[1;35mExpected key=value, got: "[0m
+[1;35m[WARNING]: Unable to parse[0m
+[1;35m/home/s/projects/raspicam/remotecam/files/setup/ansible/inventory as an[0m
+[1;35minventory source[0m
+[1;35m[WARNING]: No inventory was parsed, only implicit localhost is available[0m
+
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************

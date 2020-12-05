@@ -1,5 +1,3 @@
-# pi:$6$TcStb3ADs0Vmhl1P$HOz0afl84EFN0Ws4IFhEtgW6iFt3VbmI2u4Q6WsAy9IPeXiJRJ0vOhBPzGRNEOrR.gdI6jWe7Nmy8Ub1ZSRHY/:18494:0:99999:7:::
-
 # Connect as pi and add our public key to root user
 - name: Prepare keys for root (as 'pi', connect with password)
   hosts: all
@@ -70,19 +68,13 @@
       register: newuser
       ignore_errors: yes
       
+      
     - name: Allow '{{ rpi_user }}' to SSH with a password
       lineinfile: 
         dest: "/etc/ssh/sshd_config"
         regexp: "^AllowUsers"  
-        line: "^AllowUsers {{ rpi_user }}"
+        line: "AllowUsers {{ rpi_user }}"
       when:
-        newuser.rc == 0        
-
-
-#    - name: Make '{{ newuser }}' a sudoer
-#      copy:
-#        dest: "/etc/sudoers.d/{{ newuser }}"
-#        content: "{{ newuser }} ALL=(ALL) NOPASSWD:ALL"
-
+        newuser.rc == 0
 
         

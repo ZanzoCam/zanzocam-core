@@ -1,0 +1,1 @@
+{"command": ["ansible-playbook", "-i", "/home/s/projects/raspicam/remotecam/files/setup/ansible/inventory", 
