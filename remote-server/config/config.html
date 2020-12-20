@@ -1,12 +1,73 @@
-{% extends "base.html" %}
+<html>
+<head>
+  <title>ZANZOCAM - Impostazioni</title>
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="text/html; charset=ISO-8859-1">
+  <link rel="icon" href="/static/assets/images/favicon.gif" type="image/gif"/> 
 
-{% block content %}
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700&family=Roboto&display=swap" rel="stylesheet"> 
+
+  <link href="mg/milligram.css" rel="stylesheet">
+
+</head>
+<body>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-family: 'Raleway', sans-serif;
+}
+
+body {
+  background-color: #b5c6d7;
+/*  background-attachment: fixed;
+  background-size: cover;
+  background-image: url("sfondo.jpg");*/
+}
+
+#container {
+  max-width: 800px;
+  margin: auto;
+  font-family: 'Raleway', sans-serif;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  background-color: white;
+  padding: 5%;
+}
+
+.center {
+    text-align: center;
+}
+
+hr {
+    border-bottom: 1px solid gray;
+    margin: 2em;
+}
+
+h3 {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+details > summary {
+  list-style: none;
+}
+
+</style>
+
+<div id="container">
+    
+    <div class="center">
+        <h2>Impostazioni</h2>
+        <h1>ZANZOCAM</h1>
+    </div>
     
     <div id="loading" class="center">
+        <hr />
         <h2>Caricamento...</h2>
+        <hr />
     </div>
-
-    <hr />
     
     <div id="main-form" style="display:none;">
     
@@ -680,8 +741,9 @@
         </form>
        
     </div>
-    
-    <script>
+</div>
+
+<script>
     // Parameters
     var url = "http://46.101.245.13/uploads/";
     var username = "zanzocam-bot";
@@ -814,7 +876,7 @@
         text_block.style.display = value==="text" ? "block" : "none";
         image_block.style.display = value==="image" ? "block" : "none";
     }
-    </script>
-    
-{% endblock %}
+</script>
 
+</body>
+</html>

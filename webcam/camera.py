@@ -422,9 +422,8 @@ def apply_system_settings(conf):
     with open(".tmp-cronjob-file", 'w') as d:
         d.writelines(textwrap.dedent(f"""
             # ZANZOCAM - shoot pictures
-            {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1
+            {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py >> /home/zanzocam-bot/webcam/logs.txt 2>&1
             """))
-            
     create_cron = subprocess.run([
         "/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
         stdout=subprocess.PIPE)
@@ -494,6 +493,14 @@ def log(msg):
 
 def main():
     log("Start")
+    try:
+        uptime_proc = subprocess.Popen(['uptime', '-s'],
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT)
+        stdout,stderr = uptime_proc.communicate()
+        log("System is up since: ", stdout)
+    except Exception:
+        log("Could not get uptime information.")
     conf = get_configuration()
     if conf is not None:
         main_procedure(conf)

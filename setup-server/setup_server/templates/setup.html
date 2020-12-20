@@ -13,7 +13,7 @@
     </p>
 
      
-    <div id="main-form">
+    <div id="main-form"">
     
         <form id="config" method="POST" action="/setting-up">
 
@@ -24,14 +24,6 @@
                 <label for="wifi_password">Password:</label>
                 <input type="text" name="wifi_password" value="{{ data.wifi_password }}" required>                
             
-            <h3>Utente Raspberry:</h3>
-                <label for="rpi_username">Nome utente (non 'pi'):</label>
-                <input type="text" name="rpi_username" value="{{ data.rpi_username }}" required>
-                
-                <label for="rpi_password">Password (non 'raspberry'):</label>
-                <input type="text" name="rpi_password" value="{{ data.rpi_password }}"  required>                
-            
-
             <h3>Server:</h3>
                 <label for="server_url">URL del server:</label>
                 <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}" required>
@@ -41,38 +33,49 @@
                 
                 <label for="server_password">Password del server (se necessaria):</label>
                 <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}" required>
-                
-            <h3>Cron:</h3>
             
-                <div class="row">
-                    <div class="column">
-                        <label class="label-inline">Minuti:</label>
-                        <input type="text" placeholder="*"  name="crontab_minute" value="{{ data.crontab_minute }}" required>
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">Ora:</label>
-                        <input type="text" placeholder="*"  name="crontab_hour" value="{{ data.crontab_hour }}" required>
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">Giorno:</label>
-                        <input type="text" placeholder="*"  name="crontab_day" value="{{ data.crontab_day }}" required>
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">Mese:</label>
-                        <input type="text" placeholder="*"  name="crontab_month" value="{{ data.crontab_month }}" required>
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">G. settimana:</label>
-                        <input type="text" placeholder="*"  name="crontab_weekday" value="{{ data.crontab_weekday }}" required>
-                    </div>
-                </div>
-            
-          
             <div class="center">
-                <input class="button-primary" type="submit" value="Salva" style="font-size:20pt;height:unset;padding:1rem 3rem;margin-top:3rem;text-transform:none;">
+                <button id="configure" class="button setup-button" type="submit">Configura</button>
+                <button id="shoot" class="button setup-button" onclick="javascript:shootFirstPicture();" type="button">Scatta Foto</button>
             </div>     
         </form>
-       
+
+        <p id="photo-feedback" class="center"></p>
+
     </div>
+    
+    
+    <script>
+    function shootFirstPicture() {
+        button = document.getElementById("shoot");
+        configure = document.getElementById("configure");
+        feedback = document.getElementById("photo-feedback");
+        
+        button.innerHTML = "Sto scattando...";
+        feedback.innerHTML = "Sto scattando (ci vuole un minuto)...";
+        button.disabled = true;
+        configure.disabled = true;
+        
+        fetch("/shoot", {
+            method:'GET',
+        })
+        .then(response => response.json())
+        .then(outcome => {
+            if (outcome['success']){
+                feedback.innerHTML = "Foto scattata con successo! Visita <a href='" + 
+                    outcome['server_url'] +
+                    "/pictures' target='_blank'>il tuo server</a> per assicurarti che sia stata ricevuta."
+            } else {
+                feedback.innerHTML = "Si e' verificato un errore! "+
+                    "Prova a riconfigurare ZANZOCAM e controlla che <a href='" + 
+                    outcome['server_url'] +
+                    "/pictures' target='_blank'>il tuo server</a> sia funzionante."         
+            }
+            button.innerHTML = "Scatta di nuovo";
+            button.disabled = false;
+            configure.disabled = false;
+        });
+    };
+    </script>
     
 {% endblock %}

@@ -3,9 +3,9 @@
     "server_username": "zanzocam-bot",
     "server_password": "esperimento",
     "crontab": {
-        "minutes": "*/5",
-        "hours": "*",
-        "days": "*",
+        "minute": "*/3",
+        "hour": "*",
+        "day": "*",
         "month": "*",
         "weekday": "*"
     },
@@ -21,7 +21,7 @@
         "hor_flip": false,
         "ver_flip": false,
         "rotation": 0,
-        "background_color": "green"
+        "background_color": "yellow"
     },
     "overlays": {
         "top_left": {
@@ -31,7 +31,7 @@
             "date_format": "%d %B %Y",
             "font_size": 30,
             "font_color": "white",
-            "background_color": "black",
+            "background_color": "#000000aa",
             "over_the_picture": true
         },
         "top_right": {
@@ -58,3 +58,4 @@
         }
     }
 }
+

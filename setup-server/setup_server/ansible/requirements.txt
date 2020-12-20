@@ -1,5 +1,0 @@
-Pillow 
-picamera
-requests
-ansible
-ansible-runner
