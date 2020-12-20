@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>
+    Inserisci qua sotto i dati del WiFi e i dati necessari per la
+    configurazione iniziale del software della webcam.
+    </p>
+    
+    <p>
+    Questi dati potranno essere cambiati in seguito utilizzando il file di 
+    configurazione salvato sul server. La webcam scarichera' il file aggiornato
+    appena prima di fare l'upload di una nuova foto.
+    </p>
+
+     
+    <div id="main-form">
+    
+        <form id="config" method="POST" action="/setting-up">
+
+            <h3>WiFi:</h3>
+                <label for="wifi_ssid">Nome della rete (SSID):</label>
+                <input type="text" name="wifi_ssid" value="{{ data.wifi_ssid }}">
+                
+                <label for="wifi_password">Password:</label>
+                <input type="text" name="wifi_password" value="{{ data.wifi_password }}" required>                
+            
+            <h3>Utente Raspberry:</h3>
+                <label for="rpi_username">Nome utente (non 'pi'):</label>
+                <input type="text" name="rpi_username" value="{{ data.rpi_username }}" required>
+                
+                <label for="rpi_password">Password (non 'raspberry'):</label>
+                <input type="text" name="rpi_password" value="{{ data.rpi_password }}"  required>                
+            
+
+            <h3>Server:</h3>
+                <label for="server_url">URL del server:</label>
+                <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}" required>
+                
+                <label for="server_username">Username del server (se necessario):</label>
+                <input type="text" placeholder="username"  name="server_username" value="{{ data.server_username }}" required>
+                
+                <label for="server_password">Password del server (se necessaria):</label>
+                <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}" required>
+                
+            <h3>Cron:</h3>
+            
+                <div class="row">
+                    <div class="column">
+                        <label class="label-inline">Minuti:</label>
+                        <input type="text" placeholder="*"  name="crontab_minute" value="{{ data.crontab_minute }}" required>
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">Ora:</label>
+                        <input type="text" placeholder="*"  name="crontab_hour" value="{{ data.crontab_hour }}" required>
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">Giorno:</label>
+                        <input type="text" placeholder="*"  name="crontab_day" value="{{ data.crontab_day }}" required>
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">Mese:</label>
+                        <input type="text" placeholder="*"  name="crontab_month" value="{{ data.crontab_month }}" required>
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">G. settimana:</label>
+                        <input type="text" placeholder="*"  name="crontab_weekday" value="{{ data.crontab_weekday }}" required>
+                    </div>
+                </div>
+            
+          
+            <div class="center">
+                <input class="button-primary" type="submit" value="Salva" style="font-size:20pt;height:unset;padding:1rem 3rem;margin-top:3rem;text-transform:none;">
+            </div>     
+        </form>
+       
+    </div>
+    
+{% endblock %}
