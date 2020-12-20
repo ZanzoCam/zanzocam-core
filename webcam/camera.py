@@ -8,7 +8,7 @@ import shutil
 import requests
 import datetime
 import textwrap
-import ansible_runner
+import subprocess
 from pathlib import Path
 from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
@@ -288,7 +288,12 @@ def send_logs(url, user=None, pwd=None):
     # Load the logs content
     logs = " ==> No logs found!! <== "
     try:
-        with open(path/"logs.txt", "r+") as l:
+        logs_file = path/"logs.txt"
+        
+        if not os.path.exists(logs_file):
+            open(logs_file, 'w').close()
+            
+        with open(logs_file, "r") as l:
             logs = l.readlines()
     except Exception as e:
         log("ERROR! Something happened opening the logs file.")
@@ -395,12 +400,17 @@ def get_configuration():
         log("ERROR! Something went wrong fetching the new config file from the server.")
         log("The exception is:" + str(e))
         log("The server replied:")
-        print(var(raw_response))  
+        print(vars(raw_response))  
         log("Falling back to old configuration file.") 
+        print(json.dumps(old_conf, indent=4))
         return old_conf  
         
         
 def apply_system_settings(conf):
+    """ 
+    Modifies the system according to the new configuration file content. 
+    Currently only updates the crontab.
+    """    
     cron = conf.get("crontab", {})
     cron_string = " ".join([
         cron.get('minute', '*'),
@@ -410,14 +420,19 @@ def apply_system_settings(conf):
         cron.get('weekday', '*')
     ])
     with open(".tmp-cronjob-file", 'w') as d:
-        d.writelines(f"""
-# ZANZOCAM - shoot pictures
-{cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1
-""") 
+        d.writelines(textwrap.dedent(f"""
+            # ZANZOCAM - shoot pictures
+            {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1
+            """) 
     create_cron = subprocess.run([
         "/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
         stdout=subprocess.PIPE)
-    if not create_cron:
+
+    chown_cron = subprocess.run([
+        "/usr/bin/sudo", "chown", "root:root", "/etc/cron.d/zanzocam"], 
+        stdout=subprocess.PIPE)
+
+    if not create_cron or not chown_cron:
         log("ERROR! Something went wrong creating the new cron file.")
         log("The old cron file is unaffected.") 
 
