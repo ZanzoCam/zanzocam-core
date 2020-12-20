@@ -332,7 +332,7 @@ def get_configuration():
     the backup of the previous configuration file.
     """
     log(f"Fetching new configuration")
-        
+            
     old_conf = {}
     try:
         # Get the server data from the old configuration file
@@ -401,28 +401,26 @@ def get_configuration():
         
         
 def apply_system_settings(conf):
-    webcam_path = Path(__file__).parent.absolute()
-    # home folder name = user name
-    username = str(Path(__file__).parent.parent.absolute()).split(os.path.sep)[-1]
     cron = conf.get("crontab", {})
-    
-    with open(webcam_path/"inventory", "w") as i:
-        inventory = f"""
-        [all]
-        127.0.0.1
-        
-        [all:vars]
-        webcam_dir={webcam_path}
-        rpi_user={username}
-        cron_minute={cron.get('minute', '*')}
-        cron_hour={cron.get('hour', '*')}
-        cron_day={cron.get('day', '*')}
-        cron_month={cron.get('month', '*')}
-        cron_weekday={cron.get('weekday', '*')}
-        """
-        i.writelines(inventory)
-    r = ansible_runner.run(private_data_dir=str(webcam_path), playbook=str(webcam_path/"rpi_self_setup.yml"))
-    
+    cron_string = " ".join([
+        cron.get('minute', '*'),
+        cron.get('hour', '*'),
+        cron.get('day', '*'),
+        cron.get('month', '*'),
+        cron.get('weekday', '*')
+    ])
+    with open(".tmp-cronjob-file", 'w') as d:
+        d.writelines(f"""
+# ZANZOCAM - shoot pictures
+{cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1
+""") 
+    create_cron = subprocess.run([
+        "/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
+        stdout=subprocess.PIPE)
+    if not create_cron:
+        log("ERROR! Something went wrong creating the new cron file.")
+        log("The old cron file is unaffected.") 
+
 
 def main_procedure(conf, retrying=False):
     try:

@@ -62,6 +62,7 @@ This step installs a few libraries required for the webcam to work.
     - Generate locales: `sudo locale-gen it_IT.UTF-8`
     - Update locales: `sudo update-locale it_IT.UTF-8`
     
+- Create alias for `ll` in `~/.bashrc`: `alias ll="ls -lah"`
 - Install utilities: `sudo apt install git whois`
 - Install graphics libraries and fonts: `sudo apt install libopenjp2-7-dev libtiff-dev fonts-dejavu`
 - Set timezone: `sudo timedatectl set-timezone Europe/Rome`
@@ -74,10 +75,10 @@ This step installs a few libraries required for the webcam to work.
 ```
 - Install pip3 and venv: `sudo apt install python3-pip python3-venv`
 - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
-- Copy out the `webcam` folder: `cp zanzocam/webcam .`
-- Copy the `server` folder into `/var/www`: `cp zanzocam/server /var/www`
+- Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
+- Copy the `server` folder into `/var/www`: `sudo cp -R zanzocam/server /var/www`
 - Enter the webcam folder: `cd webcam`
-- Create venv: `sudo python3 -m venv venv`
+- Create venv: `python3 -m venv venv`
 - Activate venv: `source venv/bin/activate`
 - Install the requirements: `pip install -r requirements.txt`
 - Leave venv: `deactivate`
@@ -408,7 +409,7 @@ Description=uWSGI instance to serve the ZANZOCAM setup server
 After=network.target
 
 [Service]
-User=pi
+User=zanzocam-bot
 Group=www-data
 WorkingDirectory=/var/www/setup-server
 Environment="PATH=/var/www/setup-server/venv/bin"
@@ -435,13 +436,4 @@ server {
 - Disable the default config: `sudo rm /etc/nginx/sites-enabled/default`
     - Check for errors with `sudo nginx -t`
 - Restart Nginx: `sudo systemctl restart nginx`
-
-
-### Prepare the automatic setup scripts
-
-It's better not to embed the camera software itself on the image, because it 
-might change a lot more often and we want to be able to upgrade existing 
-cameras too if so required.
-
-
 

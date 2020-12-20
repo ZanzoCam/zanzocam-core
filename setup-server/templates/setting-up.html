@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+    <h4 id="feedback" style="margin:5rem 0 3rem 0;">Setup in corso (non lasciare la pagina!)</h4>
+    
+    <textarea id="logs" disabled style="height:50vh;margin-bottom:3rem;color:#eee;background-color:#222;padding:3rem 2rem;border-radius:1rem;">
+    - Inizio setup
+    </textarea>
+    
+    <a href="/" id="back" class="button" style="display:none;">Torna alla Home</a>
+
+    <script>
+    
+    // Poll the server for fresh logs
+    const poll = async ({ fn, validate, interval, maxAttempts }) => {
+        let attempts = 0;
+
+        const executePoll = async (resolve, reject) => {
+            const result = await fn();
+            attempts++;
+
+            if (validate(result)) {
+                return resolve(result);
+            } else if (maxAttempts && attempts === maxAttempts) {
+                return reject(new Error('Exceeded max attempts'));
+            } else {
+                setTimeout(executePoll, interval, resolve, reject);
+            }
+        };
+
+        return new Promise(executePoll);
+    };
+    
+    const askForLogs = async () => {
+        fetch("/setup/logs", {
+            method:'GET',
+        })
+        .then(response => response.json())
+        .then(logs => { document.getElementById("logs").value = logs.join(""); });
+    };
+    
+    const POLL_INTERVAL = 1000;
+    const pollForLogs = poll({
+          fn: askForLogs,
+          validate: () => {return false;},
+          interval: POLL_INTERVAL,
+    })
+    .then(logs => console.log(logs))
+    .catch(err => console.error(err));
+    
+    const startTheSetup = async () => {
+        fetch("/setup/start", {
+            method:'POST',
+        })
+        .then(response => response.json())
+        .then(outcome => {
+            alert(outcome); 
+            if (outcome){
+                document.getElementById("feedback").text = "Setup completo!";
+                document.getElementById("back").style.display = "block";
+            } else {
+                alert("Il setup non e' andato a buon fine. Controlla i log prima di lasciare la pagina e riprova.");
+            }
+        });
+    };
+    startTheSetup();
+   
+    </script>
+    
+{% endblock %}
+
