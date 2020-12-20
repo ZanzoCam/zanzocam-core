@@ -2,9 +2,9 @@ import os
 import sys
 import json
 import subprocess
-import ansible_runner
 from pathlib import Path
-from flask import Flask, render_template, request
+from textwrap import dedent
+from flask import Flask, render_template, request, abort
 
 app = Flask(__name__)
 
@@ -41,6 +41,24 @@ def setup():
     
 
 
+@app.route("/shoot", methods=["GET"])
+def shoot():
+    """ Shoot a test picture """
+    try:
+        with open(initial_data, 'r') as d:
+            data = json.load(d)
+    except Exception:
+        data = {"server_url": "http://url/del/tuo/server"}
+    
+    shoot = subprocess.run(
+        [   
+             "/home/zanzocam-bot/webcam/venv/bin/python3",
+             "/home/zanzocam-bot/webcam/camera.py"
+        ], 
+        stdout=subprocess.PIPE)
+    return json.dumps({"success": bool(shoot), "server_url": data['server_url']})
+
+
 @app.route("/setting-up", methods=["POST"])
 def setting_up():
     """ The page with the logs """
@@ -74,70 +92,44 @@ def start_setup():
         
     error=False
     
-    # Encrypts the rpi password to make it a valid Linux user password
-    # Depends on the 'whois' system package
-    #log("Hashing della password")
-    #hashing_proc = subprocess.run(["/usr/bin/mkpasswd", "--method=sha-512", data['rpi_password']], stdout=subprocess.PIPE)
-    #hashed_password = hashing_proc.stdout.decode('utf-8').strip()
-    
-    
+    # Write the wpa_supplicant.conf file.
     log("Setup WiFi")
     with open(".tmp-wpa_supplicant", "w") as f:
-            f.writelines(f"""
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
+        f.writelines(dedent(f"""
+            ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+            update_config=1
 
-network={{
-    ssid="{data['wifi_ssid']}"
-    psk="{data['wifi_password']}"
-}}
-""")
-    create_wpa_conf = subprocess.run(["/usr/bin/sudo", "mv", ".tmp-wpa_supplicant", 
-        "/etc/wpa_supplicant/wpa_supplicant.conf"], stdout=subprocess.PIPE)
-    if not create_wpa_conf:
-        log(f"""ERRORE! Non e' stato possibile configurare il WiFi. 
-Usa SSH per configurarlo manualmente:
- - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf 
- - Copiaci dentro: 
-
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-
-network={{
-    ssid="{data['wifi_ssid']}"
-    psk="{data['wifi_password']}"
-}}
-
-""",  dot="\n===> ")
-        error=True
-    
-    
-    log("Aggiornamento cronjob")
-    cron_string = " ".join([
-        data['crontab_minute'],
-        data['crontab_hour'],
-        data['crontab_day'],
-        data['crontab_month'], 
-        data['crontab_weekday']
-    ])
-    with open(".tmp-cronjob-file", 'w') as d:
-        d.writelines(f"""
-# ZANZOCAM - shoot pictures
-{cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1
-""") 
-    create_cron = subprocess.run(
-        ["/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
+            network={{
+                ssid="{data['wifi_ssid']}"
+                psk="{data['wifi_password']}"
+            }}
+            """))
+    create_wpa_conf = subprocess.run(
+        [   
+            "/usr/bin/sudo", 
+            "mv", 
+            ".tmp-wpa_supplicant", 
+            "/etc/wpa_supplicant/wpa_supplicant.conf"
+        ], 
         stdout=subprocess.PIPE)
-    if not create_cron:
-        log("""ERRORE! Non e' stato possibile creare il cronjob. 
-Usa SSH per crearlo manualmente:
- - Apri il file con: sudo nano /etc/cron.d/zanzocam
- - Copiaci dentro: {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py > /home/zanzocam-bot/webcam/logs.txt 2>&1\n""",
- dot="\n===> ")
-        error = True
+    if not create_wpa_conf:
+        log(dedent(f"""ERRORE! Non e' stato possibile configurare il WiFi. 
+                Usa SSH per configurarlo manualmente:
+                 - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf 
+                 - Copiaci dentro: 
+
+                ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+                update_config=1
+
+                network={{
+                    ssid="{data['wifi_ssid']}"
+                    psk="{data['wifi_password']}"
+                }}"""),  dot="\n===> ")
+        error=True
         
-        
-    log("Aggiornamento configurazione della webcam")
+    
+    # Write the initial configuration.json to bootstrap the webcam
+    log("Setup dati del server remoto")
     webcam_minimal_conf = {
         "server_url": data['server_url'],
         "server_username": data['server_username'],
@@ -145,10 +137,11 @@ Usa SSH per crearlo manualmente:
     }
     try:
         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
-            json.dump(webcam_minimal_conf, d)
-    except Exception:
+            json.dump(webcam_minimal_conf, d, indent=4)
+    except Exception as e:
         error = True
         
+    # If there was an error at some point, return 500
     if error:
         log("Setup fallito")
         abort(500)

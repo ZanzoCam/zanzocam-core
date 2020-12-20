@@ -2,36 +2,40 @@
 
 {% block content %}
     
-    <h4 id="feedback" style="margin:5rem 0 3rem 0;">Setup in corso (non lasciare la pagina!)</h4>
+    <h4 id="setup" style="margin:5rem 0 3rem 0;">Setup in corso (non lasciare la pagina!)</h4>
     
-    <textarea id="logs" disabled style="height:50vh;margin-bottom:3rem;color:#eee;background-color:#222;padding:3rem 2rem;border-radius:1rem;">
+    <textarea id="logs" disabled style="height:30vh;margin-bottom:3rem;color:#eee;background-color:#222;padding:3rem 2rem;border-radius:1rem;">
     - Inizio setup
     </textarea>
     
-    <a href="/" id="back" class="button" style="display:none;">Torna alla Home</a>
+    <p id="feedback"></p>
+    <div class="center">
+        <a href="/" id="back" class="button setup-button" style="display:none;">Indietro</a>
+    </div>
 
     <script>
+    // Keep people from leaving
+    setupInProgress = true;
+    window.onunload = function() {
+        alert("Il setup non e' ancora completo!");
+    }
     
-    // Poll the server for fresh logs
+    // Function to poll the server
     const poll = async ({ fn, validate, interval, maxAttempts }) => {
         let attempts = 0;
-
         const executePoll = async (resolve, reject) => {
             const result = await fn();
             attempts++;
-
             if (validate(result)) {
                 return resolve(result);
-            } else if (maxAttempts && attempts === maxAttempts) {
-                return reject(new Error('Exceeded max attempts'));
             } else {
                 setTimeout(executePoll, interval, resolve, reject);
             }
         };
-
         return new Promise(executePoll);
     };
     
+    // Ask the server for new logs
     const askForLogs = async () => {
         fetch("/setup/logs", {
             method:'GET',
@@ -40,32 +44,41 @@
         .then(logs => { document.getElementById("logs").value = logs.join(""); });
     };
     
+    // Start to poll
     const POLL_INTERVAL = 1000;
     const pollForLogs = poll({
           fn: askForLogs,
-          validate: () => {return false;},
+          validate: () => {return !setupInProgress;},
           interval: POLL_INTERVAL,
     })
     .then(logs => console.log(logs))
     .catch(err => console.error(err));
     
+    // Start the setup procedure
     const startTheSetup = async () => {
         fetch("/setup/start", {
             method:'POST',
         })
         .then(response => response.json())
         .then(outcome => {
-            alert(outcome); 
+            document.getElementById("back").style.display = "block";
             if (outcome){
-                document.getElementById("feedback").text = "Setup completo!";
-                document.getElementById("back").style.display = "block";
+                document.getElementById("setup").innerHTML = "Setup completo!";
+                document.getElementById("feedback").innerHTML = "Setup completato! "+
+                    "Riavvia il Raspberry Pi se non e' ancora collegato alla "+
+                    "rete da te specificata, poi configura il tuo server e infine " +
+                    "scatta una foto di prova per far partire la webcam.";
+                document.getElementById("shoot").style.display = "block";
             } else {
-                alert("Il setup non e' andato a buon fine. Controlla i log prima di lasciare la pagina e riprova.");
+                const msg = "Il setup non e' andato a buon fine. Controlla i log "+
+                "prima di lasciare la pagina e riprova.";
+                document.getElementById("feedback").innerHTML = msg;
+                alert(msg);
             }
         });
     };
     startTheSetup();
-   
+    
     </script>
     
 {% endblock %}
