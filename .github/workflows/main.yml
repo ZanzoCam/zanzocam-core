@@ -1,35 +1,17 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI
-
-# Controls when the action will run. 
+name: Write Version to File
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - master
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  write-version:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    name: Write Version to File
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Check out the repo 
-        uses: actions/checkout@v2
-
-      - name: Write Version to File
-      # You may pin to the exact commit or the version.
-      # uses: brettdorrans/write-version-to-file@ea48c38c3afc479e8b2645a19743c24200966f3d
-        uses: brettdorrans/write-version-to-file@v1.0.0
-        with:
-          # The filename to write the version tag to
-          filename: /.version
+    - uses: actions/checkout@master
+    - name: Update version
+      id: version
+      uses: brettdorrans/write-version-to-file@master
+      with:
+        filename: '/.VERSION'
