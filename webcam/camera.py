@@ -6,6 +6,7 @@ import shutil
 import requests
 import datetime
 import textwrap
+import traceback
 import subprocess
 from pathlib import Path
 from picamera import PiCamera
@@ -20,7 +21,7 @@ local_images_path = path / "overlays"
 def main():
     # Boots up and checks itself
     log("Start")
-    collect_stats()
+    status = collect_stats()
     
     # Get configuration
     conf = get_configuration()
@@ -42,6 +43,24 @@ def log(msg):
     print(f"{datetime.datetime.now()} -> {msg}")
 
 
+def decode_json_numbers(json):
+    for k, v in json.items():
+        try:
+            if isinstance(v, dict):
+                json[k] = decode_json_numbers(v)
+            if isinstance(v, str):
+                if v == "false":
+                    value = False
+                if v == "true":
+                    value = True
+                value = float(v)
+                value = int(v)
+                json[k] = value
+        except ValueError:
+            pass
+    return json
+
+
 def collect_stats():
     """ 
     Print system statistics in the logs. 
@@ -52,28 +71,54 @@ def collect_stats():
     # Version
     try:
         with open("../zanzocam/.VERSION") as v:
-            stats["version"] = v.readline()
-    excelt Exception as e:
+            stats["version"] = v.readline().strip()
+    except Exception as e:
         log("Could not get version information.")
-        log("The exception is: " + e)    
+        traceback.print_exc()
+
     # Uptime
     try:
         uptime_proc = subprocess.Popen(['uptime', '-s'],
-            stdout=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         stdout, stderr = uptime_proc.communicate()
-        stats['uptime'] = stdout
-        
+        stats['uptime'] = stdout.decode('utf-8').strip()
+        # TODO convertin timedelta and show the span (like 5 days 3 hours 27 minutes)
     except Exception as e:
-        log("Could not get uptime information.")
-        log("The exception is: " + e)
-      
-    # Output  
+        log("ERROR! Could not get uptime information.")
+        traceback.print_exc()
+
+    # Autohotspot
+    try:
+        hotspot_proc = subprocess.run(["/usr/bin/sudo", "/usr/bin/autohotspot"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if not hotspot_proc:
+            raise ValueError("The autohotspot script failed to run or returned an exception.")
+        stats['autohotspot'] = True
+    except Exception as e:
+        log("ERROR! The hotspot script failed to run.")
+        traceback.print_exc()
+        stats["autohotspot"] = False
+
+    # WiFi SSID
+    try:
+        wifi_proc = subprocess.Popen(['/usr/sbin/iwgetid', '-r'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        stdout, stderr = wifi_proc.communicate()
+        stats['WiFi SSID'] = stdout.decode('utf-8').strip()
+    except Exception as e:
+        log("ERROR! Could not retrieve WiFi information.")
+        traceback.print_exc()
+
+    # Ensure Internet connectivity - TODO
+
+    # Log the outcomes
     stats_string = ""
     for stat, value in stats.items():
         stats_string += f" - {stat}: {value}\n"
-
     log(f"System statistics:\n{stats_string}")
+
+    return stats
 
 
 def get_configuration():
@@ -99,7 +144,7 @@ def get_configuration():
 
     except Exception as e:
         log("ERROR! Something went wrong loading the old configuration file.")
-        log("Exception is:" + str(e))
+        traceback.print_exc()
         log("THIS ERROR IS FATAL: exiting.")
         return None
     
@@ -113,6 +158,7 @@ def get_configuration():
         # Write the new config into the configuration file                    
         response = json.loads(raw_response.content.decode('utf-8'))
         new_conf = response["configuration"]
+        new_conf = decode_json_numbers(new_conf)  # The configuration file will contain strings in place of numbers!
         
         with open(path / "configuration.json", 'w') as c:
             json.dump(new_conf, c, indent=4)
@@ -122,13 +168,13 @@ def get_configuration():
         
         # Download any new image
         # TODO cleaup old icons? Requires backup, delete, check for errors and potentially restore if something went wrong
-        remote_images_path = server_url + "config/images/"  # TODO make configurable?
+        remote_images_path = new_conf['server_url'] + "config/images/"  # TODO make configurable?
         
         new_images = response["images"]
         for image in new_images:
-            if not os.path.exists(local_images_path / image):                
+            if True: #not os.path.exists(local_images_path / image):                
                 
-                r = requests.get(f"{remote_images_path}{image}", stream = True)
+                r = requests.get(f"{remote_images_path}{image}", stream=True, auth=requests.auth.HTTPBasicAuth(user, pwd))
                 if r.status_code == 200:
                     r.raw.decode_content = True
 
@@ -139,8 +185,9 @@ def get_configuration():
 
                 else:
                     log(f"ERROR! New overlay image failed to download: {image}")
+                    log(f"Response status code: {r.status_code}")
                     log("Replacing it with empty image file.")
-                    os.copy(path / "fallback-pixel.png", local_images_path / image)          
+                    shutil.copy2(path / "fallback-pixel.png", local_images_path / image)          
         
         # Apply the new system configuration if needed
         log("Applying new system settings from the configuration file...")
@@ -151,14 +198,14 @@ def get_configuration():
         except Exception as e:
             log("ERROR! Something happened while applying the system "
                 "settings from the new configuration file.")
-            log("The exception is: " + str(e))
+            traceback.print_exc()
             log("Re-applying the old system configuration:")
             try:  
                 apply_system_settings(old_conf)
             except Exception as e:
                 log("ERROR! Something unexpected occurred while re-applyign the "
                     "old system settings!")
-                log("The exception is: "+ str(e))
+                traceback.print_exc()
                 log("THIS ERROR IS FATAL: the webcam might be in an inconsistent state."
                     "ZANZOCAM might need manual intervention at this point.")
                     
@@ -167,7 +214,7 @@ def get_configuration():
         
     except Exception as e:
         log("ERROR! Something went wrong fetching the new config file from the server.")
-        log("The exception is:" + str(e))
+        traceback.print_exc()
         log("The server replied:")
         print(vars(raw_response))  
         log("Falling back to old configuration file.") 
@@ -258,7 +305,7 @@ def send_logs(url, user=None, pwd=None):
             logs = l.readlines()
     except Exception as e:
         log("ERROR! Something happened opening the logs file.")
-        log("The exception is " + str(e))
+        traceback.print_exc()
         log("This error will be ignored.")
         return
 
@@ -286,7 +333,7 @@ def send_logs(url, user=None, pwd=None):
     
     except Exception as e:
         log("ERROR! Something happened uploading the logs file.")
-        log("The exception is " + str(e))
+        traceback.print_exc()
         log("This error will be ignored.")
         return
 
@@ -323,7 +370,7 @@ def take_picture(conf, retrying=False):
         if not retrying:
             # Try again using the old config file
             log("ERROR! Something unexpected happened during the main routine!")
-            log("The exception is: " + str(e))
+            traceback.print_exc()
             log("+++++++++++++++++++++++++++++++++++++++++++")
             log("Discarding newest configuration and restoring the previous values.")
             
@@ -339,6 +386,7 @@ def take_picture(conf, retrying=False):
         # That's the second run that failed: give up.
         log("ERROR! Something happened while running with the old configuration file too!")
         log("The exception is: " + str(e))
+        traceback.print_exc()
         log("THIS ERROR IS FATAL: giving up.")
         return
 
@@ -418,14 +466,14 @@ def _prepare_text_overlay(conf, picture_size):
         label = Image.new("RGBA", text_size, color=background_color)
         draw = ImageDraw.Draw(label)
         draw.text((padding, padding, padding), text, font_color, font=font)
-        
+
         return label
-        
+
     except Exception as e:
-        log("ERROR! Something unexpected happened while generating the overlay. "+
+        log("ERROR! Something unexpected happened while generating text the overlay. "+
         "This overlay will be skipped.")
-        log("Exception: " + str(e))
-        return None        
+        traceback.print_exc()
+        return None
 
 
 def _prepare_image_overlay(conf):
@@ -433,7 +481,7 @@ def _prepare_image_overlay(conf):
     Prepares an overlay containing an image.
     Might return None in case of issues. 
     """
-    picture_name = local_images_path / conf.get("path")
+    picture_name = local_images_path / conf.get("image")
 
     if not picture_name:
         log(f"ERROR! This image overlay does not contain the image path. "
@@ -441,11 +489,11 @@ def _prepare_image_overlay(conf):
         return None
 
     try:
-        picture = Image.open(path / picture_name)
+        picture = Image.open(path / picture_name).convert("RGBA")
     except Exception as e:
         log(f"ERROR! Image '{picture_name}' not found. "
         "This overlay will be skipped.")
-        log("Exception: " + str(e))
+        traceback.print_exc()
         return None
     
     try:
@@ -473,10 +521,10 @@ def _prepare_image_overlay(conf):
         return image
         
     except Exception as e:
-        log("ERROR! Something unexpected happened while generating the overlay. "+
+        log("ERROR! Something unexpected happened while generating the image overlay. "+
             "This overlay will be skipped.")
-        log("Exception: " + str(e))
-        return None      
+        traceback.print_exc()
+        return None
 
 
 def process_picture(raw_picture_name, image_conf, overlays_conf):
@@ -485,29 +533,35 @@ def process_picture(raw_picture_name, image_conf, overlays_conf):
     with the proper name and format.
     """
     # Open and measures the picture
-    picture = Image.open(raw_picture_name)
+    picture = Image.open(raw_picture_name).convert("RGBA")
     picture_size = picture.size
 
     # Creates the components to overlay
     pieces_to_layout = []
     for piece_position, piece_conf in overlays_conf.items():
-    
-        kind = piece_conf.get("type", "missing")
-        if kind == "text":
-            overlay = _prepare_text_overlay(piece_conf, picture_size)
-            if overlay is not None:
-                pieces_to_layout.append((piece_position, piece_conf, overlay))
-
-        elif kind == "image":
-            overlay = _prepare_image_overlay(piece_conf)
-            if overlay is not None:
-                pieces_to_layout.append((piece_position, piece_conf, overlay))
+        try:
+            log(f"Processing overlay {piece_position}")
         
-        elif kind == "missing":
-            log(f"ERROR! Missing overlay name! This overlay will be skipped.")
-        else:
-            log(f"ERROR! Overlay name '{kind}' not recognized. Valid names: "
-            "text, image. This overlay will be skipped.")
+            kind = piece_conf.get("type", "none")
+            if kind == "text":
+                overlay = _prepare_text_overlay(piece_conf, picture_size)
+                if overlay is not None:
+                    pieces_to_layout.append((piece_position, piece_conf, overlay))
+
+            elif kind == "image":
+                overlay = _prepare_image_overlay(piece_conf)
+                if overlay is not None:
+                    pieces_to_layout.append((piece_position, piece_conf, overlay))
+        
+            elif kind == "none":
+                log(f"No overlay specified for position {piece_position}.")
+            else:
+                log(f"ERROR! Overlay name '{kind}' not recognized. Valid names: "
+                "text, image. This overlay will be skipped.")
+
+        except Exception as e:
+            log(f"ERROR! Something happened processing the overlay {piece_position}. This overlay will be skipped.")
+            traceback.print_exc()
 
     # Calculate borders to add to the picture according to the size of 
     # the out-of-picture overlays
@@ -552,7 +606,7 @@ def process_picture(raw_picture_name, image_conf, overlays_conf):
 
     # Assemble the image name
     image_name = image_conf.get("name", "image")
-    image_extension = image_conf.get("extension", "png")
+    image_extension = image_conf.get("extension", "jpg")
     if image_conf.get("add_date_to_name", True):
         image_name += "_" + datetime.datetime.now().strftime("%Y-%m-%d")
     if image_conf.get("add_time_to_name", True):
@@ -600,9 +654,9 @@ def send_picture(image_name, url, user=None, pwd=None) -> bool:
         
     except Exception as e:
         log("ERROR! Something happened uploading the pictures!")
-        log("The error is: " + str(e))
-        raise e
+        traceback.print_exc()
         log("WARNING: the image was probably not sent!")
+        raise e
 
 
 

@@ -34,8 +34,6 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $imageerror = $_FILES['photo']['error'];
     $imagetemp = $_FILES['photo']['tmp_name'];
 
-    $response['post'] = $_POST;
-
     if ($logs){
         if (file_put_contents($logs_path."logs_".date('Y-m-d_H:i:s').".txt", $logs)){
             $response["logs"] = "";

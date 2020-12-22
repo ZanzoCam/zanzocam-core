@@ -88,8 +88,8 @@
                     </div>
                     <div class="column">
                         <label for="image__extension">Estensione:</label>
-                        <select id="image__extension">
-                          <option value="jpg">JPG</option>
+                        <select name="image__extension">
+                          <option value="jpg" selected="selected">JPG</option>
                           <option value="png">PNG</option>
                           <option value="gif">GIF</option>
                         </select>
@@ -824,12 +824,22 @@
     // Converts the form data back into JSON
     function formdata_to_json(formData){
         var object = {};
-        formData.forEach((value, key) => {
-        
+        var form = document.getElementsByTagName('form')[0];
+
+        Array.from(form.elements).forEach((field) => {
+            key = field.name;
+            value = formData.get(key);
+            
             if (value===""){ value = null; }
             if (value==="on"){ value = true; }
             if (value==="off"){ value = false; }
-            if (value===null && document.getElementsByName(key)[0].type === "file"){
+            if (field.type === "checkbox"){
+                console.log(key, value);
+            }
+
+//            console.log("==============>", field.name, field.type, field.value);
+
+            if (value===null && field.type === "file"){
                 // This is a file that has not been changed.
                 // Be sure to re-send the old value or it will clear the field.
                 value = deepGet(key, last_loaded_data);
@@ -843,7 +853,17 @@
                 deepSet(key, value, object);
 	        }
         });
-        return object;
+
+        // Custom processing of the overlays
+        filtered_object = object
+        Object.entries(object["overlays"]).forEach(([key, value]) => {
+            console.log(value+"has type? "+value.hasOwnProperty("type"));
+            if (!value.hasOwnProperty("type")){
+                delete filtered_object["overlays"][key];
+            }
+        });
+
+        return filtered_object;
     }
 
 
@@ -864,9 +884,9 @@
         formdata = new FormData();
         formdata.append("config", serialized);
         // Get all the images
-        for(verr of ['top', 'bottom']) {
+        for(ver of ['top', 'bottom']) {
             for(hor of ['right', 'center', 'left']){
-                var field = "overlays__"+verr+"_"+hor+"__image";
+                var field = "overlays__"+ver+"_"+hor+"__image";
                 if (data.has(field)){
                     formdata.append(field, data.get(field));
                 }
