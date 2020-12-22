@@ -69,8 +69,7 @@ This step installs a few libraries required for the webcam to work.
     
 - Create alias for `ll` in `~/.bashrc`: `nano ~/.bashrc`
     - Add at the end: `alias ll="ls -lah"`
-- Install utilities: `sudo apt install git whois`
-- Install graphics libraries and fonts: `sudo apt install libopenjp2-7-dev libtiff-dev fonts-dejavu`
+- Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu`
 - Set timezone: `sudo timedatectl set-timezone Europe/Rome`
 - Setup cronjob to turn off HDMI at reboot:
     - `sudo nano /etc/cron.d/no-hdmi`
