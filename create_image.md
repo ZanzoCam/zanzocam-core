@@ -40,6 +40,8 @@ network={
 }
 ```
 - Boot the RPI with the SD card
+- Find its IP with `nmap -p 22 192.168.1.0/24` 
+- Connect to it with SSH: `ssh pi@192.168.1.xxx`
 
 
 ### Basic setup (libraries and configuration)
