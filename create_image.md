@@ -82,7 +82,8 @@ This step installs a few libraries required for the webcam to work.
 - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
 - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
 - Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
-- Copy the `setup-server` folder into `/var/www`: `sudo cp -R zanzocam/setup-server /var/www`
+- Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server /var/www`
+- Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
 - Enter the webcam folder: `cd webcam`
 - Create venv: `python3 -m venv venv`
 - Activate venv: `source venv/bin/activate`
@@ -96,16 +97,13 @@ This step makes the RPI able to generate its own WiFi network (SSID: zanzocam-se
 
 Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection)
 
-- Connect to the RPI with `ssh`
-- Upgrade the system
-    - `sudo apt-get update && sudo apt-get upgrade`
 - Install `hostapd` and `dnsmasq`
-    - `sudo apt-get install hostapd dnsmasq`
-- `hostapd` and `dnsmasq` run when the pi is started, but they should only start if the home router is not found. So automatic startup needs to be disabled and `hostapd` needs to be unmasked:
+    - `sudo apt install -y hostapd dnsmasq`
+- `hostapd` and `dnsmasq` run when the Raspberry is started, but they should only start if the home router is not found. So automatic startup needs to be disabled and `hostapd` needs to be unmasked:
     - `sudo systemctl unmask hostapd`
     - `sudo systemctl disable hostapd`
     - `sudo systemctl disable dnsmasq`
-- Edit `hostapd` configuration file:
+- Edit `hostapd` configuration file to create a network called `zaozocam-setup` and password `webcamdelrifugio`:
     - `sudo nano /etc/hostapd/hostapd.conf`
     - Content:
 ```
@@ -168,10 +166,12 @@ source-directory /etc/network/interfaces.d
 [Unit]
 Description=Automatically generates an hotspot when a valid ssid is not in range
 After=multi-user.target
+
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/autohotspot
+
 [Install]
 WantedBy=multi-user.target
 ```
@@ -387,13 +387,7 @@ fi
     - `sudo reboot`.
     - You should see a wifi network called "zanzocam-setup" that you can connect to.
     - Connect and `ssh` into the Raspberry again (IP is `10.0.0.5`)
-    
-- To make sure the hotspot switches on and off when the network changes, a crontab can be set up.
-The camera software should run this check before starting! To set it up manually, however:
-    - `ssh` into the Pi
-    - `crontab -e`
-    - Add `*/5 * * * * sudo /usr/bin/autohotspot >/dev/null 2>&1`
-    
+
 
 ### Prepare setup server
 Once the Pi can generate its own network, we make it able to receive HTTP requests by setting up a web server: Nginx.
@@ -403,8 +397,8 @@ Instructions (here)[https://www.raspberrypi.org/documentation/remote-access/web-
 - Install Nginx: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
 - Start Nginx: `sudo /etc/init.d/nginx start`
 - Install venv into `/var/www/setup-server`
-- Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
-- Activate venv: `source /var/www/setup-server/venv/bin/activate`
+    - Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
+    - Activate venv: `source /var/www/setup-server/venv/bin/activate`
 - Install the requirements for Flask and Ansible: `pip install -r requirements.txt`
 - Leave venv: `deactivate`
 - Create a systemdunit file: `sudo nano /etc/systemd/system/setup-server.service`
