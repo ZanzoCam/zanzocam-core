@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import os
 import math
 import json
@@ -14,12 +12,340 @@ from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
 
 
+# Global vars
 path = Path(__file__).parent
+local_images_path = path / "overlays"
+
+
+def main():
+    # Boots up and checks itself
+    log("Start")
+    collect_stats()
+    
+    # Get configuration
+    conf = get_configuration()
+    if conf is not None:
+    
+        # Send logs of the previous run
+        server_url = conf.get("server_url")
+        server_user = conf.get("server_username")
+        server_pwd = conf.get("server_password")
+        send_logs(server_url, server_user, server_pwd)
+        
+        # Process and send the picture
+        take_picture(conf)
+        
+    print("\n==========================================\n")
+    
+    
+def log(msg):
+    print(f"{datetime.datetime.now()} -> {msg}")
+
+
+def collect_stats():
+    """ 
+    Print system statistics in the logs. 
+    """
+    log("Collecting system statistics")
+    stats = {}
+    
+    # Version
+    try:
+        with open("../zanzocam/.VERSION") as v:
+            stats["version"] = v.readline()
+    excelt Exception as e:
+        log("Could not get version information.")
+        log("The exception is: " + e)    
+    # Uptime
+    try:
+        uptime_proc = subprocess.Popen(['uptime', '-s'],
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT)
+        stdout, stderr = uptime_proc.communicate()
+        stats['uptime'] = stdout
+        
+    except Exception as e:
+        log("Could not get uptime information.")
+        log("The exception is: " + e)
+      
+    # Output  
+    stats_string = ""
+    for stat, value in stats.items():
+        stats_string += f" - {stat}: {value}\n"
+
+    log(f"System statistics:\n{stats_string}")
+
+
+def get_configuration():
+    """ 
+    Download the new configuration files from the server.
+    If the download fails for any reason, logs the error and then fallback to
+    the backup of the previous configuration file.
+    """
+    log(f"Fetching new configuration")
+            
+    old_conf = {}
+    try:
+        # Get the server data from the old configuration file
+        with open(path / "configuration.json", 'r') as c:
+            old_conf = json.load(c)
+        url = old_conf.get("server_url")
+        user = old_conf.get("server_username")
+        pwd = old_conf.get("server_password")
+        log(f"Server URL: {url}")
+        
+        # Backup the old config file
+        shutil.copy(path / "configuration.json", path / "configuration.prev.json")
+
+    except Exception as e:
+        log("ERROR! Something went wrong loading the old configuration file.")
+        log("Exception is:" + str(e))
+        log("THIS ERROR IS FATAL: exiting.")
+        return None
+    
+    try:
+        # Fetch the new config
+        if user:
+            raw_response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
+        else:
+            raw_response = requests.get(url)
+
+        # Write the new config into the configuration file                    
+        response = json.loads(raw_response.content.decode('utf-8'))
+        new_conf = response["configuration"]
+        
+        with open(path / "configuration.json", 'w') as c:
+            json.dump(new_conf, c, indent=4)
+
+        log("Configuration downloaded successfully:")
+        print(json.dumps(new_conf, indent=4))
+        
+        # Download any new image
+        # TODO cleaup old icons? Requires backup, delete, check for errors and potentially restore if something went wrong
+        remote_images_path = server_url + "config/images/"  # TODO make configurable?
+        
+        new_images = response["images"]
+        for image in new_images:
+            if not os.path.exists(local_images_path / image):                
+                
+                r = requests.get(f"{remote_images_path}{image}", stream = True)
+                if r.status_code == 200:
+                    r.raw.decode_content = True
+
+                    with open(local_images_path / image ,'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
+
+                    log(f"New overlay image downloaded: {image}")
+
+                else:
+                    log(f"ERROR! New overlay image failed to download: {image}")
+                    log("Replacing it with empty image file.")
+                    os.copy(path / "fallback-pixel.png", local_images_path / image)          
+        
+        # Apply the new system configuration if needed
+        log("Applying new system settings from the configuration file...")
+        try:  
+            apply_system_settings(new_conf)
+            
+        # Try to restore the old system settings if something goes wrong
+        except Exception as e:
+            log("ERROR! Something happened while applying the system "
+                "settings from the new configuration file.")
+            log("The exception is: " + str(e))
+            log("Re-applying the old system configuration:")
+            try:  
+                apply_system_settings(old_conf)
+            except Exception as e:
+                log("ERROR! Something unexpected occurred while re-applyign the "
+                    "old system settings!")
+                log("The exception is: "+ str(e))
+                log("THIS ERROR IS FATAL: the webcam might be in an inconsistent state."
+                    "ZANZOCAM might need manual intervention at this point.")
+                    
+        # Return the downloaded data
+        return new_conf
+        
+    except Exception as e:
+        log("ERROR! Something went wrong fetching the new config file from the server.")
+        log("The exception is:" + str(e))
+        log("The server replied:")
+        print(vars(raw_response))  
+        log("Falling back to old configuration file.") 
+        print(json.dumps(old_conf, indent=4))
+        return old_conf  
+
+
+def apply_system_settings(conf):
+    """ 
+    Modifies the system according to the new configuration file content.
+    """    
+    # Create the crontab
+    cron = conf.get("crontab", {})
+    cron_string = " ".join([
+        cron.get('minute', '*'),
+        cron.get('hour', '*'),
+        cron.get('day', '*'),
+        cron.get('month', '*'),
+        cron.get('weekday', '*')
+    ])
+    with open(".tmp-cronjob-file", 'w') as d:
+        d.writelines(textwrap.dedent(f"""
+            # ZANZOCAM - shoot pictures
+            {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py >> /home/zanzocam-bot/webcam/logs.txt 2>&1
+            """))
+            
+    # Backup the old crontab in the home
+    backup_cron = subprocess.run([
+        "/usr/bin/sudo", "mv", "/etc/cron.d/zanzocam", "/home/zanzocam-bot/.crontab.bak"], 
+        stdout=subprocess.PIPE)
+    if not backup_cron:
+        log("ERROR! Something went wrong creating a backup for the cron file.")
+        log("No backup is created.")
+        
+    # Move new cron file into cron folder
+    create_cron = subprocess.run([
+        "/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
+        stdout=subprocess.PIPE)
+    if not create_cron:
+        log("ERROR! Something went wrong creating the new cron file.")
+        log("The old cron file should be unaffected.")
+
+    # Give ownership of the new crontab file to root
+    chown_cron = subprocess.run([
+        "/usr/bin/sudo", "chown", "root:root", "/etc/cron.d/zanzocam"], 
+        stdout=subprocess.PIPE)
+    # if it fails, start recovery procedure by trying to write back the old crontab
+    if not chown_cron:
+        log("ERROR! Something went wrong changing the owner of the crontab!")
+        log("Trying to restore the crontab using the backup")
+        log("+++++++++++++++++++++++++++++++++++++++++++")
+        if not backup_cron:
+            log("ERROR! The backup was not created!")
+            log("THIS ERROR IS FATAL: the crontab might not trigger anymore.")
+            log("ZANZOCAM might need manual intervention.")
+        else:
+            restore_cron = subprocess.run([
+                "/usr/bin/sudo", "mv", "/home/zanzocam-bot/.crontab.bak", "/etc/cron.d/zanzocam"], 
+                stdout=subprocess.PIPE)
+            if not restore_cron:
+                log("ERROR! Something went wrong restoring the cron file from its backup!")
+                log("THIS ERROR IS FATAL: the crontab might not trigger anymore.")
+                log("ZANZOCAM might need manual intervention.")
+            else:
+                log("cron file restored successfully.")
+                log("Please investigate the cause of the issue!")
+        log("+++++++++++++++++++++++++++++++++++++++++++")
+            
+
+
+def send_logs(url, user=None, pwd=None):
+    """ 
+    Send the logs to the server. 
+    Tries to never fail in order not to break the main routine if something 
+    goes wrong at this stage (even though it's a worrying sign).
+    """
+    log(f"Uploading logs to {url}")
+        
+    # Load the logs content
+    logs = " ==> No logs found!! <== "
+    try:
+        logs_file = path/"logs.txt"
+        
+        if not os.path.exists(logs_file):
+            open(logs_file, 'w').close()
+            
+        with open(logs_file, "r") as l:
+            logs = l.readlines()
+    except Exception as e:
+        log("ERROR! Something happened opening the logs file.")
+        log("The exception is " + str(e))
+        log("This error will be ignored.")
+        return
+
+    # Prepare and send the request
+    try:
+        data = {'logs': "".join(logs)}
+        if user:
+            raw_response = requests.post(url, data=data, 
+                                    auth=requests.auth.HTTPBasicAuth(user, pwd))
+        else:
+            raw_response = requests.post(url, data=data)
+        response = json.loads(raw_response.content.decode("utf-8"))
+        
+        # Make sure the server did not return an error
+        reply = response.get("logs", "No field named 'logs' in the response")
+        if reply != "":
+            log("ERROR! The server replied with an error.")
+            log("The server replied:")
+            log(vars(raw_response))  
+            log("The error is " + str(reply))
+            log("This error will be ignored.")
+            return
+            
+        log("Logs uploaded successfully.")
+    
+    except Exception as e:
+        log("ERROR! Something happened uploading the logs file.")
+        log("The exception is " + str(e))
+        log("This error will be ignored.")
+        return
+
+
+
+def take_picture(conf, retrying=False):
+    """
+    Takes the picture, renders the elements on and sends it to the server.
+    Handles failures internally.
+    """
+    try:
+        # Shoot picture
+        log("Taking photo")
+        raw_pic_name = shoot_picture(conf.get("image", {}))
+        
+        # Add overlays
+        log("Rendering photo")
+        final_pic_name = process_picture(raw_pic_name, conf.get("image", {}), conf.get("overlays", {}))
+        
+        # Upload picture
+        log("Uploading photo")
+        server_url = conf.get("server_url")
+        server_user = conf.get("server_username")
+        server_pwd = conf.get("server_password")
+        send_picture(final_pic_name, server_url, server_user, server_pwd)
+        
+        # Clean up picture if everything worked out
+        log("Cleaning up")
+        os.remove(raw_pic_name)
+        os.remove(final_pic_name)
+        log("Cleanup done")
+        
+    except Exception as e:
+        if not retrying:
+            # Try again using the old config file
+            log("ERROR! Something unexpected happened during the main routine!")
+            log("The exception is: " + str(e))
+            log("+++++++++++++++++++++++++++++++++++++++++++")
+            log("Discarding newest configuration and restoring the previous values.")
+            
+            shutil.copy(path / "configuration.prev.json", path / "configuration.json")
+            conf = {}
+            with open(path / "configuration.json", 'r') as c:
+                conf = json.load(c)
+            
+            take_picture(conf, retrying=True)
+            log("+++++++++++++++++++++++++++++++++++++++++++")
+            return 
+            
+        # That's the second run that failed: give up.
+        log("ERROR! Something happened while running with the old configuration file too!")
+        log("The exception is: " + str(e))
+        log("THIS ERROR IS FATAL: giving up.")
+        return
 
 
 def shoot_picture(image_conf):
     """ 
-    Shoots the picture.
+    Shoots the picture and returns the name of the saved image.
     """
     camera = PiCamera()
     camera.resolution = (int(image_conf.get("width", 100)), int(image_conf.get("height", 100)))
@@ -30,7 +356,6 @@ def shoot_picture(image_conf):
     camera.capture(image_name)
     camera.close()
     return image_name
-
 
 
 def _process_text(font, user_text, max_line_length):
@@ -97,7 +422,8 @@ def _prepare_text_overlay(conf, picture_size):
         return label
         
     except Exception as e:
-        log("ERROR! Something unexpected happened while generating the overlay. This overlay will be skipped.")
+        log("ERROR! Something unexpected happened while generating the overlay. "+
+        "This overlay will be skipped.")
         log("Exception: " + str(e))
         return None        
 
@@ -107,7 +433,7 @@ def _prepare_image_overlay(conf):
     Prepares an overlay containing an image.
     Might return None in case of issues. 
     """
-    picture_name = conf.get("path")
+    picture_name = local_images_path / conf.get("path")
 
     if not picture_name:
         log(f"ERROR! This image overlay does not contain the image path. "
@@ -147,7 +473,8 @@ def _prepare_image_overlay(conf):
         return image
         
     except Exception as e:
-        log("ERROR! Something unexpected happened while generating the overlay. This overlay will be skipped.")
+        log("ERROR! Something unexpected happened while generating the overlay. "+
+            "This overlay will be skipped.")
         log("Exception: " + str(e))
         return None      
 
@@ -275,241 +602,10 @@ def send_picture(image_name, url, user=None, pwd=None) -> bool:
         log("ERROR! Something happened uploading the pictures!")
         log("The error is: " + str(e))
         raise e
-        
-        
-def send_logs(url, user=None, pwd=None):
-    """ 
-    Send the logs to the server. 
-    Tries to never fail in order not to break the main routine if something 
-    goes wrong at this stage (even though it's a worrying sign).
-    """
-    log(f"Uploading logs to {url}")
-        
-    # Load the logs content
-    logs = " ==> No logs found!! <== "
-    try:
-        logs_file = path/"logs.txt"
-        
-        if not os.path.exists(logs_file):
-            open(logs_file, 'w').close()
-            
-        with open(logs_file, "r") as l:
-            logs = l.readlines()
-    except Exception as e:
-        log("ERROR! Something happened opening the logs file.")
-        log("The exception is " + str(e))
-        log("This error will be ignored.")
-        return
-
-    # Prepare and send the request
-    try:
-        data = {'logs': "".join(logs)}
-        if user:
-            raw_response = requests.post(url, data=data, 
-                                    auth=requests.auth.HTTPBasicAuth(user, pwd))
-        else:
-            raw_response = requests.post(url, data=data)
-        response = json.loads(raw_response.content.decode("utf-8"))
-        
-        # Make sure the server did not return an error
-        reply = response.get("logs", "No field named 'logs' in the response")
-        if reply != "":
-            log("ERROR! The server replied with an error.")
-            log("The server replied:")
-            log(vars(raw_response))  
-            log("The error is " + str(reply))
-            log("This error will be ignored.")
-            return
-            
-        log("Logs uploaded successfully.")
-    
-    except Exception as e:
-        log("ERROR! Something happened uploading the logs file.")
-        log("The exception is " + str(e))
-        log("This error will be ignored.")
-        return
+        log("WARNING: the image was probably not sent!")
 
 
-def get_configuration():
-    """ 
-    Download the new configuration files from the server.
-    If the download fails for any reason, logs the error and then fallback to
-    the backup of the previous configuration file.
-    """
-    log(f"Fetching new configuration")
-            
-    old_conf = {}
-    try:
-        # Get the server data from the old configuration file
-        with open(path / "configuration.json", 'r') as c:
-            old_conf = json.load(c)
-        url = old_conf.get("server_url")
-        user = old_conf.get("server_username")
-        pwd = old_conf.get("server_password")
-        log(f"Server URL: {url}")
-        
-        # Backup the old config file
-        shutil.copy(path / "configuration.json", path / "configuration.prev.json")
-
-    except Exception as e:
-        log("ERROR! Something went wrong loading the old configuration file.")
-        log("Exception is:" + str(e))
-        log("This error is not recoverable. Exiting.")
-        return None
-    
-    try:
-        # Fetch the new config
-        if user:
-            raw_response = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
-        else:
-            raw_response = requests.get(url)
-
-        # Write the new config into the configuration file                    
-        response = json.loads(raw_response.content.decode('utf-8'))
-        new_conf = response["configuration"]
-        
-        with open(path / "configuration.json", 'w') as c:
-            json.dump(new_conf, c, indent=4)
-
-        log("Configuration downloaded successfully:")
-        print(json.dumps(new_conf, indent=4))
-        
-        # Apply the new system configuration if needed
-        log("Applying new system settings from the configuration file...")
-        try:  
-            apply_system_settings(new_conf)
-        except Exception as e:
-            log("ERROR! Something happened while applying the system "
-                "settings from the new configuration file.")
-            log("The exception is: " + str(e))
-            log("Re-applying the old system configuration:")
-            try:  
-                apply_system_settings(old_conf)
-            except Exception as e:
-                log("ERROR! Something unexpected occurred while re-applyign the "
-                    "old system settings!")
-                log("The exception is: "+ str(e))
-                log("This issue is not recoverable: ignoring the "
-                    "error and hope nothing is left insonsistent. "
-                    "Check the logs to make sure.")
-                    
-        # Return the downloaded data
-        return new_conf
-        
-    except Exception as e:
-        log("ERROR! Something went wrong fetching the new config file from the server.")
-        log("The exception is:" + str(e))
-        log("The server replied:")
-        print(vars(raw_response))  
-        log("Falling back to old configuration file.") 
-        print(json.dumps(old_conf, indent=4))
-        return old_conf  
-        
-        
-def apply_system_settings(conf):
-    """ 
-    Modifies the system according to the new configuration file content. 
-    Currently only updates the crontab.
-    """    
-    cron = conf.get("crontab", {})
-    cron_string = " ".join([
-        cron.get('minute', '*'),
-        cron.get('hour', '*'),
-        cron.get('day', '*'),
-        cron.get('month', '*'),
-        cron.get('weekday', '*')
-    ])
-    with open(".tmp-cronjob-file", 'w') as d:
-        d.writelines(textwrap.dedent(f"""
-            # ZANZOCAM - shoot pictures
-            {cron_string} zanzocam-bot cd /home/zanzocam-bot/webcam && /home/zanzocam-bot/webcam/venv/bin/python3 /home/zanzocam-bot/webcam/camera.py >> /home/zanzocam-bot/webcam/logs.txt 2>&1
-            """))
-    create_cron = subprocess.run([
-        "/usr/bin/sudo", "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
-        stdout=subprocess.PIPE)
-
-    chown_cron = subprocess.run([
-        "/usr/bin/sudo", "chown", "root:root", "/etc/cron.d/zanzocam"], 
-        stdout=subprocess.PIPE)
-
-    if not create_cron or not chown_cron:
-        log("ERROR! Something went wrong creating the new cron file.")
-        log("The old cron file is unaffected.") 
-
-
-def main_procedure(conf, retrying=False):
-    try:
-        # Send logs of the previous run
-        server_url = conf.get("server_url")
-        server_user = conf.get("server_username")
-        server_pwd = conf.get("server_password")
-        send_logs(server_url, server_user, server_pwd)
-        
-        # Shoot picture
-        log("Taking photo")
-        raw_pic_name = shoot_picture(conf.get("image", {}))
-        
-        # Add overlays
-        log("Rendering photo")
-        final_pic_name = process_picture(raw_pic_name, conf.get("image", {}), conf.get("overlays", {}))
-        
-        # Upload picture
-        log("Uploading photo")
-        send_picture(final_pic_name, server_url, server_user, server_pwd)
-        
-        # Clean up picture if everything worked out
-        log("Cleaning up")
-        os.remove(raw_pic_name)
-        os.remove(final_pic_name)
-        log("Cleanup done")
-        
-    except Exception as e:
-        if not retrying:
-            # Try again using the old config file
-            log("ERROR! Something unexpected happened during the main routine!")
-            log("The exception is: " + str(e))
-            log("+++++++++++++++++++++++++++++++++++++++++++")
-            log("Discarding newest configuration and restoring the previous values.")
-            
-            shutil.copy(path / "configuration.prev.json", path / "configuration.json")
-            conf = {}
-            with open(path / "configuration.json", 'r') as c:
-                conf = json.load(c)
-            
-            main_procedure(conf, retrying=True)
-            log("+++++++++++++++++++++++++++++++++++++++++++")
-            return 
-            
-        # That's the second run that failed: give up.
-        log("ERROR! Something happened while running with the old configuration file too!")
-        log("The exception is: " + str(e))
-        log("Can't fix the issue any further: giving up.")
-        return
-        
-
-def log(msg):
-    print(f"{datetime.datetime.now()} -> {msg}")
-        
-
-def main():
-    log("Start")
-    try:
-        uptime_proc = subprocess.Popen(['uptime', '-s'],
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT)
-        stdout,stderr = uptime_proc.communicate()
-        log("System is up since: ", stdout)
-    except Exception:
-        log("Could not get uptime information.")
-    conf = get_configuration()
-    if conf is not None:
-        main_procedure(conf)
-    print("\n==========================================\n")
-    
-    
-    
 
 if "__main__" == __name__:
     main()
-
 

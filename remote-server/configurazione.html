@@ -23,7 +23,6 @@
 	<div class="cloud x16"></div>
 	<div class="cloud x17"></div>
 
-
 <div id="container">
     
     <div class="center">
@@ -220,9 +219,17 @@
                 </div>                
      
                 <div id="top_right_image-vars" style="display: none;">
-                    <label for="top_right_image-name">Immagine</label>
-                    <input type="file" name="overlays__top_right__image">
-                    
+                    <div class="row">
+                        <div class="column">
+                            <label>Immagine Attuale:</label>
+                            <img id="overlays__top_right__height" height="200"></img>
+                        </div>
+                        <div class="column vertical-center">
+                            <label>Cambia immagine</label>
+                            <input type="file" name="overlays__top_right__image">
+                        </div>
+                    </div>
+                       
                     <div class="row">
                         <div class="column">
                             <label>Larghezza:</label>
@@ -310,9 +317,15 @@
                 </div>                
      
                 <div id="top_center_image-vars" style="display: none;">
-                    <label for="top_center_image-name">Immagine</label>
-                    <input type="file"  name="overlays__top_center__image" name="top_center_image">
-                    
+                    <div class="column">
+                        <label>Immagine Attuale:</label>
+                        <img id="overlays__top_center__image" height="200"></img>
+                    </div>
+                    <div class="column vertical-center">
+                        <label>Cambia immagine</label>
+                        <input type="file" name="overlays__top_center__image">
+                    </div>
+                        
                     <div class="row">
                         <div class="column">
                             <label>Larghezza:</label>
@@ -400,8 +413,14 @@
                 </div>                
      
                 <div id="top_left_image-vars" style="display: none;">
-                    <label for="top_left_image-name">Immagine</label>
-                    <input type="file"  name="overlays__top_left__image" name="top_left_image">
+                    <div class="column">
+                        <label>Immagine Attuale:</label>
+                        <img id="overlays__top_left__image" height="200"></img>
+                    </div>
+                    <div class="column vertical-center">
+                        <label>Cambia immagine</label>
+                        <input type="file" name="overlays__top_left__image">
+                    </div>
                     
                     <div class="row">
                         <div class="column">
@@ -490,8 +509,14 @@
                 </div>                
      
                 <div id="bottom_right_image-vars" style="display: none;">
-                    <label for="bottom_right_image-name">Immagine</label>
-                    <input type="file"  name="overlays__bottom_right__image" name="bottom_right_image">
+                    <div class="column">
+                        <label>Immagine Attuale:</label>
+                        <img id="overlays__bottom_right__image" height="200"></img>
+                    </div>
+                    <div class="column vertical-center">
+                        <label>Cambia immagine</label>
+                        <input type="file" name="overlays__bottom_right__image">
+                    </div>
                     
                     <div class="row">
                         <div class="column">
@@ -581,8 +606,14 @@
                 </div>                
      
                 <div id="bottom_center_image-vars" style="display: none;">
-                    <label for="bottom_center_image-name">Immagine</label>
-                    <input type="file"  name="overlays__bottom_center__image" name="bottom_center_image">
+                    <div class="column">
+                        <label>Immagine Attuale:</label>
+                        <img id="overlays__bottom_center__image" height="200"></img>
+                    </div>
+                    <div class="column vertical-center">
+                        <label>Cambia immagine</label>
+                        <input type="file" name="overlays__bottom_center__image">
+                    </div>
                     
                     <div class="row">
                         <div class="column">
@@ -671,9 +702,15 @@
                 </div>                
      
                 <div id="bottom_left_image-vars" style="display: none;">
-                    <label for="bottom_left_image-name">Immagine</label>
-                    <input type="file"  name="overlays__bottom_left__image" name="bottom_left_image">
-                    
+                    <div class="column">
+                        <label>Immagine Attuale:</label>
+                        <img id="overlays__bottom_left__image" height="200"></img>
+                    </div>
+                    <div class="column vertical-center">
+                        <label>Cambia immagine</label>
+                        <input type="file" name="overlays__bottom_left__image">
+                    </div>
+
                     <div class="row">
                         <div class="column">
                             <label>Larghezza:</label>
@@ -704,7 +741,7 @@
                 <hr />   
 
                 <div class="center">
-                    <input class="button-primary" type="submit" value="Salva" style="font-size:20pt;height:unset;padding:1rem 3rem;text-transform:none;">
+                    <input id="save" class="button-primary" type="submit" value="Salva" style="font-size:20pt;height:unset;padding:1rem 3rem;text-transform:none;">
                 </div>     
         </form>
        
@@ -712,30 +749,13 @@
 </div>
 
 <script>
-    // Parameters
-    var url = "http://46.101.245.13/uploads/";
-    var username = "zanzocam-bot";
-    var password = "esperimento";
-    
-    // "Security" check 
-    /*
-    var actual_url=window_location_href.split("/");
-    actual_url.pop();
-    actual_url.pop();
-    actual_url = actual_url.join("/");
-    if (url !== actual_url){
-        window.location.href = actual_url;
-    }
-    */
+    // Figures out the endpoint URL
+    const url = window.location.href.substring(0, window.location.href.lastIndexOf("/")+1);
+    var last_loaded_data = null;
     
     // Get JSON
     function loadData(){
-        fetch(url, {
-            method:'GET', 
-            headers: {
-                'Authorization': 'Basic ' + btoa(username+':'+password)
-            }
-        })
+        fetch(url, { method:'GET'})
         .then(response => response.json())
         .then(json => fillForm(json.configuration, ""));
     }   
@@ -743,32 +763,63 @@
 
     // Loads the JSON data into the form
     function fillForm(data, prefix){
-    
+        last_loaded_data = data;
 	    document.getElementById("loading").style.display="none";  
 	    document.getElementById("main-form").style.display="block"; 
 	    
 	    const { elements } = document.querySelector('form')
         
         for (const [ key, value ] of Object.entries(data) ) {
-	        //console.log(prefix+key, value);
 	        if (typeof value === 'object' & value !== null){
                 fillForm(value, prefix+key+"__");
 	        }
 	        
             const field = elements.namedItem(prefix+key)
-            field && (field.value = value)
-            
+            if (field){
+                if(field.type === "file"){
+                    image = document.getElementById(prefix+key).src = url+ "config/images/" +value;  
+                } else {
+                    field.value = value
+                }
+            }
+                                
 	        if (typeof value === 'boolean'){
 		        field.checked = value ? 'checked' : ''; 
 	        }
 	        
 	        prefixes = prefix.split("__");
 	        if (prefixes[0] == "overlays" &&  key == "type"){
-	            console.log("toggling:  " + prefixes[1] + "  " + value);
 	            toggle_type_of_overlay(prefixes[1], value);
 	        }
         }
     }
+
+
+    // Sets in a deep object from a flat key
+	function deepSet(key, value, obj){
+        var i;
+	    key = key.split('__');
+	    for (i = 0; i < key.length - 1; i++){
+		    if (typeof obj[key[i]] === "undefined"){
+		        obj[key[i]] = {};
+            }
+            obj = obj[key[i]];
+	    }
+	    obj[key[i]] = value;
+	}
+	
+    // Gets in a deep object from a flat key
+	function deepGet(key, obj){
+        var i;
+	    key = key.split('__');
+	    for (i = 0; i < key.length - 1; i++){
+		    if (typeof obj[key[i]] === "undefined"){
+                obj[key[i]] = {};
+		    }
+            obj = obj[key[i]];        
+        }
+	    return obj[key[i]];
+	}
 
     // Converts the form data back into JSON
     function formdata_to_json(formData){
@@ -778,29 +829,19 @@
             if (value===""){ value = null; }
             if (value==="on"){ value = true; }
             if (value==="off"){ value = false; }
-        
-            keys = key.split("__");
-            
-            if (keys.length === 1){
-                object[keys[0]] = value;
+            if (value===null && document.getElementsByName(key)[0].type === "file"){
+                // This is a file that has not been changed.
+                // Be sure to re-send the old value or it will clear the field.
+                value = deepGet(key, last_loaded_data);
             }
-            
-            else if (keys.length === 2){
-                if (!object[keys[0]]){
-                    object[keys[0]] = {}
+	        if (value!==null){  // other null values are just noise
+	            if (value instanceof File) {
+                    value = value.name;
+                } else {
+                    value = value;
                 }
-                object[keys[0]][keys[1]] = value;
-            }
-            
-            else if (keys.length === 3){
-                if (!object[keys[0]]){
-                    object[keys[0]] = {}
-                }
-                if (!object[keys[0]][keys[1]]){
-                    object[keys[0]][keys[1]] = {}
-                }
-                object[keys[0]][keys[1]][keys[2]] = value;
-            }
+                deepSet(key, value, object);
+	        }
         });
         return object;
     }
@@ -810,32 +851,45 @@
     const form = document.getElementById('config');
     form.onsubmit = async (e) => {
         e.preventDefault();
+
+        const save = document.getElementById('save');
+        save.disabled = true;        
         
+        // Serialize the content of the form in a JSON file
         const data = new FormData(form);
         const object = formdata_to_json(data);
-        
         serialized = JSON.stringify(object, null, "  ");
-        console.log(serialized);
         
-        fetch(url, {
-            method:'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa(username+':'+password)
-            },
-            body: serialized,
-        })
-        .then(response => {
-            if (response===""){
-                console.log("POST done!");
-                console.log(response);
-                loadData();        
+        // Create a new for with the JSON of the config and all the images
+        formdata = new FormData();
+        formdata.append("config", serialized);
+        // Get all the images
+        for(verr of ['top', 'bottom']) {
+            for(hor of ['right', 'center', 'left']){
+                var field = "overlays__"+verr+"_"+hor+"__image";
+                if (data.has(field)){
+                    formdata.append(field, data.get(field));
+                }
             }
+        }
+	    // Display the key/value pairs
+	    for (var pair of formdata.entries()) {
+	        console.log(pair[0]+ ', ' + pair[1]); 
+	    }        
+            
+	    fetch(url, {
+            method:'POST',
+            body: formdata,
+        })
+        .then(response => response.json())
+        .then(reply => {
+            console.log(reply);
+            loadData();
         });
+        
+        save.disabled = false;  
     };
-    
-    
+        
     
     // Toggle text or image config in the overlays section
     function toggle_type_of_overlay(position, value) {
