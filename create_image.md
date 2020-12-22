@@ -67,7 +67,8 @@ This step installs a few libraries required for the webcam to work.
     - Generate locales: `sudo locale-gen it_IT.UTF-8`
     - Update locales: `sudo update-locale it_IT.UTF-8`
     
-- Create alias for `ll` in `~/.bashrc`: `alias ll="ls -lah"`
+- Create alias for `ll` in `~/.bashrc`: `nano ~/.bashrc`
+    - Add at the end: `alias ll="ls -lah"`
 - Install utilities: `sudo apt install git whois`
 - Install graphics libraries and fonts: `sudo apt install libopenjp2-7-dev libtiff-dev fonts-dejavu`
 - Set timezone: `sudo timedatectl set-timezone Europe/Rome`
