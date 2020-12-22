@@ -79,7 +79,7 @@ This step installs a few libraries required for the webcam to work.
 # Disable the HDMI port (to save power)
 @reboot /usr/bin/tvservice -o
 ```
-- Install pip3 and venv: `sudo apt install python3-pip python3-venv`
+- Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
 - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
 - Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
 - Copy the `server` folder into `/var/www`: `sudo cp -R zanzocam/server /var/www`
@@ -400,7 +400,7 @@ Once the Pi can generate its own network, we make it able to receive HTTP reques
 
 Instructions (here)[https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md] for Nginx and (here)[https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04] for Flask.
 
-- Install Nginx: `sudo apt install nginx libssl-dev libffi-dev build-essential`
+- Install Nginx: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
 - Start Nginx: `sudo /etc/init.d/nginx start`
 - Install venv into `/var/www/setup-server`
 - Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
