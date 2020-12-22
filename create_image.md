@@ -52,9 +52,11 @@ This step installs a few libraries required for the webcam to work.
     - Create user with home directory: `sudo useradd -m zanzocam-bot`
     - Change password: `sudo passwd zanzocam-bot`
     - Make sudoer: `sudo usermod -aG sudo zanzocam-bot`
-    - Leave the SSH connection and reconnect with `zanzocam-bot`
     - Allow passwordless `sudo` for `zanzocam-bot`: `sudo nano /etc/sudoers`
+          - Add ad the end: `zanzocam-bot ALL=(ALL:ALL) NOPASSWD:ALL`
     - Allow `zanzocam-bot` to access the webcam: `sudo usermod -aG video zanzocam-bot`
+
+    - Leave the SSH connection and reconnect with `zanzocam-bot`
     - Lock `pi`:  `sudo passwd -l pi`
     - Kill all processes (shold be none): `sudo pkill -KILL -u pi`
     - Remove the user: `sudo deluser --remove-home pi`
