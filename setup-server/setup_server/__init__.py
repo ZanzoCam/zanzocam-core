@@ -11,20 +11,21 @@ app = Flask(__name__)
 
 
 initial_data = "/var/www/setup-server/setup_server/initial_data.json"
-log_buffer = "/var/www/setup-server/setup_server/logs.txt"
+log_buffer = "/var/www/setup-server/setup_server/.logs_buffer"
 
 
 
 def clear_logs():
+    """ Empties the logs buffer file"""
     with open(log_buffer, 'w') as d:
         pass
 
 def log(message, dot="- "):
+    """ Writes the logs to the buffer, so they can be retrieved by the browser """
     with open(log_buffer, 'a') as d:
         d.writelines(f"{dot}{message}\n")
     
-    
-    
+      
 
 @app.route("/", methods=["GET"])
 def setup():
@@ -50,30 +51,35 @@ def shoot():
     except Exception:
         data = {"server_url": "http://url/del/tuo/server"}
     
-    shoot = subprocess.run(
-        [   
-             "/home/zanzocam-bot/webcam/venv/bin/python3",
-             "/home/zanzocam-bot/webcam/camera.py"
-        ], 
-        stdout=subprocess.PIPE)
-    return json.dumps({"success": bool(shoot), "server_url": data['server_url']})
+    try:
+        shoot = subprocess.run(
+            [   
+                 "/home/zanzocam-bot/webcam/venv/bin/python3",
+                 "/home/zanzocam-bot/webcam/camera.py"
+            ])
+        success = True
+    except subprocess.CalledProcessError as e:
+        success = False
+        
+    return json.dumps({"success": success, "server_url": data['server_url']})
 
 
 @app.route("/setting-up", methods=["POST"])
 def setting_up():
-    """ The page with the logs """
+    """ Follow the configuration logs as they are produced """
     clear_logs()
     
     # Save new initial data to a file
     with open(initial_data, 'w') as d:
         json.dump(request.form, d, indent=4)
-        
+
+    # Render a page that will poll for logs at /setup/logs        
     return render_template("setting-up.html", title="Setup")
         
 
 @app.route("/setup/logs", methods=["GET"])
 def get_logs():
-    """ Endpoint for fetching the latest logs"""
+    """ Endpoint for fetching the logs of the configuration process """
     global log_buffer
     with open(log_buffer, 'r') as d:
         logs = d.readlines()
@@ -82,18 +88,16 @@ def get_logs():
 
 @app.route("/setup/start", methods=["POST"])
 def start_setup():
-    """ Actually sets up the Pi """
-    
+    """ Performs the actual setup """
     try:
         with open(initial_data, 'r') as d:
             data = json.load(d)
     except Exception:
-        abort(404)  # Data must be there!
-        
-    error=False
-    
+        abort(404)  # Initial data must be there!
+
     # Write the wpa_supplicant.conf file.
     log("Setup WiFi")
+    error=False    
     with open(".tmp-wpa_supplicant", "w") as f:
         f.writelines(dedent(f"""
             ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -150,31 +154,6 @@ def start_setup():
     return json.dumps(True), 200
     
     
-    
-    
-
-class RedirectText:
-    """ Per ottenere i logs di Ansible """
-    def __init__(self, logger):
-        self.output = logger
-    
-    def flush(self):
-        pass
-        
-    def write(self, string):
-        if ("fatal" in string or "ERROR!" in string) and "ignoring" not in string:
-            self.output(f"ERRORE!  {string}", dot="\n===> ")
-        if "TASK" in string:
-            string = string.replace("*", "")
-            string = string.replace("TASK [", " ")
-            string = string.replace("]", "")
-            string = string.strip()                
-            if string != "" and not "ok: " in string:
-                self.output(string, dot="  ->")
-
-
-
-
 
 @app.errorhandler(400)
 def handle_bad_request(e):

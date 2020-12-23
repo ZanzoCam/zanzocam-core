@@ -429,6 +429,7 @@ server {
     location / {
         include uwsgi_params;
         uwsgi_pass unix:/var/www/setup-server/setup-server.sock;
+        uwsgi_read_timeout 600;
     }
 }
 ```

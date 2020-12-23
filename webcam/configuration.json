@@ -1,0 +1,49 @@
+{
+    "server_url": "http://46.101.245.13/uploads/",
+    "server_username": "zanzocam-bot",
+    "server_password": "esperimento",
+    "crontab": {
+        "minute": "*/10",
+        "hour": "*",
+        "day": "*",
+        "month": "*",
+        "weekday": "*"
+    },
+    "image": {
+        "name": "image",
+        "extension": "jpg",
+        "width": 2592,
+        "height": 1944,
+        "rotation": 0,
+        "background_color": "yellow",
+        "jpeg_quality": 90,
+        "jpeg_subsampling": 0
+    },
+    "overlays": {
+        "top_left": {
+            "type": "text",
+            "over_the_picture": false,
+            "text": "%%TIME del %%DATE",
+            "font_color": "white",
+            "background_color": "#000000aa",
+            "font_size": 30,
+            "date_format": "%d %B %Y",
+            "time_format": "%H:%M"
+        },
+        "bottom_center": {
+            "type": "image",
+            "over_the_picture": false,
+            "image": "logo-cai-trasparente.png",
+            "width": 200,
+            "padding_ratio": 0
+        },
+        "bottom_left": {
+            "type": "text",
+            "over_the_picture": false,
+            "text": "Questo e' fuori dalla foto ed e' un testo qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890...\nLunghissimo!",
+            "font_color": "black",
+            "background_color": "white",
+            "font_size": 25
+        }
+    }
+}
