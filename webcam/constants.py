@@ -1,13 +1,16 @@
+from pathlib import Path
+
+
 PATH = Path(__file__).parent
 
-CONFIGURATION_PATH = path / "configuration.json"
-CONFIGURATION_BACKUP_PATH = path / "configuration.json.bak"
+CONFIGURATION_PATH = PATH / "configuration.json"
+CONFIGURATION_BACKUP_PATH = PATH / "configuration.json.bak"
 
-IMAGE_OVERLAYS_PATH = path / "overlays"
+IMAGE_OVERLAYS_PATH = PATH / "overlays"
 REMOTE_IMAGES_PATH = "config/images/"
 
-LOGS_PATH = path / "logs.txt"
+LOGS_PATH = PATH/ "logs.txt"
 
-REQUEST_TIMEOUT = 10
+REQUEST_TIMEOUT = 60
 
 

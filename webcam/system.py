@@ -4,9 +4,9 @@ import requests
 import datetime
 import subprocess
 
-from .constants import *
-from .utils import log, log_error
-
+from constants import *
+from utils import log, log_error
+from configuration import Configuration
 
 
 class System:
@@ -27,7 +27,7 @@ class System:
         """
         self.status = {}
         self.status["version"] = self.get_version()
-        self.status["last reboot"] = self.get_last_reboot()
+        self.status["last reboot"] = self.get_last_reboot_time()
         self.status["uptime"] = self.get_uptime()
         self.status["autohotspot check"] = self.run_autohotspot()
         self.status['wifi ssid'] = self.get_wifi_ssid()
@@ -71,7 +71,7 @@ class System:
         Returns None if an error occurs.
         """
         try:
-            last_reboot = self.get_last_reboot()
+            last_reboot = self.get_last_reboot_time()
             return datetime.datetime.now() - last_reboot
 
         except Exception as e:
@@ -91,6 +91,7 @@ class System:
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT)
             stdout, stderr = hotspot_proc.communicate()
+            stdout = stdout.decode("utf-8")
             
             if hotspot_proc.returncode != 0:
                 log_error("The hotspot script returned with exit code "
@@ -148,7 +149,7 @@ class System:
         None if an error occurred during the test.
         """
         try:
-            r = requests.head("www.google.com", timeout=constants.request_timeout)
+            r = requests.head("http://www.google.com", timeout=REQUEST_TIMEOUT)
             return True
         except requests.ConnectionError as ex:
             return False
@@ -157,14 +158,12 @@ class System:
         return None
 
 
-    def apply_system_settings(self, configuration: Dict) -> None:
+    def apply_system_settings(self, configuration: Configuration) -> None:
         """
         Modifies the system according to the new configuration.
         """
-        if ('crontab' in configuration and 
-            isinstance(configuration.get("crontab"), dict)):
-
-            self.update_crontab(configuration.get("crontab")):
+        if 'crontab' in vars(configuration).keys():
+            self.update_crontab(configuration.crontab)
 
     def update_crontab(self, cron: Dict) -> None:
         """ 

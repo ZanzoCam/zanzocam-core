@@ -8,8 +8,10 @@ from pathlib import Path
 from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
 
+from constants import *
+from utils import log, log_error
+from configuration import Configuration 
 
-from .configuration import Configurazione 
 
 
 class Camera:
@@ -17,9 +19,14 @@ class Camera:
     Manages the pictures and graphical operations.
     """
     def __init__(self, configuration: Configuration):
+        log("Initializing camera")
         
         # Populate the attributes with the 'image' data 
-        for key, value in configuration.get('image', {}):
+        if "image" not in vars(configuration).keys():
+            log("WARNING! No image information present in the configuration! "
+                "Please fix the error ASAP. Fallback values are being used.")
+        
+        for key, value in configuration.image.items():
             setattr(self, key, value)
 
         # Provide defaults for all the expected values of 'image'
@@ -38,10 +45,14 @@ class Camera:
             "background_color": (0,0,0,0),
         }
 
-        self.overlays = configuration.get("overlays", {})
+        # There might be no overlays (even though the entry should be specified)
+        if "overlays" in vars(configuration).keys():
+            self.overlays = configuration.overlays
+        else:
+            self.overlays = {}
         
         # Image name
-        self.raw_image_name = '.temp_image.jpg'
+        self.photo_name = '.temp_image.jpg'
         now = datetime.datetime.now()
         processed_image_name = self.name
         
@@ -51,8 +62,7 @@ class Camera:
             processed_image_name += "_" + now.strftime("%H:%M:%S")
 
         self.processed_image_name = processed_image_name + "." + self.extension
-        self.processed_image_name = self.name
-
+        
 
     def __getattr__(self, name):
         """ 
@@ -60,7 +70,7 @@ class Camera:
         Logs the access to highlight values that are not set, but were used.
         """
         value = self.defaults.get(name, None)
-        log("WARNING: Accessing default value for {name}: {value}")
+        log(f"WARNING: Accessing default value for {name}: {value}")
         return value
         
         
@@ -69,7 +79,7 @@ class Camera:
         Removes the images created during the processing.
         """
         log("Cleaning up image files")
-        os.remove(self.raw_image_name)
+        os.remove(self.photo_name)
         os.remove(self.processed_image_name)
         log("Cleanup complete")
                
@@ -93,7 +103,7 @@ class Camera:
         camera.vflip = self.ver_flip
         camera.hflip = self.hor_flip
         camera.rotation = int(self.rotation)
-        camera.capture(self.image_name)
+        camera.capture(str(PATH / self.photo_name))
         camera.close()
 
 
@@ -105,7 +115,7 @@ class Camera:
 
         # Open and measures the picture
         try:
-            photo = Image.open(self.raw_picture_name).convert("RGBA")
+            photo = Image.open(self.photo_name).convert("RGBA")
         except Exception as e:
             log_error("Failed to open the image for editing. "
                       "The photo will have no overlays applied.", e)
@@ -115,12 +125,12 @@ class Camera:
         rendered_overlays = []
         for position, data in self.overlays.items():
             try:
-                overlay = Overlay(position, data, photo_width, photo_height)
+                overlay = Overlay(position, data, photo.width, photo.height)
                 if overlay.rendered_image:
-                    overlays_to_layout.append(overlay)
+                    rendered_overlays.append(overlay)
                     
             except Exception as e:
-                log_error(f"Something happened processing the overlay {piece_position}. "
+                log_error(f"Something happened processing the overlay {position}. "
                 "This overlay will be skipped.", e)
         
         # Calculate final image size
@@ -146,17 +156,18 @@ class Camera:
 
         # Add the overlays on the canvas in the right position
         for overlay in rendered_overlays:
-            x, y = overlay.compute_position(photo_width, photo_height, border_top, border_bottom)
-            image.paste(overlay.rendered_overlay, (x, y), mask=overlay)  # mask is to allow for transparent images
+            if overlay.rendered_image:  # it might be None if it failed along the way
+                x, y = overlay.compute_position(image.width, image.height, border_top, border_bottom)
+                image.paste(overlay.rendered_image, (x, y), mask=overlay.rendered_image)  # mask is to allow for transparent images
         
         # Save the image appropriately
         if self.extension.lower() in ["jpg", "jpeg"]:
             image = image.convert('RGB')
-            image.save(image_name, format='JPEG', 
+            image.save(PATH / self.processed_image_name, format='JPEG', 
                 subsampling=self.jpeg_subsampling, quality=self.jpeg_quality)
        
         else:
-            image.save(self.processed_image_name)
+            image.save(PATH / self.processed_image_name)
         
         
 
@@ -166,10 +177,10 @@ class Overlay:
     Represents one overlay to add to the picture.
     """
     def __init__(self, position: str, data: Dict, photo_width: int, photo_height: int):
-        log(f"Creating overlay {piece_position}")
+        log(f"Creating overlay {position}")
         
         # Populate the attributes with the overlay data 
-        for key, value in data:
+        for key, value in data.items():
             setattr(self, key, value)
 
         # Store position information
@@ -228,11 +239,11 @@ class Overlay:
         Logs the access to highlight values that are not set, but were used.
         """
         value = self.defaults.get(name, None)
-        log("WARNING: Accessing default value for {name}: {value}")
+        log(f"WARNING: Accessing default value for {name}: {value}")
         return value
         
     
-    def compute_position(self, photo_width: int, photo_height: int, 
+    def compute_position(self, image_width: int, image_height: int, 
                 border_top: int, border_bottom: int) -> Tuple[int, int]:
         """
         Returns the x,y position in the picture where this overlay 
@@ -244,22 +255,22 @@ class Overlay:
             x = 0
             
         elif self.horizontal_position == "right":
-            x = photo_width - self.rendered_overlay.width
+            x = image_width - self.rendered_image.width
             
         elif self.horizontal_position == "center":
-            x = int((photo_width - self.rendered_overlay.width)/2)
+            x = int((image_width - self.rendered_image.width)/2)
 
         if self.vertical_position == "top":
-            if self.over_picture:
+            if self.over_the_picture:
                 y = border_top
             else:
                 y = 0
                 
         elif self.vertical_position == "bottom":
-            if self.over_picture:
-                y = photo_height - self.rendered_overlay - border_bottom
+            if self.over_the_picture:
+                y = image_height - self.rendered_image.height - border_bottom
             else:
-                y = photo_height - self.rendered_overlay
+                y = image_height - self.rendered_image.height
                 
         return x, y
 
@@ -348,11 +359,11 @@ class Overlay:
             # Calculate new dimension, retaining aspect ratio if necessary
             if self.width and not self.height:
                 aspect_ratio = image.width / image.height
-                self.height = math.ceil(width / old_aspect_ratio)
+                self.height = math.ceil(self.width / aspect_ratio)
 
             if not self.width and self.height:
                 aspect_ratio = image.height / image.width
-                self.width = math.ceil(height / aspect_ratio)
+                self.width = math.ceil(self.height / aspect_ratio)
     
             # Do not resize if no size is given
             if self.width and self.height:
@@ -363,7 +374,7 @@ class Overlay:
 
             overlay_size = (self.width+padding_width*2, self.height+padding_height*2)
             overlay = Image.new("RGBA", overlay_size, color=self.background_color)
-            overlay.paste(image, (padding_width, padding_height), mask=picture)
+            overlay.paste(image, (padding_width, padding_height), mask=image)
 
             return overlay
             

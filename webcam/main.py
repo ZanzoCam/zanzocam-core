@@ -1,12 +1,12 @@
 import os
 import datetime
 
-from .constants import *
-from .utils import log, log_error
-from .system import System
-from .configuration import Configuration
-from .server import Server
-from .camera import Camera
+from constants import *
+from utils import log, log_error
+from system import System
+from configuration import Configuration
+from server import Server
+from camera import Camera
 
 
 def main():
@@ -17,11 +17,15 @@ def main():
 
     # Initial setup
     start = datetime.datetime.now()
-    new_configuration_raised_exception_at = []
+    new_configuration_raised_exception = False
 
     system = System()
-    status = system.collect_stats()  # TODO this can check if it's online and switch
-                                     #  to offline mode if not (issue #7)
+    status = system.report_general_status()  # TODO this can check if it's online and switch
+                                             #  to offline mode if not (issue #7)
+    log("Status report:")
+    for key, value in status.items():
+        log(f" - {key}: {value}")
+                                             
     try:
         old_configuration = Configuration()
     except Exception as e:
@@ -39,6 +43,7 @@ def main():
         log_error("Something went wrong fetching the new configuration file "
                   "from the server.", e)
         log("Falling back to the old configuration.")
+        new_configuration_raised_exception = True
         configuration = old_configuration
 
     log("Configuration in use:")
@@ -56,6 +61,7 @@ def main():
     except Exception as e:
         log_error("Something happened while applying the system "
             "settings from the new configuration file.", e)
+        new_configuration_raised_exception = True
         log("Re-applying the old system configuration.")
         log("+++++++++++++++++++++++++++++++++++++++++++")
         try:  
@@ -75,6 +81,7 @@ def main():
     except Exception as e:
         # Try again using the old config file
         log_error("An error occurred while taking the picture.", e)
+        new_configuration_raised_exception = True
         log("Trying again with the old configuration.")
         log("+++++++++++++++++++++++++++++++++++++++++++")
         camera = Camera(old_configuration)
@@ -88,12 +95,19 @@ def main():
         return
         
     # Send the picture
-    if os.path.exists(camera.image_path):
-        server.upload_picture(camera.image_path)
+    if os.path.exists(PATH / camera.processed_image_name):
+        server.upload_picture(PATH / camera.processed_image_name)
         camera.clean_up()
+        
+    # If we had trouble with the new config, restore the old from the backup
+    # TODO assess the situation better! Maybe the failure is unrelated.
+    errors_were_raised = "successfully"
+    if new_configuration_raised_exception:
+        old_configuration.restore_backup()
+        errors_were_raised = "with errors"
             
     end = datetime.datetime.now()
-    log("Execution completed successfully in: {end - start}")
+    log(f"Execution completed {errors_were_raised} in: {end - start}")
     print("\n==========================================\n")
 
 

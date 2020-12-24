@@ -4,9 +4,9 @@ import os
 import shutil
 import requests
 
-from .constants import *
-from .utils import log, log_error
-from .configuration import Configuration
+from constants import *
+from utils import log, log_error
+from configuration import Configuration
 
 
 
@@ -14,7 +14,7 @@ class Server:
     """
     Handles all communication with the server.
     """
-    def __init__(self, url: str, user: Optional[str], pwd: Optional[str]):
+    def __init__(self, url: str, username: Optional[str], password: Optional[str]):
         # URL is necessary
         if not url:
             log_error("Cannot contact the server: no server URL found in "
@@ -24,25 +24,25 @@ class Server:
             raise ValueError("No server data is available.")
     
         self.url = url
-        if user:
-            self.user = user
-            self.pwd = pwd
-            self.credentials = requests.auth.HTTPBasicAuth(user, pwd)    
+        if username:
+            self.username = username
+            self.password = password
+            self.credentials = requests.auth.HTTPBasicAuth(username, password)    
 
 
-    def update_configuration(self) -> Configuration:
+    def update_configuration(self, old_configuration: Configuration) -> Configuration:
         """ 
         Download the new configuration file from the server and updates it 
         locally.
         """
         # NOTE: Errors here should escalate, so always rethrow them
-        
+        raw_response = {}
         try:
-            log(f"Downloading the new configuration file from {url}")
+            log(f"Downloading the new configuration file from {self.url}")
         
             # Fetch the new config
             auth = None
-            raw_response = requests.get(url, auth=self.credentials)
+            raw_response = requests.get(self.url, auth=self.credentials, timeout=REQUEST_TIMEOUT)
             response = raw_response.json()
             
             if "configuration" not in response:
@@ -67,7 +67,7 @@ class Server:
             raise e
 
 
-    def download_new_overlay_images(self, images_list: List[str]) -> None:
+    def download_overlay_images(self, images_list: List[str]) -> None:
         """ 
         Download all the overlay images that should be re-downloaded.
         If it fails, logs it and replaces that image with a transparent pixel, 
@@ -79,7 +79,8 @@ class Server:
             # Download from the server
             r = requests.get(f"{remote_images_path}{image}", 
                                 stream=True, 
-                                auth=self.credentials)
+                                auth=self.credentials,
+                                timeout=REQUEST_TIMEOUT)
             # Save image to file
             if r.status_code == 200:                
                 r.raw.decode_content = True
@@ -100,7 +101,7 @@ class Server:
         Send the logs to the server.
         """
         # NOTE: exceptions in here should NOT escalate. Catch everything!!
-        log(f"Uploading logs to {url}")
+        log(f"Uploading logs to {self.url}")
             
         # Load the logs content
         logs = " ==> No logs found!! <== "
@@ -116,9 +117,12 @@ class Server:
             return
 
         # Prepare and send the request
+        data = {'logs': logs}
         try:
-            data = {'logs': logs}
-            raw_response = requests.post(url, data=data, auth=self.credentials)
+            raw_response = requests.post(self.url, 
+                                         data=data, 
+                                         auth=self.credentials, 
+                                         timeout=REQUEST_TIMEOUT)
             response = raw_response.json()
             
             # Make sure the server did not return an error
@@ -144,14 +148,18 @@ class Server:
         Uploads the new picture to the server.
         """
         # Do NOT escalate errors from here: catch everything
-        
         if not image_name:
             log("Cannot upload the picture: picture location not given", 
                 fatal="Picture won't be uploaded.")
+        
+        log("Uploading picture")
         try:
             # Upload the picture
             files = {'photo': open(image_name, 'rb')}
-            raw_response = requests.post(url, files=files, auth=self.credentials)
+            raw_response = requests.post(self.url, 
+                                         files=files, 
+                                         auth=self.credentials,
+                                         timeout=REQUEST_TIMEOUT)
             response = raw_response.json()
                                     
             # Make sure the server did not return an error

@@ -1,11 +1,12 @@
-from typing import Dict, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 
 import json
 import shutil
+import datetime
 from pathlib import Path
 
-from .logging import log, log_error
-from .constants import *
+from constants import *
+from utils import log, log_error
 
 
 class Configuration:
@@ -30,11 +31,11 @@ class Configuration:
             configuration = self._decode_json_values(configuration)
         
         # Populate the attributes with the data 
-        for key, value in configuration:
+        for key, value in configuration.items():
             setattr(self, key, value)
             
         # Add info about the download time (last edit time)
-        last_changed = datetime.timedelta(total_seconds=CONFIGURATION_PATH.stat().st_mtime)
+        last_changed = datetime.timedelta(seconds=CONFIGURATION_PATH.stat().st_mtime)
         self._download_time = datetime.datetime.now() - last_changed
         
 
@@ -44,9 +45,9 @@ class Configuration:
         Creates a Configuration object starting from a dictionary. Will
         save the configuration file at the specified path.
         """
-        data = decode_json_numbers(data)  # Transform strings into numbers
+        data = Configuration._decode_json_values(data)  # Transform strings into numbers
         with open(path, "w+") as d:
-            json.dumps(data, d, intent=4)
+            json.dump(data, d, indent=4)
         return Configuration(path)
 
         
@@ -54,7 +55,7 @@ class Configuration:
         """
         Prints out as a JSON object
         """
-        return json.dumps(vars(self), indent=4)
+        return json.dumps(vars(self), indent=4, default=lambda x: str(x))
 
 
     def backup(self):
@@ -62,7 +63,7 @@ class Configuration:
         Creates a backup copy of the configuration file.
         """
         try:
-            shutil.copy(self.path, self.path + ".bak")
+            shutil.copy2(self.path, str(self.path) + ".bak")
         except Exception as e:
             log_error("Cannot backup the configuration file.", e)
             log(f"WARNING! The current situation is very fragile, "
@@ -74,9 +75,9 @@ class Configuration:
         Restores the configuration file from its backup copy.
         """
         try:
-            shutil.copy(self.path, self.path + ".bak")
+            shutil.copy2(str(self.path) + ".bak", self.path)
         except Exception as e:
-            log_error("Cannot backup the configuration file.", e)
+            log_error("Cannot restore the configuration file from its backup.", e)
             log(f"WARNING! The current situation is very fragile, "
                  "please fix this error before a failure occurs.")
 
@@ -102,7 +103,7 @@ class Configuration:
         for key, value in json.items():
             # Recusrion
             if isinstance(value, dict):
-                value = decode_json_numbers(value)
+                value = Configuration._decode_json_values(value)
             # Check if string boolean
             if isinstance(value, str):
                 if value == "false":
