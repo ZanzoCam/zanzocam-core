@@ -438,3 +438,16 @@ server {
     - Check for errors with `sudo nginx -t`
 - Restart Nginx: `sudo systemctl restart nginx`
 
+
+### Create the image
+
+- Insert the SD card into the computer and mount it
+- Clone it into an image: `dd if=/dev/sdX of=zanzocam.img bs=4M status=progress oflag=sync` with `sudo`
+- Install resizing tool: `sudo apt install -y qemu-utils`
+- Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 4G`
+
+The image is ready to be flashed on any SD card. Note that the filesystem will not expand.
+
+If you want to upload/send it, compress it first with `tar -czvf zanzocam.tar.gz zanzocam.img`
+
+
