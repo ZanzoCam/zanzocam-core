@@ -4,9 +4,9 @@ import os
 import shutil
 import requests
 
-from constants import *
-from utils import log, log_error
-from configuration import Configuration
+from webcam.constants import *
+from webcam.utils import log, log_error
+from webcam.configuration import Configuration
 
 
 

@@ -5,8 +5,8 @@ import shutil
 import datetime
 from pathlib import Path
 
-from constants import *
-from utils import log, log_error
+from webcam.constants import *
+from webcam.utils import log, log_error
 
 
 class Configuration:
@@ -22,7 +22,7 @@ class Configuration:
             log("WARNING! The path to the configuration file was set to None. "
                 f"Falling back to default: {CONFIGURATION_PATH}")
             path = CONFIGURATION_PATH            
-        self.path = path
+        self._path = path
 
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow
@@ -35,8 +35,7 @@ class Configuration:
             setattr(self, key, value)
             
         # Add info about the download time (last edit time)
-        last_changed = datetime.timedelta(seconds=CONFIGURATION_PATH.stat().st_mtime)
-        self._download_time = datetime.datetime.now() - last_changed
+        self._download_time = datetime.datetime.fromtimestamp(CONFIGURATION_PATH.stat().st_mtime)
         
 
     @staticmethod
@@ -63,7 +62,7 @@ class Configuration:
         Creates a backup copy of the configuration file.
         """
         try:
-            shutil.copy2(self.path, str(self.path) + ".bak")
+            shutil.copy2(self._path, str(self._path) + ".bak")
         except Exception as e:
             log_error("Cannot backup the configuration file.", e)
             log(f"WARNING! The current situation is very fragile, "
@@ -75,7 +74,7 @@ class Configuration:
         Restores the configuration file from its backup copy.
         """
         try:
-            shutil.copy2(str(self.path) + ".bak", self.path)
+            shutil.copy2(str(self._path) + ".bak", self._path)
         except Exception as e:
             log_error("Cannot restore the configuration file from its backup.", e)
             log(f"WARNING! The current situation is very fragile, "

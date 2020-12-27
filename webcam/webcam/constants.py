@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-PATH = Path(__file__).parent
+PATH = Path(__file__).parent.parent
 
 CONFIGURATION_PATH = PATH / "configuration.json"
 CONFIGURATION_BACKUP_PATH = PATH / "configuration.json.bak"

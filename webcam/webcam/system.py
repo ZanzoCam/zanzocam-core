@@ -1,12 +1,13 @@
 from typing import Dict, Optional
 
+import shutil
 import requests
 import datetime
 import subprocess
 
-from constants import *
-from utils import log, log_error
-from configuration import Configuration
+from webcam.constants import *
+from webcam.utils import log, log_error
+from webcam.configuration import Configuration
 
 
 class System:
@@ -32,6 +33,8 @@ class System:
         self.status["autohotspot check"] = self.run_autohotspot()
         self.status['wifi ssid'] = self.get_wifi_ssid()
         self.status['internet access'] = self.check_internet_connectivity()
+        self.status['disk size'] = self.get_filesystem_size()
+        self.status['free disk space'] = self.get_free_space_on_disk()
         return self.status
 
     def get_version(self) -> Optional[str]:
@@ -156,6 +159,49 @@ class System:
         except Exception as e:
             log_error("Could not check if there is Internet access", e)
         return None
+        
+        
+    def get_filesystem_size(self) -> Optional[str]:
+        """
+        Returns a string with the size of the filesystem where the OS is running.
+        Suffixes are KB, MB, GB, TB, Returns None if an error occurs,
+        """
+        try:
+            fs_size, _, _ = shutil.disk_usage(__file__)
+            return self.convert_bytes_into_string(fs_size)
+        except Exception as e:
+            log_error("Could not retrieve the size of the filesystem.", e)
+        return None
+        
+        
+    def get_free_space_on_disk(self) -> Optional[str]:
+        """
+        Returns a string with the amount of free space left on the device.
+        Suffixes are KB, MB, GB, TB, Returns None if an error occurs,
+        """
+        try:
+            _, _, free_space = shutil.disk_usage(__file__)
+            return self.convert_bytes_into_string(free_space)
+        except Exception as e:
+            log_error("Could not get the amount of free space on the filesystem.", e)
+        return None
+
+
+    @staticmethod
+    def convert_bytes_into_string(bytes: int) -> str:
+        """
+        Convert an integer of bytes into a human readable string.
+        """
+        if bytes > 1024**4:
+            return f"{bytes/(1024**4):.2f} TB"
+        elif bytes > 1024**3:
+            return f"{bytes/(1024**3):.2f} GB"
+        elif bytes > 1024**2:
+            return f"{bytes/(1024**2):.2f} MB"
+        elif bytes > 1024:
+            return f"{bytes/1024:.2f} KB"
+        else:
+            return f"{bytes} bytes"
 
 
     def apply_system_settings(self, configuration: Configuration) -> None:
@@ -185,10 +231,8 @@ class System:
             d.writelines(
                 "# ZANZOCAM - shoot picture\n"
                 f"{cron_string} zanzocam-bot "
-                "cd /home/zanzocam-bot/webcam && "
-                "/home/zanzocam-bot/webcam/venv/bin/python3 "
-                "/home/zanzocam-bot/webcam/camera.py "
-                ">> /home/zanzocam-bot/webcam/logs.txt 2>&1")
+                " /home/zanzocam-bot/webcam/venv/bin/z-webcam "
+                " >> /home/zanzocam-bot/webcam/logs.txt 2>&1\n")
                 
         # Backup the old crontab in the home
         backup_cron = subprocess.run([

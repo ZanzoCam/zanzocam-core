@@ -8,9 +8,9 @@ from pathlib import Path
 from picamera import PiCamera
 from PIL import Image, ImageFont, ImageDraw
 
-from constants import *
-from utils import log, log_error
-from configuration import Configuration 
+from webcam.constants import *
+from webcam.utils import log, log_error
+from webcam.configuration import Configuration 
 
 
 
@@ -52,7 +52,7 @@ class Camera:
             self.overlays = {}
         
         # Image name
-        self.photo_name = '.temp_image.jpg'
+        self.photo_name = PATH / '.temp_image.jpg'
         now = datetime.datetime.now()
         processed_image_name = self.name
         
@@ -60,8 +60,8 @@ class Camera:
             processed_image_name += "_" + now.strftime("%Y-%m-%d")
         if self.add_time_to_name:
             processed_image_name += "_" + now.strftime("%H:%M:%S")
-
-        self.processed_image_name = processed_image_name + "." + self.extension
+        processed_image_name += "." + self.extension
+        self.processed_image_name = PATH / processed_image_name
         
 
     def __getattr__(self, name):
@@ -79,8 +79,13 @@ class Camera:
         Removes the images created during the processing.
         """
         log("Cleaning up image files")
-        os.remove(self.photo_name)
-        os.remove(self.processed_image_name)
+        try:
+            os.remove(self.photo_name)
+            os.remove(self.processed_image_name)
+        except Exception as e:
+            log_error(f"Failed to clean up image files.", e)
+            log("WARNING: The filesystem might fill up if the old pictures "
+                "are not removed, which can cause ZANZOCAM to fail.")
         log("Cleanup complete")
                
 
