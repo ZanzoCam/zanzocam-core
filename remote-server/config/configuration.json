@@ -1,7 +1,9 @@
 {
-    "server_url": "http://46.101.245.13/uploads/",
-    "server_username": "zanzocam-bot",
-    "server_password": "esperimento",
+    "server": {
+        "url": "http://46.101.245.13/uploads/",
+        "username": "zanzocam-bot",
+        "password": "esperimento"
+    },
     "crontab": {
         "minute": "*/3",
         "hour": "*",
@@ -11,7 +13,7 @@
     },
     "image": {
         "name": "image",
-        "add_time_to_name": false,
+        "add_time_to_name": true,
         "add_date_to_name": false,
         "extension": "jpg",
         "jpeg_quality": 90,
@@ -43,7 +45,7 @@
         },
         "bottom_center": {
             "type": "image",
-            "path": "icona_cai.png",
+            "path": "logo-cai-trasparente.png",
             "width": 200,
             "padding_ratio": 0,
             "over_the_picture": true

@@ -29,10 +29,10 @@
                 <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}" required>
                 
                 <label for="server_username">Username del server (se necessario):</label>
-                <input type="text" placeholder="username"  name="server_username" value="{{ data.server_username }}" required>
+                <input type="text" placeholder="username"  name="server_username" value="{{ data.server_username }}">
                 
                 <label for="server_password">Password del server (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}" required>
+                <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}">
             
             <div class="center">
                 <button id="configure" class="button setup-button" type="submit">Configura</button>
@@ -46,11 +46,11 @@
     
     
     <script>
-    function shootFirstPicture() {
-        button = document.getElementById("shoot");
-        configure = document.getElementById("configure");
-        feedback = document.getElementById("photo-feedback");
+    const button = document.getElementById("shoot");
+    const configure = document.getElementById("configure");
+    const feedback = document.getElementById("photo-feedback");
         
+    function shootFirstPicture() {
         button.innerHTML = "Sto scattando...";
         feedback.innerHTML = "Sto scattando (ci vuole un minuto)...";
         button.disabled = true;
@@ -76,6 +76,14 @@
             configure.disabled = false;
         });
     };
+    
+    if (window.location.href==="http://10.0.0.5"){
+        button.disabled = true;
+        feedback.innerHTML = "Impossibile scattare una foto di prova finche' " +
+            "la modalita' hotspot e' attiva. Configura il Raspberry Pi e riavvialo, " +
+            "poi trova il suo IP e connettiti con il browser. A quel punto potrai " +
+            "scattare la foto di prova". 
+    }
     </script>
     
 {% endblock %}

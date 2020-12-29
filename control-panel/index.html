@@ -5,6 +5,392 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta content="text/html; charset=ISO-8859-1">
   <link href="milligram.css" rel="stylesheet">
+  <script type="text/javascript" src="jszip.js"></script>
+  
+  <script>  
+    var zipFile = null;   // Is the configuration file a ZIP or a JSON?
+    var zippedImagesData = {};
+    
+    /*
+     * Get JSON data from the server.
+     * Useful if the page is hosted with the JSON on the remote server
+     */
+    function loadDataFromServer(url){
+        fetch(url, { method:'GET'})
+        .then(response => response.json())
+        .then(json => {
+            last_loaded_data = json.configuration;
+            fillForm(last_loaded_data, "");
+         });
+    }
+    
+    /*
+     * Get JSON data from a local file.
+     * Useful if this page is running from a local HTML file on an offline machine.
+     */
+    function loadDataFromFile(form){
+        if (form.files.length === 0) {
+            alert('Seleziona il file di configurazione da modificare.');
+            return;
+        }        
+        var filename = form.files[0].name;
+        var extension = filename.substring(filename.lastIndexOf(".")+1, filename.length);
+        if (extension==="zip"){
+            loadDataFromZip(form, filename);
+        } else {
+            loadDataFromJson(form, filename);
+        }
+    }
+    
+    /*
+     * Get JSON data from a local text file.
+     * No images will be available unless the remote server wants to serve them.
+     */
+    function loadDataFromJson(form, filename){
+        // It's a simple JSON file
+        const reader = new FileReader();
+        reader.onload = function fileReadCompleted() {
+            data = JSON.parse(reader.result);
+            last_loaded_data = data;
+            fillForm(last_loaded_data, "");
+        };
+        reader.readAsText(form.files[0]);
+    }
+  
+    /*
+     * Get JSON data and the images from a local ZIP file.
+     * Images should be available in the ZIP file and they can be previewed.
+     */
+    function loadDataFromZip(form, filename){
+        // it's a complete ZIP file with the images
+        const reader = new FileReader();
+        reader.onload = function fileReadCompleted() {
+            var zip = new JSZip();
+            zip.loadAsync(reader.result, {createFolders:true})
+            .then((zip) => {
+            
+                // Read the configuration file
+                zip.file("configuration.json")
+                .async("string")
+                .then(content => {
+                
+                    // Load the configuration file
+                    data = JSON.parse(content);
+                    zipFile = filename;
+                    last_loaded_data = data;
+                    fillForm(last_loaded_data, "");
+                    
+                    // Once done, load all the images contained into it
+                    // and replace remote URLs with the local blobs
+                    zip.folder("images").forEach((image, data) => {
+                        data.async("arraybuffer")
+                        .then(
+                        function(content) {
+                            var buffer = new Uint8Array(content);
+                            var blob = new Blob([buffer.buffer]);
+                            var imageElement = document.querySelector("img[src*='"+image+"']");
+                            imageElement.src = URL.createObjectURL(blob);
+                            zippedImagesData[image] = blob;
+                        },
+                        function(e) {
+                            console.log(e);
+                            alert("Errore durante la lettura di: "+file.name);
+                        });
+                    });
+                    
+                }).catch(error => {
+                    console.log(error);
+                    alert("Errore durante il caricamento! Sei sicuro di aver "+
+                          "selezionato il file zip corretto? Il file deve "+
+                          "contenere un file di nome 'configuration.json' e " +
+                          "una cartella chiamata 'images' per essere caricato "+
+                          "correttamente.");
+                });
+            });
+        };
+        reader.readAsArrayBuffer(form.files[0]);
+    }
+  
+  
+    /*
+     * Load local images to render them in the configuration file.
+     * Used to preview a new image that has been selected but is neither online
+     * not in the zip yet.
+     */
+    function loadLocalImage(filePicker) {
+        const reader = new FileReader();
+        reader.onload = function fileReadCompleted() {
+            document.getElementById(filePicker.name).src = reader.result;
+        };
+        reader.readAsDataURL(filePicker.files[0]);
+    }
+
+    /*
+     * Loads the JSON data into the form.
+     */
+    function fillForm(data, prefix){
+        // Hide the loading box and display the main form
+	    document.getElementById("loading").style.display="none";  
+	    document.getElementById("main-form").style.display="block"; 
+
+	    // Get all the form input elements
+	    const { elements } = document.querySelector('form')
+        
+        for (const [ key, value ] of Object.entries(data) ) {
+            // Nested objects should be processed recursively
+	        if (typeof value === 'object' & value !== null){
+                fillForm(value, prefix+key+"__");
+	        }
+            // Check if there is an input field matching the name of the data field	        
+            const field = elements.namedItem(prefix+key)
+            if (field){
+                // If the value is a Boolean, the field should be a checkbox: check it                     
+	            if (field.type === 'checkbox'){
+		            field.checked = value ? true : false; 
+	            
+                // Handle radioboxes and multiple checkboxes with the same name.                   
+	            }if (!field.type && field[0].type==="checkbox"){
+	                field.forEach((f) => {
+    		            f.checked = value ? true : false; 
+	                });
+	            
+                // If it's a file picker, render the image in the nearby box
+                } else if(field.type === "file"){
+                    if (localMode){
+                        server_url = document.getElementById("server-url").value;
+                        document.getElementById(prefix+key).alt = "Preview non disponibile in modalita' offline";
+                        document.getElementById(prefix+key).src = server_url + "config/images/" + value;
+                    } else {
+                        document.getElementById(prefix+key).src = url + "config/images/" + value;
+                    }
+                    document.getElementById(prefix+key+"_current").innerHTML = "<b>"+value+"</b>";
+                // If it's not an object, you can safely fill the value in
+                } else {
+                    field.value = value
+                }
+            }
+	        // Special processing is needed for the overlay type radio switch
+	        prefixes = prefix.split("__");
+	        if (prefixes[0] == "overlays" &&  key == "type"){
+	            toggle_type_of_overlay(prefixes[1], value);
+	        }
+        }
+    }
+
+
+    /*
+     * Sets a value in a deep object given a flat key. Separator: "__"
+     */
+	function deepSet(key, value, obj){
+        var i;
+	    key = key.split('__');
+	    for (i = 0; i < key.length - 1; i++){
+		    if (typeof obj[key[i]] === "undefined"){
+		        obj[key[i]] = {};
+            }
+            obj = obj[key[i]];
+	    }
+	    obj[key[i]] = value;
+	}
+	
+    /*
+     * Gets a value from a deep object given a flat key. Separator: "__"
+     */
+	function deepGet(key, obj){
+        var i;
+	    key = key.split('__');
+	    for (i = 0; i < key.length - 1; i++){
+		    if (typeof obj[key[i]] === "undefined"){
+                obj[key[i]] = {};
+		    }
+            obj = obj[key[i]];        
+        }
+	    return obj[key[i]];
+	}
+
+    /*
+     * Converts the form data into a nested JSON object 
+     * ready to be sent to the server or returned to the user.
+     */
+    function formdataToJson(formData){
+        var object = {};
+        const form = document.getElementById('config');
+        Array.from(form.elements).forEach((field) => {
+            key = field.name;
+            value = formData.get(key);
+            // Empty strings are null
+            if (value===""){ value = null; }
+            
+            // Checkboxes are boolean and have their value in the checked attribute
+            if (field.type === "checkbox"){
+                value = field.checked ? true: false; 
+            }
+            // This is a file that has not been changed.
+            // Be sure to re-send the old value, or it will clear the field.        
+            if (value===null && field.type === "file"){
+                value = deepGet(key, last_loaded_data);
+            }
+            if (value !== null){ 
+	            // Get the proper value from filepickers
+	            if (value instanceof File) {
+                    value = value.name;
+                }
+	            // Actually set the value
+                deepSet(key, value, object);
+	        }
+        });
+        // Custom processing of the overlays: 
+        // remove fields related to the other types of overlays
+        filtered_object = object
+        Object.entries(object["overlays"]).forEach(([key, value]) => {
+            if (!value.hasOwnProperty("type")){
+                delete filtered_object["overlays"][key];
+            }
+        });
+        return filtered_object;
+    }
+
+
+    /*
+     * Saves the configuration either by sending it to the remote server 
+     * (if hosted on the remote server) or by letting the user download it 
+     * (if running offline).
+     */
+    function saveConfiguration(url){
+        const form = document.getElementById('config');
+        const save = document.getElementById('save');
+        save.disabled = true;        
+        
+        // Serialize the content of the form in a JSON file
+        const data = new FormData(form);
+        const object = formdataToJson(data);
+        serialized = JSON.stringify(object, null, "  ");
+        
+        // Create a new form with the JSON of the config and all the images
+        var formdata = new FormData();
+        var images = []
+        formdata.append("config", serialized);
+        // Get all the images specified in the form
+        for(ver of ['top', 'bottom']) {
+            for(hor of ['right', 'center', 'left']){
+                var field = "overlays__"+ver+"_"+hor+"__path";
+                if (data.has(field)){
+                    var imageElement = document.getElementById(field);
+                    formdata.append(field, data.get(field));
+                    images.push(imageElement.src);
+                }
+            }
+        }
+	    // Send the JSON to the server or ask the user to save it locally
+        if (localMode){
+            if (zipFile){
+                saveConfigurationToZip(formdata, images);
+            } else {
+                saveConfigurationToJson(formdata);
+            }
+        } else {
+	        saveConfigurationToServer(formdata);
+        }
+        save.disabled = false;  
+    };
+    
+    /*
+     * Send the updated JSON with the pictures on the server.
+     */
+    function saveConfigurationToServer(formdata){
+        fetch(url, {
+            method:'POST',
+            body: formdata,
+        })
+        .then(response => response.json())
+        .then(reply => {
+            loadData(url);
+        });
+    }
+    
+    /*
+     * Let the user download the ZIP file containing the JSOn and the images.
+     */
+    function saveConfigurationToZip(formdata, images){
+        var zip = new JSZip();
+        zip.file("configuration.json", serialized);
+        var img = zip.folder("images");
+    
+        var imagePickers = Array.from(document.querySelectorAll('.image-picker'));
+        imagePickers.forEach((item) => {
+                
+            // If the filepicker contains something, save it
+            if (item.files.length > 0){
+                img.file(item.files[0].name, item.files[0], {base64: true});
+                
+            // Otherwise, make sure to preserve whatever image the previous 
+            // config file came with.
+            } else {
+
+                var imageElement = document.getElementById(item.name);
+                var imageName = document.getElementById(item.name+"_current").textContent;
+                
+                if (imageElement && imageElement.src){
+                    if(imageElement.src.startsWith("blob:")){
+                        // it's a blob: read from the original ZIP
+                        img.file(imageName, zippedImagesData[imageName]);
+                                    
+                    } else {
+                        // In any other case we assume it's a URL, so try to
+                        // download it.
+                        fetch(imageElement.src)
+                        .then(function(response) {
+                            return response.blob();
+                        })
+                        .then(function(blob) {
+                            img.file(item.value, blob, {base64: true});
+                        })
+                        .catch((error) => {
+                            alert("Errore durante il salvataggio di "+
+                                imageElement.src +" Aggiungi manualmente questa "+
+                                "immagine sul server!");
+                        });
+                    }
+                }
+            }
+        });
+        zip.generateAsync({type:"blob"}).then(function(content) {
+            var download = document.createElement('a');
+            download.setAttribute("href", URL.createObjectURL(content));
+            download.setAttribute("download", "configuration.zip");
+            document.body.appendChild(download); // required for firefox
+            download.click();
+            download.remove();
+        });
+    }
+    
+    /*
+     * Let the user download the JSON file, without the images.
+     */
+    function saveConfigurationToJson(formdata) {
+        var dataString = "data:text/json;charset=utf-8," + encodeURIComponent(serialized);                
+        var download = document.createElement('a');
+        download.setAttribute("href", dataString);
+        download.setAttribute("download", "configuration.json");
+        document.body.appendChild(download); // required for firefox
+        download.click();
+        download.remove();
+        alert("ATTENZIONE! Assicurati che sul server siano presenti "+
+              "tutte le immagini specificate nel file di configurazione!")
+    }
+        
+    
+    // Toggle text or image config in the overlays section
+    function toggle_type_of_overlay(position, value) {
+        var text_block = document.getElementById(position+"_text-vars");
+        var image_block = document.getElementById(position+"_image-vars");
+        text_block.style.display = value==="text" ? "block" : "none";
+        image_block.style.display = value==="image" ? "block" : "none";
+        document.querySelectorAll('[name^="overlays__'+position+'__'+ value +'"]').forEach((item) => {
+            item.value = "";
+        });
+    }
+  </script>
 
 </head>
 <body class="sky">
@@ -36,18 +422,26 @@
         <hr />
     </div>
     
+    <div id="loading-local">
+        <hr />
+        <h3>Scegli il file di configurazione da modificare:</h3>
+        <input type="file" id="configFile">
+        
+        <hr />
+    </div>
+    
     <div id="main-form" style="display:none;">
     
         <form id="config">
             <h3>Server:</h3>
-                <label for="server_url">URL del server:</label>
-                <input type="text" placeholder="https://example.com/foto"  name="server_url">
+                <label for="server__url">URL del server:</label>
+                <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
                 
-                <label for="server_username">Username del server (se necessario):</label>
-                <input type="text" placeholder="username"  name="server_username">
+                <label for="server__username">Username del server (se necessario):</label>
+                <input type="text" placeholder="username"  name="server__username">
                 
-                <label for="server_password">Password del server (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server_password">
+                <label for="server__password">Password del server (se necessaria):</label>
+                <input type="text" placeholder="password"  name="server__password">
                 
             <hr />        
             <h3>Crontab:</h3>
@@ -175,8 +569,6 @@
                     </div>
                 </div> 
                 
-                <input type="hidden"  name="overlays__top_right__over_the_picture" value="off">
-
                 <div id="top_right_text-vars" style="display: none;">
                     <label for="overlays__top_right__text">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__top_right__text"></textarea>
@@ -221,12 +613,12 @@
                 <div id="top_right_image-vars" style="display: none;">
                     <div class="row">
                         <div class="column">
-                            <label>Immagine Attuale:</label>
-                            <img id="overlays__top_right__height" height="200"></img>
+                            <label>Immagine Attuale: <span id="overlays__top_right__path_current"></span></label>
+                            <img id="overlays__top_right__path" height="200"></img>
                         </div>
                         <div class="column vertical-center">
                             <label>Cambia immagine</label>
-                            <input type="file" name="overlays__top_right__image">
+                            <input type="file" class="image-picker" name="overlays__top_right__path">
                         </div>
                     </div>
                        
@@ -274,8 +666,6 @@
                     </div>
                 </div>  
                 
-                <input type="hidden"  name="overlays__top_center__over_the_picture" value="off">
-
                 <div id="top_center_text-vars" style="display: none;">
                     <label for="top_center_text-content">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__top_center__text"></textarea>
@@ -318,12 +708,12 @@
      
                 <div id="top_center_image-vars" style="display: none;">
                     <div class="column">
-                        <label>Immagine Attuale:</label>
-                        <img id="overlays__top_center__image" height="200"></img>
+                        <label>Immagine Attuale: <span id="overlays__top_center__path_current"></span></label>
+                        <img id="overlays__top_center__path" height="200"></img>
                     </div>
                     <div class="column vertical-center">
                         <label>Cambia immagine</label>
-                        <input type="file" name="overlays__top_center__image">
+                        <input type="file" class="image-picker" name="overlays__top_center__path">
                     </div>
                         
                     <div class="row">
@@ -370,8 +760,6 @@
                     </div>
                 </div>  
 
-                <input type="hidden"  name="overlays__top_left__over_the_picture" value="off">
-
                 <div id="top_left_text-vars" style="display: none;">
                     <label for="top_left_text-content">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__top_left__text"></textarea>
@@ -414,12 +802,12 @@
      
                 <div id="top_left_image-vars" style="display: none;">
                     <div class="column">
-                        <label>Immagine Attuale:</label>
-                        <img id="overlays__top_left__image" height="200"></img>
+                        <label>Immagine Attuale: <span id="overlays__top_left__path_current"></span></label>
+                        <img id="overlays__top_left__path" height="200"></img>
                     </div>
                     <div class="column vertical-center">
                         <label>Cambia immagine</label>
-                        <input type="file" name="overlays__top_left__image">
+                        <input type="file" class="image-picker" name="overlays__top_left__path">
                     </div>
                     
                     <div class="row">
@@ -466,8 +854,6 @@
                     </div>
                 </div>  
 
-                <input type="hidden"  name="overlays__bottom_right__over_the_picture" value="off">
-
                 <div id="bottom_right_text-vars" style="display: none;">
                     <label for="bottom_right_text-content">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__bottom_right__text"></textarea>
@@ -510,12 +896,12 @@
      
                 <div id="bottom_right_image-vars" style="display: none;">
                     <div class="column">
-                        <label>Immagine Attuale:</label>
-                        <img id="overlays__bottom_right__image" height="200"></img>
+                        <label>Immagine Attuale: <span id="overlays__bottom_right__path_current"></span></label>
+                        <img id="overlays__bottom_right__path" height="200"></img>
                     </div>
                     <div class="column vertical-center">
                         <label>Cambia immagine</label>
-                        <input type="file" name="overlays__bottom_right__image">
+                        <input type="file" class="image-picker" name="overlays__bottom_right__path">
                     </div>
                     
                     <div class="row">
@@ -563,8 +949,6 @@
                     </div>
                 </div>
                 
-                <input type="hidden"  name="overlays__bottom_center__over_the_picture" value="off">
-
                 <div id="bottom_center_text-vars" style="display: none;">
                     <label for="bottom_center_text-content">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__bottom_center__text"></textarea>
@@ -607,12 +991,12 @@
      
                 <div id="bottom_center_image-vars" style="display: none;">
                     <div class="column">
-                        <label>Immagine Attuale:</label>
-                        <img id="overlays__bottom_center__image" height="200"></img>
+                        <label>Immagine Attuale: <span id="overlays__bottom_center__path_current"></span></label>
+                        <img id="overlays__bottom_center__path" height="200"></img>
                     </div>
                     <div class="column vertical-center">
                         <label>Cambia immagine</label>
-                        <input type="file" name="overlays__bottom_center__image">
+                        <input type="file"  class="image-picker" name="overlays__bottom_center__path">
                     </div>
                     
                     <div class="row">
@@ -659,8 +1043,6 @@
                     </div>
                 </div>
                 
-                <input type="hidden"  name="overlays__bottom_left__over_the_picture" value="off">
-
                 <div id="bottom_left_text-vars" style="display: none;">
                     <label for="bottom_left_text-content">Testo</label>
                     <textarea placeholder="Testo..." name="overlays__bottom_left__text"></textarea>
@@ -703,12 +1085,12 @@
      
                 <div id="bottom_left_image-vars" style="display: none;">
                     <div class="column">
-                        <label>Immagine Attuale:</label>
-                        <img id="overlays__bottom_left__image" height="200"></img>
+                        <label>Immagine Attuale: <span id="overlays__bottom_left__path_current"></span></label>
+                        <img id="overlays__bottom_left__path" height="200"></img>
                     </div>
                     <div class="column vertical-center">
                         <label>Cambia immagine</label>
-                        <input type="file" name="overlays__bottom_left__image">
+                        <input type="file" class="image-picker" name="overlays__bottom_left__path">
                     </div>
 
                     <div class="row">
@@ -749,174 +1131,47 @@
 </div>
 
 <script>
-    // Figures out the endpoint URL
+    // Figures out the endpoint URL and mode of operation (local/remote)
     const url = window.location.href.substring(0, window.location.href.lastIndexOf("/")+1);
-    var last_loaded_data = null;
-    
-    // Get JSON
-    function loadData(){
-        fetch(url, { method:'GET'})
-        .then(response => response.json())
-        .then(json => fillForm(json.configuration, ""));
-    }   
-    loadData(); 
-
-    // Loads the JSON data into the form
-    function fillForm(data, prefix){
-        last_loaded_data = data;
-	    document.getElementById("loading").style.display="none";  
-	    document.getElementById("main-form").style.display="block"; 
-	    
-	    const { elements } = document.querySelector('form')
-        
-        for (const [ key, value ] of Object.entries(data) ) {
-	        if (typeof value === 'object' & value !== null){
-                fillForm(value, prefix+key+"__");
-	        }
-	        
-            const field = elements.namedItem(prefix+key)
-            if (field){
-                if(field.type === "file"){
-                    image = document.getElementById(prefix+key).src = url+ "config/images/" +value;  
-                } else {
-                    field.value = value
-                }
-            }
-                                
-	        if (typeof value === 'boolean'){
-		        field.checked = value ? 'checked' : ''; 
-	        }
-	        
-	        prefixes = prefix.split("__");
-	        if (prefixes[0] == "overlays" &&  key == "type"){
-	            toggle_type_of_overlay(prefixes[1], value);
-	        }
-        }
-    }
-
-
-    // Sets in a deep object from a flat key
-	function deepSet(key, value, obj){
-        var i;
-	    key = key.split('__');
-	    for (i = 0; i < key.length - 1; i++){
-		    if (typeof obj[key[i]] === "undefined"){
-		        obj[key[i]] = {};
-            }
-            obj = obj[key[i]];
-	    }
-	    obj[key[i]] = value;
-	}
-	
-    // Gets in a deep object from a flat key
-	function deepGet(key, obj){
-        var i;
-	    key = key.split('__');
-	    for (i = 0; i < key.length - 1; i++){
-		    if (typeof obj[key[i]] === "undefined"){
-                obj[key[i]] = {};
-		    }
-            obj = obj[key[i]];        
-        }
-	    return obj[key[i]];
-	}
-
-    // Converts the form data back into JSON
-    function formdata_to_json(formData){
-        var object = {};
-        var form = document.getElementsByTagName('form')[0];
-
-        Array.from(form.elements).forEach((field) => {
-            key = field.name;
-            value = formData.get(key);
-            
-            if (value===""){ value = null; }
-            if (value==="on"){ value = true; }
-            if (value==="off"){ value = false; }
-            if (field.type === "checkbox"){
-                console.log(key, value);
-            }
-
-//            console.log("==============>", field.name, field.type, field.value);
-
-            if (value===null && field.type === "file"){
-                // This is a file that has not been changed.
-                // Be sure to re-send the old value or it will clear the field.
-                value = deepGet(key, last_loaded_data);
-            }
-	        if (value!==null){  // other null values are just noise
-	            if (value instanceof File) {
-                    value = value.name;
-                } else {
-                    value = value;
-                }
-                deepSet(key, value, object);
-	        }
-        });
-
-        // Custom processing of the overlays
-        filtered_object = object
-        Object.entries(object["overlays"]).forEach(([key, value]) => {
-            console.log(value+"has type? "+value.hasOwnProperty("type"));
-            if (!value.hasOwnProperty("type")){
-                delete filtered_object["overlays"][key];
-            }
-        });
-
-        return filtered_object;
-    }
-
-
-    // Hooks on the Save button click event and sends the JSON to the endpoint
+    const localMode = url.startsWith("file://");
     const form = document.getElementById('config');
+    form.reset();
+    
+    // Hooks on the configFile filepicker to load the configuration file if in local mode
+    document.getElementById('configFile').addEventListener('change', function selectedFileChanged() {
+        form.reset();
+        loadDataFromFile(this);
+    });
+    
+    // Hooks on the image filepickers to load the image preview if in local mode
+    document.querySelectorAll('.image-picker').forEach((item) => {
+        item.addEventListener('change', function selectedFileChanged() {
+            loadLocalImage(this);
+        });
+    })
+    
+    // Checkboxes with the same name should always have the same value.
+    document.querySelectorAll('input[type="checkbox"]').forEach((item) => {
+        item.addEventListener('change', function selectedFileChanged() {
+            document.querySelectorAll('input[name="'+item.name+'"]').forEach((sameItem) => {
+                sameItem.checked = item.checked;
+            });
+        });
+    })
+    
+    // Hooks on the Save button click event to trigger the save operation
     form.onsubmit = async (e) => {
         e.preventDefault();
-
-        const save = document.getElementById('save');
-        save.disabled = true;        
-        
-        // Serialize the content of the form in a JSON file
-        const data = new FormData(form);
-        const object = formdata_to_json(data);
-        serialized = JSON.stringify(object, null, "  ");
-        
-        // Create a new for with the JSON of the config and all the images
-        formdata = new FormData();
-        formdata.append("config", serialized);
-        // Get all the images
-        for(ver of ['top', 'bottom']) {
-            for(hor of ['right', 'center', 'left']){
-                var field = "overlays__"+ver+"_"+hor+"__image";
-                if (data.has(field)){
-                    formdata.append(field, data.get(field));
-                }
-            }
-        }
-	    // Display the key/value pairs
-	    for (var pair of formdata.entries()) {
-	        console.log(pair[0]+ ', ' + pair[1]); 
-	    }        
-            
-	    fetch(url, {
-            method:'POST',
-            body: formdata,
-        })
-        .then(response => response.json())
-        .then(reply => {
-            console.log(reply);
-            loadData();
-        });
-        
-        save.disabled = false;  
-    };
-        
+        saveConfiguration(url);
+    }
     
-    // Toggle text or image config in the overlays section
-    function toggle_type_of_overlay(position, value) {
-        var text_block = document.getElementById(position+"_text-vars");
-        var image_block = document.getElementById(position+"_image-vars");
-        text_block.style.display = value==="text" ? "block" : "none";
-        image_block.style.display = value==="image" ? "block" : "none";
+    // Loads the data at the start
+    var last_loaded_data = null;
+    if (localMode){
+        document.getElementById('loading').style.display = "none";
+        document.getElementById('loading-local').style.display = "block";
+    } else {
+        loadData(url);
     }
 </script>
 
