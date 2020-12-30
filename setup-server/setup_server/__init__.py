@@ -48,11 +48,10 @@ def shoot():
             data = json.load(d)
     except Exception:
         return json.dumps({"success": False, "server_url": "#"})
-        
+
     try:
         shoot_proc = subprocess.run(["/home/zanzocam-bot/webcam/venv/bin/z-webcam"])
     except subprocess.CalledProcessError as e:
-        print("returning")
         return json.dumps({"success": False, "server_url": data['server_url']})
 
     print("Returning")
@@ -132,19 +131,17 @@ def start_setup():
     # Write the initial configuration.json to bootstrap the webcam
     log("Setup dati del server remoto")
     webcam_minimal_conf = {
-        "server_url": data['server_url'],
-        "server_username": data['server_username'],
-        "server_password": data['server_password'],
+        "server": {
+            "url": data['server_url'],
+            "username": data['server_username'],
+            "password": data['server_password']
+        }
     }
     try:
         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
     except Exception as e:
         error = True
-
-    with open("/home/zanzocam-bot/webcam/configuration.json", 'r') as d:
-        log(d.readlines())
-
 
     # If there was an error at some point, return 500
     if error:

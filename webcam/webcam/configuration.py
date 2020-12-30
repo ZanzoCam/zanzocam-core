@@ -21,7 +21,7 @@ class Configuration:
         if not path:
             log("WARNING! The path to the configuration file was set to None. "
                 f"Falling back to default: {CONFIGURATION_PATH}")
-            path = CONFIGURATION_PATH            
+            path = CONFIGURATION_PATH
         self._path = path
 
         # Read the configuration file
@@ -29,14 +29,14 @@ class Configuration:
         with open(CONFIGURATION_PATH, 'r') as c:
             configuration = json.load(c)
             configuration = self._decode_json_values(configuration)
-        
+
         # Populate the attributes with the data 
         for key, value in configuration.items():
             setattr(self, key, value)
-            
+
         # Add info about the download time (last edit time)
         self._download_time = datetime.datetime.fromtimestamp(CONFIGURATION_PATH.stat().st_mtime)
-        
+
 
     @staticmethod
     def create_from_dictionary(data: Dict, path: Path = CONFIGURATION_PATH) -> 'Configuration':
@@ -83,20 +83,19 @@ class Configuration:
 
     def images_to_download(self) -> List[str]:
         """
-        List all the images that are marked as new, 
-        aka that they should be redownladed
+        List all the images that should be downloaded from the server
         """
         to_download = []
         for position, data in self.overlays.items():
-            if "changed" in data and data["changed"] == True:
-                to_download.append(position)
+            if "path" in data.keys():
+                to_download.append(data["path"])
         return to_download
 
 
     @staticmethod
     def _decode_json_values(json: Dict) -> Dict:
         """
-        Ensures the JSON is parser properly: converts string numbers and 
+        Ensures the JSON is parser properly: converts string numbers and
         string booleans into the correct types, recursively.
         """
         for key, value in json.items():
@@ -111,7 +110,7 @@ class Configuration:
                     value = True
                 else:
                     # Check if string number
-                    try:        
+                    try:
                         value = float(value)
                         value = int(value)
                     except ValueError:

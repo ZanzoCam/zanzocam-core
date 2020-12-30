@@ -46,11 +46,21 @@
     
     
     <script>
-    const button = document.getElementById("shoot");
-    const configure = document.getElementById("configure");
-    const feedback = document.getElementById("photo-feedback");
-        
+    function disableOnHotspot() {
+        if(window.location.href === "http://10.0.0.5"){
+            button = document.getElementById("shoot");
+            button.disabled = true;
+            feedback = document.getElementById("photo-feedback");
+            feedback.innerHTML = "Per scattare la foto di prova, riavvia il Raspberry "+
+			"e connettiti ad esso tramite il WiFi, invece che usare l'hotspot.";
+        }
+    }
+
     function shootFirstPicture() {
+        button = document.getElementById("shoot");
+        configure = document.getElementById("configure");
+        feedback = document.getElementById("photo-feedback");
+        
         button.innerHTML = "Sto scattando...";
         feedback.innerHTML = "Sto scattando (ci vuole un minuto)...";
         button.disabled = true;
@@ -76,14 +86,6 @@
             configure.disabled = false;
         });
     };
-    
-    if (window.location.href==="http://10.0.0.5"){
-        button.disabled = true;
-        feedback.innerHTML = "Impossibile scattare una foto di prova finche' " +
-            "la modalita' hotspot e' attiva. Configura il Raspberry Pi e riavvialo, " +
-            "poi trova il suo IP e connettiti con il browser. A quel punto potrai " +
-            "scattare la foto di prova". 
-    }
     </script>
     
 {% endblock %}

@@ -22,48 +22,48 @@ class Server:
                       fatal="No server data is available, so cannot fetch "
                       "a new configuration file. Exiting.")
             raise ValueError("No server data is available.")
-    
+
         self.url = url
         if username:
             self.username = username
             self.password = password
-            self.credentials = requests.auth.HTTPBasicAuth(username, password)    
+            self.credentials = requests.auth.HTTPBasicAuth(username, password)
 
 
     def update_configuration(self, old_configuration: Configuration) -> Configuration:
-        """ 
-        Download the new configuration file from the server and updates it 
+        """
+        Download the new configuration file from the server and updates it
         locally.
         """
         # NOTE: Errors here should escalate, so always rethrow them
         raw_response = {}
         try:
             log(f"Downloading the new configuration file from {self.url}")
-        
+
             # Fetch the new config
             auth = None
             raw_response = requests.get(self.url, auth=self.credentials, timeout=REQUEST_TIMEOUT)
             response = raw_response.json()
-            
+
             if "configuration" not in response:
                 raise ValueError("The server did not reply with the expected data.")
-            
+
             # If the old server replied something good, it's OK to backup its data.
             old_configuration.backup()
-                
+
             # Create new configuration object (overwrites configuration.json)
             configuration = Configuration.create_from_dictionary(response["configuration"])
 
             # Getting new overlays associated with the configuration
             self.download_overlay_images(configuration.images_to_download())
-        
+
             log("Configuration updated successfully.")
             return configuration
-            
+
         except Exception as e:
             log_error("Something went wrong fetching the new config file from the server.", e)
             log("The server replied:")
-            print(vars(raw_response))  
+            print(vars(raw_response))
             raise e
 
 
@@ -73,18 +73,20 @@ class Server:
         If it fails, logs it and replaces that image with a transparent pixel, 
         to avoid adding checks later in the processing.
         """
+        log(f"Downloading overlay images into {IMAGE_OVERLAYS_PATH}")
+        log(f"Images to download: {images_list}")
         url = self.url + ("" if self.url.endswith("/") else "/") + REMOTE_IMAGES_PATH
 
         for image in images_list:
             # Download from the server
-            r = requests.get(f"{remote_images_path}{image}", 
-                                stream=True, 
+            r = requests.get(f"{url}{image}",
+                                stream=True,
                                 auth=self.credentials,
                                 timeout=REQUEST_TIMEOUT)
             # Save image to file
-            if r.status_code == 200:                
+            if r.status_code == 200:
                 r.raw.decode_content = True
-                with open(local_images_path / image ,'wb') as f:
+                with open(IMAGE_OVERLAYS_PATH / image ,'wb') as f:
                     shutil.copyfileobj(r.raw, f)
                 log(f"New overlay image downloaded: {image}")
 
@@ -93,7 +95,7 @@ class Server:
                 log_error(f"New overlay image failed to download: {image}")
                 log(f"Response status code: {r.status_code}")
                 log("Replacing it with a transparent pixel.")
-                shutil.copy2(path / "fallback-pixel.png", IMAGE_OVERLAYS_PATH / image)      
+                shutil.copy2(IMAGE_OVERLAYS_PATH / "fallback-pixel.png", IMAGE_OVERLAYS_PATH / image)
 
 
     def upload_logs(self, path: Path = LOGS_PATH):
@@ -134,9 +136,13 @@ class Server:
                 log("The error is " + str(reply))
                 log("This error will be ignored.")
                 return
-                
+
             log("Logs uploaded successfully.")
-        
+
+            # Clear the logs once they have been uploaded
+            with open(path, "w") as l:
+                pass
+
         except Exception as e:
             log_error("Something happened while uploading the logs file. "
                       "This error will be ignored.", e)

@@ -351,15 +351,15 @@ class Overlay:
         Prepares an overlay containing an image.
         Might return None in case of issues. 
         """
-        overlay_image_path = IMAGE_OVERLAYS_PATH / self.image
+        overlay_image_path = IMAGE_OVERLAYS_PATH / self.path
 
         try:
             image = Image.open(overlay_image_path).convert("RGBA")
         except Exception as e:
-            log_error(f"Image '{picture_name}' can't be found or is "
+            log_error(f"Image '{overlay_image_path}' can't be found or is "
             "impossible to open. This overlay will be skipped.", e)
             return
-        
+
         try:
             # Calculate new dimension, retaining aspect ratio if necessary
             if self.width and not self.height:
@@ -369,7 +369,7 @@ class Overlay:
             if not self.width and self.height:
                 aspect_ratio = image.height / image.width
                 self.width = math.ceil(self.height / aspect_ratio)
-    
+
             # Do not resize if no size is given
             if self.width and self.height:
                 image = image.resize((self.width, self.height))
