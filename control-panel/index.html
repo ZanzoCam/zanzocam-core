@@ -159,9 +159,9 @@
                     if (localMode){
                         server_url = document.getElementById("server-url").value;
                         document.getElementById(prefix+key).alt = "Preview non disponibile in modalita' offline";
-                        document.getElementById(prefix+key).src = server_url + "config/images/" + value;
+                        document.getElementById(prefix+key).src = server_url + "pannello/config/images/" + value;
                     } else {
-                        document.getElementById(prefix+key).src = url + "config/images/" + value;
+                        document.getElementById(prefix+key).src = url + "pannello/config/images/" + value;
                     }
                     document.getElementById(prefix+key+"_current").innerHTML = "<b>"+value+"</b>";
                 // If it's not an object, you can safely fill the value in
@@ -304,7 +304,7 @@
         })
         .then(response => response.json())
         .then(reply => {
-            loadData(url);
+            loadDataFromServer(url);
         });
     }
     
@@ -422,7 +422,7 @@
         <hr />
     </div>
     
-    <div id="loading-local">
+    <div id="loading-local" style="display: none;">
         <hr />
         <h3>Scegli il file di configurazione da modificare:</h3>
         <input type="file" id="configFile">
@@ -1132,7 +1132,8 @@
 
 <script>
     // Figures out the endpoint URL and mode of operation (local/remote)
-    const url = window.location.href.substring(0, window.location.href.lastIndexOf("/")+1);
+    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf("/"));
+    const url = baseUrl.substring(0, baseUrl.lastIndexOf("/")+1); 
     const localMode = url.startsWith("file://");
     const form = document.getElementById('config');
     form.reset();
@@ -1162,18 +1163,98 @@
     // Hooks on the Save button click event to trigger the save operation
     form.onsubmit = async (e) => {
         e.preventDefault();
+        var button = document.getElementById("save");
+        button.disabled = true;
+        button.value = "Sto salvando...";
         saveConfiguration(url);
+        button.disabled = false;
+        button.value = "Salva";
     }
     
     // Loads the data at the start
     var last_loaded_data = null;
     if (localMode){
+        document.getElementsByClassName("sky")[0].classList.add("dark-sky");
         document.getElementById('loading').style.display = "none";
         document.getElementById('loading-local').style.display = "block";
     } else {
-        loadData(url);
+        document.getElementsByClassName("sky")[0].classList.add("light-sky");
+        loadDataFromServer(url);
     }
 </script>
+
+
+<script>
+/*
+ * Script for the rain effect
+ */
+
+const drops = 100;
+const interval = 50;
+const frequency = 0.5;
+const scaleMax = 2;
+const scaleMin = 1;
+const deltaY = 5;  // Falling speed
+const deltaX = -2;   // inclination
+const tilt = deltaX/deltaY;
+const pageWidth = window.innerWidth
+                || document.documentElement.clientWidth
+                || document.body.clientWidth;
+const pageHeight = window.innerHeight
+                || document.documentElement.clientHeight
+                || document.body.clientHeight;
+
+function randomFromInterval(from, to) {
+    return Math.floor(Math.random() * (to - from + 1) + from);
+}
+
+var dropsCreated = 0;
+function newDrop() {
+    var drop = document.createElement('div');
+    var dropIn = document.createElement('div');
+    drop.id = dropsCreated;
+    drop.classList.add("drop");
+
+    var distanceFactor = Math.random() * (scaleMax - scaleMin + 1) + scaleMin;
+    drop.style.transform = "scaleX("+(distanceFactor/2)+") scaleY("+distanceFactor+") rotate("+ (-tilt*45) +"deg)";
+    drop.dataset.speedY = Math.round(deltaY * distanceFactor * distanceFactor);
+    drop.dataset.speedX = Math.round(deltaX * distanceFactor * distanceFactor);
+
+    drop.style.left = randomFromInterval(-(pageHeight/deltaX), pageWidth) + 'px';
+    drop.appendChild(dropIn);
+    document.getElementsByClassName('dark-sky')[0].appendChild(drop);
+    
+    dropsCreated = dropsCreated + 1;
+    if (dropsCreated < drops){
+        setTimeout(newDrop, interval*frequency);
+    }
+}
+
+function physics() {
+    var dropsElements = document.getElementsByClassName('drop');
+    for (var i=0; i<dropsElements.length; i++) {
+    
+        var y = dropsElements[i].offsetTop + Number(dropsElements[i].dataset.speedY);
+        var x = dropsElements[i].offsetLeft + Number(dropsElements[i].dataset.speedX);
+        
+        if (y > pageHeight) {
+            dropsElements[i].style.top = '0';
+            dropsElements[i].style.left = randomFromInterval(0, pageWidth-(pageHeight*tilt)) + 'px';
+        }
+        else {
+            dropsElements[i].style.top = String(y) + 'px';
+            dropsElements[i].style.left = String(x) + 'px';
+        }
+    }
+    setTimeout(physics, interval);
+}
+
+if(document.getElementsByClassName('dark-sky').length > 0){
+    newDrop();
+    physics();
+}
+</script>
+
 
 </body>
 </html>

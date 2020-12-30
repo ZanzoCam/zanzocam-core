@@ -32,6 +32,7 @@ html {
 
 body {
   color: var(--dark-accent);
+  /* top, transparent black, faked with gradient */ 
   font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   font-size: 1.6em;
   font-weight: 300;
@@ -613,6 +614,7 @@ h4 {
   font-size: 2.2rem;
   letter-spacing: -.08rem;
   line-height: 1.35;
+  font-weight: 700;
 }
 
 h5 {
@@ -674,10 +676,6 @@ img {
   font-family: 'Raleway', sans-serif;
 }
 
-body {
-  background-color: #9ec3f2;
-}
-
 #container {
   max-width: 800px;
   margin: 3rem auto;
@@ -725,6 +723,27 @@ label {
     overflow-x: hidden;
 }
 
+.light-sky {
+    background: #3c92ffaa no-repeat fixed center; /*linear-gradient(#3c92ffaa, #3c92ff33) no-repeat fixed center;*/
+}
+.dark-sky {
+    background: #1d4582aa no-repeat fixed center; /* linear-gradient(#1d4582aa, #1d458233) no-repeat fixed center; */
+}
+
+.drop {
+    z-index: -100;
+    top: 0;
+    position: fixed;
+}
+
+.drop div {
+    background: rgb(108, 146, 172);
+    width: 10px;
+    height: 10px;
+    border-radius: 0 50% 50% 50%;
+    transform: rotate(45deg);
+}
+
 /*Time to finalise the cloud shape*/
 .cloud {
     z-index: -10;
@@ -734,7 +753,7 @@ label {
 	border-radius: 200px;
 	position: fixed;
 	
-	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0.2, 0.2), 0 6px 20px 0 rgba(0, 0, 0.2, 0.19);
 }
 
 .cloud:before, .cloud:after {

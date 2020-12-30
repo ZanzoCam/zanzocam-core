@@ -1,63 +1,69 @@
 {
-    "server": {
-        "url": "http://46.101.245.13/uploads/",
-        "username": "zanzocam-bot",
-        "password": "esperimento"
+  "server": {
+    "url": "http://46.101.245.13/uploads/",
+    "username": "zanzocam-bot",
+    "password": "esperimento"
+  },
+  "crontab": {
+    "minute": "*/10",
+    "hour": "*",
+    "day": "*",
+    "month": "*",
+    "weekday": "*"
+  },
+  "image": {
+    "name": "IMMAGINE",
+    "extension": "jpg",
+    "add_date_to_name": false,
+    "add_time_to_name": false,
+    "width": "2592",
+    "height": "1944",
+    "hor_flip": false,
+    "ver_flip": false,
+    "rotation": "0",
+    "background_color": "yellow",
+    "jpeg_quality": "90",
+    "jpeg_subsampling": "0"
+  },
+  "overlays": {
+    "top_right": {
+      "type": "image",
+      "over_the_picture": true,
+      "path": "logo-cai-con-testo.png",
+      "height": "100"
     },
-    "crontab": {
-        "minute": "*/3",
-        "hour": "*",
-        "day": "*",
-        "month": "*",
-        "weekday": "*"
+    "top_left": {
+      "type": "text",
+      "text": "%%TIME del %%DATE",
+      "font_color": "white",
+      "background_color": "#000000aa",
+      "font_size": "30",
+      "over_the_picture": true,
+      "date_format": "%d %B %Y",
+      "time_format": "%H:%M"
     },
-    "image": {
-        "name": "image",
-        "add_time_to_name": true,
-        "add_date_to_name": false,
-        "extension": "jpg",
-        "jpeg_quality": 90,
-        "jpeg_subsampling": 0,
-        "width": 2592,
-        "height": 1944,
-        "hor_flip": false,
-        "ver_flip": false,
-        "rotation": 0,
-        "background_color": "yellow"
+    "bottom_right": {
+      "type": "text",
+      "text": "QUESTO E\" SULLA FOTO",
+      "font_color": "red",
+      "background_color": "white",
+      "font_size": "40",
+      "over_the_picture": true
     },
-    "overlays": {
-        "top_left": {
-            "type": "text",
-            "text": "%%TIME del %%DATE",
-            "time_format": "%H:%M",
-            "date_format": "%d %B %Y",
-            "font_size": 30,
-            "font_color": "white",
-            "background_color": "#000000aa",
-            "over_the_picture": true
-        },
-        "top_right": {
-            "type": "text",
-            "text": "QUESTO E' SULLA FOTO",
-            "font_size": 40,
-            "font_color": "red",
-            "over_the_picture": true
-        },
-        "bottom_center": {
-            "type": "image",
-            "path": "logo-cai-trasparente.png",
-            "width": 200,
-            "padding_ratio": 0,
-            "over_the_picture": true
-        },
-        "bottom_left": {
-            "type": "text",
-            "text": "Questo e' fuori dalla foto ed e' un testo qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890...\nLunghissimo!",
-            "font_size": 25,
-            "font_color": "black",
-            "background_color": "white",
-            "over_the_picture": false
-        }
+    "bottom_center": {
+      "type": "image",
+      "over_the_picture": true,
+      "path": "logo-cai-trasparente.png",
+      "width": "500",
+      "padding_ratio": "0"
+    },
+    "bottom_left": {
+      "type": "text",
+      "text": "Questo e' fuori dalla foto ed e' un testo qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890 qwertyuiopasdfghjklzxcvbnm 1234567890...\nLunghissimo!",
+      "font_color": "black",
+      "background_color": "white",
+      "font_size": "25",
+      "over_the_picture": false
     }
+  }
 }
-
