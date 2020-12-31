@@ -24,6 +24,7 @@ class Server:
             raise ValueError("No server data is available.")
 
         self.url = url
+        self.credentials = None
         if username:
             self.username = username
             self.password = password
