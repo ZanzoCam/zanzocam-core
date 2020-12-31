@@ -14,7 +14,7 @@ class Server:
     """
     Handles all communication with the server.
     """
-    def __init__(self, url: str, username: Optional[str], password: Optional[str]):
+    def __init__(self, url: str, username: Optional[str] = None, password: Optional[str] = None):
         # URL is necessary
         if not url:
             log_error("Cannot contact the server: no server URL found in "
