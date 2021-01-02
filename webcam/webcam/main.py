@@ -34,7 +34,7 @@ def main():
                   e, fatal="cannot proceed without any data. Exiting.")
         return
 
-    server = Server(**old_configuration.server)
+    server = Server(old_configuration.server)
 
     # Getting the new configuration from the server
     try:
@@ -51,7 +51,7 @@ def main():
     print(configuration)
 
     # Re-initialize the server
-    server = Server(**configuration.server)
+    server = Server(configuration.server)
 
     # Send logs of the previous run
     server.upload_logs()
@@ -98,7 +98,7 @@ def main():
     # Send the picture
     if os.path.exists(PATH / camera.processed_image_name):
         server.upload_picture(PATH / camera.processed_image_name)
-        camera.clean_up()
+        #camera.clean_up()
 
     # If we had trouble with the new config, restore the old from the backup
     # TODO assess the situation better! Maybe the failure is unrelated.
