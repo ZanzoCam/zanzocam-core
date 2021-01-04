@@ -72,6 +72,12 @@ class Server:
         log(f"Images to download: {images_list}")
 
         for image_name in images_list:
+            if not image_name or image_name == "":
+                log_error("This overlay image has no name! Skipping. "+
+                          "This is probably an empty 'path' entry in an overlay "+
+                          "configuration: please remove it or give it a value!")
+                continue
+                
             try:
                 # Download image from the server
                 self._server.download_overlay_image(image_name)
@@ -102,24 +108,68 @@ class Server:
             log_error("Something happened while uploading the logs file. "
                       "This error will be ignored.", e)
             return
+    
+    
+    def upload_failure_report(self, wrong_conf: Dict[str, Any], 
+            right_conf: Dict[str, Any], logs_path: Path = LOGS_PATH, ) -> None:
+        """ 
+        Send the logs to the server.
+        """
+        # NOTE: exceptions in here should NOT escalate. Catch everything!!
+        failure_report_path = PATH / "failure_report.txt"
+        log(f"Sending failure report to {self._server.endpoint}")
+        
+        logs = ""
+        try:
+            if os.path.exists(logs_path):
+                with open(logs_path, "r") as l:
+                    logs = l.readlines()
+                    logs = "".join(logs)
+        except Exception as e:
+            log_error("Something went wrong opening the logs file."
+                      "The report will contain no logs. This error will be ignored.", e)
+
+        if not logs or logs == "":
+            logs = " ==> No logs found!! <== "
+        
+        with open(failure_report_path, "w") as report:
+            report.writelines(
+                "**********************\n"+
+                "*   FAILURE REPORT   *\n"+
+                "**********************\n" +
+                "Failed to use the server information contained in the new configuration file.\n"+
+                "New, NOT working server information is the following:\n"+
+                json.dumps(wrong_conf, indent=4) +
+                "\nPlease fix the above information in the configuration file "+
+                "that is hosted here, or fix the affected server.\n" +
+                "ZANZOCAM will keep trying to download a new config from this server instead:\n"+
+                json.dumps(right_conf, indent=4) +
+                "\nHere is the log of the last run before the crash:" +
+                "(you might need to wait for TWO failures before seeing the errors)." +
+                logs + "\n\n"
+            )
+        # Send the logs
+        try:
+            self._server.send_logs(failure_report_path)
+            log("Failure report uploaded successfully.")
+
+        except Exception as e:
+            log_error("Something happened while uploading the failure report. "
+                      "This error will be ignored.", e)
+            return
 
 
-    def upload_picture(self, image_name: str) -> None:
+    def upload_picture(self, image_name: str, image_path: Path) -> None:
         """
         Uploads the new picture to the server.
         """
-        # Do NOT escalate errors from here: catch everything
+        # Note: Errors here MUST escalate
         log(f"Uploading picture to {self._server.endpoint}")
-        try:
-            # Upload the picture
-            self._server.upload_picture(image_name)
-            log("Pictures uploaded successfully.")
-                        
-        except Exception as e:
-            log_error("Something happened uploading the pictures!", e)
-            log("WARNING: the image was probably not sent!")
-
-
+        # Upload the picture
+        self._server.upload_picture(image_name, image_path)
+        log(f"Picture {image_name} uploaded successfully.")
+        
+        
 
 ################################################################################
 
@@ -228,7 +278,7 @@ class _HttpServer:
         
         # Make sure the server did not return an error
         reply = response.get("logs", "No field named 'logs' in the response")
-        if reply != "":
+        if reply != "" and reply != "Logs not detected":
             log_error("The server replied with an error.")
             log("The server replied:")
             log(vars(raw_response))  
@@ -236,17 +286,18 @@ class _HttpServer:
             raise ValueError("The server replied with:" + str(reply))
 
 
-    def upload_picture(self, image_name: str) -> None:
+    def upload_picture(self, image_name: str, image_path: Path) -> None:
         """
         Uploads the new picture to the server.
         """
         # NOTE: Errors from here must escalate
-        if not image_name:
-            log("Cannot upload the picture: picture location not given", 
-                fatal="Picture won't be uploaded.")        
+        if not image_name or not image_path:
+            log(f"Cannot upload the picture: picture name ({image_name}) " +
+                f"or location ({image_location}) not given.", 
+                fatal="Picture won't be uploaded.")
 
         # Upload the picture
-        files = {'photo': open(image_name, 'rb')}
+        files = {'photo': open(image_path, 'rb')}
         raw_response = requests.post(self.url, 
                                      files=files, 
                                      auth=self.credentials,
@@ -372,25 +423,25 @@ class _FtpServer:
                             "uploading the logs: " + response)
 
 
-    def upload_picture(self, image_name: str) -> None:
+    def upload_picture(self, image_name: str, image_path: Path) -> None:
         """
         Uploads the new picture to the server.
         """
         # NOTE: Errors from here must escalate
-        if not image_name:
-            log("Cannot upload the picture: picture location not given", 
+        if not image_name or not image_path:
+            log(f"Cannot upload the picture: picture name ({image_name}) " +
+                f"or location ({image_location}) not given.", 
                 fatal="Picture won't be uploaded.")
         
         # Make sure the file in question exists
-        if not os.path.exists(image_name):
-            log(f"Cannot upload the picture: image file {image_name} does not exist!", 
+        if not os.path.exists(image_path):
+            log(f"Cannot upload the picture: {image_path} does not exist!", 
                 fatal="Picture won't be uploaded.")
-            raise ValueError(f"Picture file {image_name} does not exist")
+            raise ValueError(f"Picture file {image_path} does not exist")
         
         # Fetch the new overlay
-        with open(image_name ,"rb") as image:
-            response = self._ftp_client.storbinary(
-                f"STOR pictures/{image_name}", image)
+        response = self._ftp_client.storbinary(
+            f"STOR pictures/{image_name}", open(image_path ,"rb"))
                 
         # Make sure the server did not reply with an error
         if not "226" in response:

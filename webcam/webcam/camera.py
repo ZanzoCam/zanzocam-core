@@ -54,14 +54,14 @@ class Camera:
         # Image name
         self.photo_name = PATH / '.temp_image.jpg'
         now = datetime.datetime.now()
-        processed_image_name = self.name
+        self.processed_image_name = self.name
         
         if self.add_date_to_name:
-            processed_image_name += "_" + now.strftime("%Y-%m-%d")
+            self.processed_image_name += "_" + now.strftime("%Y-%m-%d")
         if self.add_time_to_name:
-            processed_image_name += "_" + now.strftime("%H:%M:%S")
-        processed_image_name += "." + self.extension
-        self.processed_image_name = PATH / processed_image_name
+            self.processed_image_name += "_" + now.strftime("%H:%M:%S")
+        self.processed_image_name += "." + self.extension
+        self.processed_image_path = PATH / self.processed_image_name
         
 
     def __getattr__(self, name):
@@ -81,7 +81,7 @@ class Camera:
         log("Cleaning up image files")
         try:
             os.remove(self.photo_name)
-            os.remove(self.processed_image_name)
+            os.remove(self.processed_image_path)
         except Exception as e:
             log_error(f"Failed to clean up image files.", e)
             log("WARNING: The filesystem might fill up if the old pictures "
