@@ -374,10 +374,10 @@ class Overlay:
             if self.width and self.height:
                 image = image.resize((self.width, self.height))
 
-            padding_width = math.ceil(self.width*self.padding_ratio)
-            padding_height = math.ceil(self.height*self.padding_ratio)
+            padding_width = math.ceil(image.width*self.padding_ratio)
+            padding_height = math.ceil(image.height*self.padding_ratio)
 
-            overlay_size = (self.width+padding_width*2, self.height+padding_height*2)
+            overlay_size = (image.width+padding_width*2, image.height+padding_height*2)
             overlay = Image.new("RGBA", overlay_size, color=self.background_color)
             overlay.paste(image, (padding_width, padding_height), mask=image)
 
