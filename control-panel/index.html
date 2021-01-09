@@ -135,6 +135,16 @@
 
 	    // Get all the form input elements
 	    const { elements } = document.querySelector('form')
+	    
+	    // Check to Niente all the radio boxes for the overlays
+	    //for (const radio of elements){
+	    //    if (radio.type === "radio"){
+	    //        keys = radio.name.split("__");
+	    //        if (keys.length===3 && keys[0]==="overlays" && keys[2]==="type"){
+	                
+	    //        }
+	    //    }
+	    //}
         
         for (const [ key, value ] of Object.entries(data) ) {
             // Nested objects should be processed recursively
@@ -169,6 +179,10 @@
                     field.value = value
                 }
             }
+            // Special processing is needed for the server protocol radio switch
+	        if (prefix == "server__" &&  key == "protocol"){
+	            toggle_server_protocol(value);
+	        }
 	        // Special processing is needed for the overlay type radio switch
 	        prefixes = prefix.split("__");
 	        if (prefixes[0] == "overlays" &&  key == "type"){
@@ -218,6 +232,11 @@
         Array.from(form.elements).forEach((field) => {
             key = field.name;
             value = formData.get(key);
+            
+            // Fields that are hidden should not be processed
+            // but radios might be hidden by CSS to make the button style
+            if (!field.offsetParent && field.type !== "radio") { return; }
+            
             // Empty strings are null
             if (value===""){ value = null; }
             
@@ -230,7 +249,7 @@
             if (value===null && field.type === "file"){
                 value = deepGet(key, last_loaded_data);
             }
-            if (value !== null){ 
+            if (value !== null && value !== "" && typeof value !== 'undefined'){ 
 	            // Get the proper value from filepickers
 	            if (value instanceof File) {
                     value = value.name;
@@ -239,14 +258,7 @@
                 deepSet(key, value, object);
 	        }
         });
-        // Custom processing of the overlays: 
-        // remove fields related to the other types of overlays
         filtered_object = object
-        Object.entries(object["overlays"]).forEach(([key, value]) => {
-            if (!value.hasOwnProperty("type")){
-                delete filtered_object["overlays"][key];
-            }
-        });
         return filtered_object;
     }
 
@@ -380,6 +392,17 @@
     }
         
     
+    // Toggle http or ftp in the server section
+    function toggle_server_protocol(value) {
+        var http_block = document.getElementById("server_protocol_http-vars");
+        var ftp_block = document.getElementById("server_protocol_ftp-vars");
+        http_block.style.display = value==="http" ? "block" : "none";
+        ftp_block.style.display = value==="ftp" ? "block" : "none";
+        document.querySelectorAll('[name^="server__protocol__'+ value +'"]').forEach((item) => {
+            item.value = "";
+        });
+    }
+    
     // Toggle text or image config in the overlays section
     function toggle_type_of_overlay(position, value) {
         var text_block = document.getElementById(position+"_text-vars");
@@ -422,29 +445,46 @@
         <hr />
     </div>
     
-    <div id="loading-local" style="display: none;">
-        <hr />
+    <div id="loading-local" class="sheet" style="display: none;">
         <h3>Scegli il file di configurazione da modificare:</h3>
         <input type="file" id="configFile">
-        
-        <hr />
     </div>
     
     <div id="main-form" style="display:none;">
     
         <form id="config">
-            <h3>Server:</h3>
-                <label for="server__url">URL del server:</label>
-                <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
+            <div class="sheet">
+                <div class="row">
+                    <h3>Server:</h3>
+                    <label class="toggle">
+                        <input type="radio" value="HTTP" name="server__protocol" checked onclick="javascript:toggle_server_protocol('http')">
+                        <span class="label">HTTP</span>
+                    </label><br>
+                    <label class="toggle">
+                        <input type="radio" value="FTP" name="server__protocol" checked onclick="javascript:toggle_server_protocol('ftp')">
+                        <span class="label">FTP</span>
+                    </label><br>
+                </div> 
                 
-                <label for="server__username">Username del server (se necessario):</label>
+                <div id="server_protocol_http-vars">
+                    <label for="server__url">URL del server:</label>
+                    <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
+                </div>
+                
+                <div id="server_protocol_ftp-vars" style="display: none;">
+                    <label for="server__hostname">Hostname:</label>
+                    <input type="text" placeholder="example.com" id="server-hostname" name="server__hostname">
+                </div>
+                
+                <label for="server__username">Username (se necessario):</label>
                 <input type="text" placeholder="username"  name="server__username">
                 
-                <label for="server__password">Password del server (se necessaria):</label>
+                <label for="server__password">Password (se necessaria):</label>
                 <input type="text" placeholder="password"  name="server__password">
-                
-            <hr />        
-            <h3>Crontab:</h3>
+            </div>
+            
+            <div class="sheet">
+                <h3>Crontab:</h3>
             
                 <div class="row">
                     <div class="column">
@@ -469,11 +509,12 @@
                     </div>
                 </div>
             
-            <hr />
+            </div>
             
      <!-------------------------------------------------------------------------->
         
-            <h3>Foto:</h3>
+            <div class="sheet">
+                <h3>Foto:</h3>
                 
                 <div class="row">
                     <div class="column column-75">
@@ -547,584 +588,592 @@
                         <input type="text" placeholder="0"  name="image__jpeg_subsampling">
                     </div>
                 </div>
+            </div>
                 
-                <hr />        
+            <div class="sheet">
                 <h3>Testo e Immagini:</h3>
 
-     <!-------------------------------------------------------------------------->
-
-                <h4>In alto a destra</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio" value="" name="overlays__top_right__type" checked onclick="javascript:toggle_type_of_overlay('top_right', 'neither')">
-                        <label class="label-inline" for="top_right_empty">Niente</label><br>
+ <!-------------------------------------------------------------------------->
+                <div class="sheet-inner">
+                    <div class="row">
+                        <h4>In alto a destra</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__top_right__type" checked onclick="javascript:toggle_type_of_overlay('top_right', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__top_right__type" onclick="javascript:toggle_type_of_overlay('top_right', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__top_right__type" onclick="javascript:toggle_type_of_overlay('top_right', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
+                    </div> 
+                    
+                    <div id="top_right_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="overlays__top_right__text">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__top_right__text"></textarea>
+                        
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label for="overlays__top_right__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_right__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__top_right__background_color">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__top_right__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_right__over_the_picture">
+                                <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_right__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__top_right__time_format">
+                            </div>
+                        </div>
                     </div>
-                    <div class="column">
-                        <input type="radio" value="text" name="overlays__top_right__type" onclick="javascript:toggle_type_of_overlay('top_right', 'text')">
-                        <label class="label-inline" for="top_right_text">Testo</label><br>
+                    
+                    <div id="top_right_image-vars"  class="overlay-fields" style="display: none;">
+                        <div class="row">
+                            <div class="column">
+                                <label>Immagine Attuale: <span id="overlays__top_right__path_current"></span></label>
+                                <img id="overlays__top_right__path" height="200"></img>
+                            </div>
+                            <div class="column vertical-center">
+                                <label>Cambia immagine</label>
+                                <input type="file" class="image-picker" name="overlays__top_right__path">
+                            </div>
+                        </div>
+                           
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_right__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_right__height">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__top_right__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_right__over_the_picture">
+                                <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
+                        </div>
                     </div>
-                    <div class="column">    
-                        <input type="radio" value="image" name="overlays__top_right__type" onclick="javascript:toggle_type_of_overlay('top_right', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
-                    </div>
-                </div> 
+                    
+                </div>
                 
-                <div id="top_right_text-vars" style="display: none;">
-                    <label for="overlays__top_right__text">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__top_right__text"></textarea>
+     <!-------------------------------------------------------------------------->
+                
+               <div class="sheet-inner">
+  
+                   <div class="row">
+                        <h4>In alto al centro</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__top_center__type" checked onclick="javascript:toggle_type_of_overlay('top_center', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__top_center__type" onclick="javascript:toggle_type_of_overlay('top_center', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__top_center__type" onclick="javascript:toggle_type_of_overlay('top_center', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
+                    </div> 
                     
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label for="overlays__top_right__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_right__font_color">
+                    <div id="top_center_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="top_center_text-content">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__top_center__text"></textarea>
+                        
+                         <div class="row">
+                            <div class="column">
+                                <label for="overlays__top_center__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_center__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__top_center__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__top_center__background_color">
+                            </div>
                         </div>
-                        <div class="column">
-                            <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__top_right__background_color">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__top_center__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_center__over_the_picture">
+                                <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__top_right__font_size">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_center__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__top_center__time_format">
+                            </div>
                         </div>
+                    </div>                
+         
+                    <div id="top_center_image-vars"  class="overlay-fields" style="display: none;">
                         <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_right__over_the_picture">
-                            <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__top_right__date_format">
-                        </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__top_right__time_format">
-                        </div>
-                    </div>
-                </div>                
-     
-                <div id="top_right_image-vars" style="display: none;">
-                    <div class="row">
-                        <div class="column">
-                            <label>Immagine Attuale: <span id="overlays__top_right__path_current"></span></label>
-                            <img id="overlays__top_right__path" height="200"></img>
+                            <label>Immagine Attuale: <span id="overlays__top_center__path_current"></span></label>
+                            <img id="overlays__top_center__path" height="200"></img>
                         </div>
                         <div class="column vertical-center">
                             <label>Cambia immagine</label>
-                            <input type="file" class="image-picker" name="overlays__top_right__path">
+                            <input type="file" class="image-picker" name="overlays__top_center__path">
                         </div>
-                    </div>
-                       
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_right__width">
+                            
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_center__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_center__height">
+                            </div>
                         </div>
-                        <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_right__height">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__top_right__padding_ratio">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_right__over_the_picture">
-                            <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
-                        </div>
-                    </div>
-                </div>
-                
-     <!-------------------------------------------------------------------------->
-                
-                <br>
-                <h4>In alto al centro</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio"  value="" name="overlays__top_center__type" checked onclick="javascript:toggle_type_of_overlay('top_center', 'neither')">
-                        <label class="label-inline" for="top_center_empty">Niente</label><br>
-                    </div>
-                    <div class="column">
-                        <input type="radio"  value="text" name="overlays__top_center__type" onclick="javascript:toggle_type_of_overlay('top_center', 'text')">
-                        <label class="label-inline" for="top_center_text">Testo</label><br>
-                    </div>
-                    <div class="column">    
-                        <input type="radio"  value="image" name="overlays__top_center__type" onclick="javascript:toggle_type_of_overlay('top_center', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
-                    </div>
-                </div>  
-                
-                <div id="top_center_text-vars" style="display: none;">
-                    <label for="top_center_text-content">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__top_center__text"></textarea>
-                    
-                     <div class="row">
-                        <div class="column">
-                            <label for="overlays__top_center__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_center__font_color">
-                        </div>
-                        <div class="column">
-                            <label for="overlays__top_center__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__top_center__background_color">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__top_center__font_size">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_center__over_the_picture">
-                            <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__top_center__date_format">
-                        </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__top_center__time_format">
-                        </div>
-                    </div>
-                </div>                
-     
-                <div id="top_center_image-vars" style="display: none;">
-                    <div class="column">
-                        <label>Immagine Attuale: <span id="overlays__top_center__path_current"></span></label>
-                        <img id="overlays__top_center__path" height="200"></img>
-                    </div>
-                    <div class="column vertical-center">
-                        <label>Cambia immagine</label>
-                        <input type="file" class="image-picker" name="overlays__top_center__path">
-                    </div>
                         
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_center__width">
-                        </div>
-                        <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_center__height">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__top_center__padding_ratio">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_center__over_the_picture">
-                            <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__top_center__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_center__over_the_picture">
+                                <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
                         </div>
                     </div>
                 </div>
 
      <!-------------------------------------------------------------------------->
                 
-                <br>
-                <h4>In alto a sinistra</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio" value="" name="overlays__top_left__type" checked onclick="javascript:toggle_type_of_overlay('top_left', 'neither')">
-                        <label class="label-inline" for="top_left_empty">Niente</label><br>
-                    </div>
-                    <div class="column">
-                        <input type="radio" value="text" name="overlays__top_left__type" onclick="javascript:toggle_type_of_overlay('top_left', 'text')">
-                        <label class="label-inline" for="top_left_text">Testo</label><br>
-                    </div>
-                    <div class="column">    
-                        <input type="radio" value="image" name="overlays__top_left__type" onclick="javascript:toggle_type_of_overlay('top_left', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
-                    </div>
-                </div>  
+               <div class="sheet-inner">
+ 
+                   <div class="row">
+                        <h4>In alto a sinistra</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__top_left__type" checked onclick="javascript:toggle_type_of_overlay('top_left', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__top_left__type" onclick="javascript:toggle_type_of_overlay('top_left', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__top_left__type" onclick="javascript:toggle_type_of_overlay('top_left', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
+                    </div> 
 
-                <div id="top_left_text-vars" style="display: none;">
-                    <label for="top_left_text-content">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__top_left__text"></textarea>
-                    
-                     <div class="row">
-                        <div class="column">
-                            <label for="overlays__top_left__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_left__font_color">
+                    <div id="top_left_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="top_left_text-content">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__top_left__text"></textarea>
+                        
+                         <div class="row">
+                            <div class="column">
+                                <label for="overlays__top_left__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__top_left__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__top_left__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__top_left__background_color">
+                            </div>
                         </div>
-                        <div class="column">
-                            <label for="overlays__top_left__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__top_left__background_color">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__top_left__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_left__over_the_picture">
+                                <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__top_left__font_size">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_left__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__top_left__time_format">
+                            </div>
                         </div>
+                    </div>                
+         
+                    <div id="top_left_image-vars"  class="overlay-fields" style="display: none;">
                         <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_left__over_the_picture">
-                            <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
+                            <label>Immagine Attuale: <span id="overlays__top_left__path_current"></span></label>
+                            <img id="overlays__top_left__path" height="200"></img>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__top_left__date_format">
+                        <div class="column vertical-center">
+                            <label>Cambia immagine</label>
+                            <input type="file" class="image-picker" name="overlays__top_left__path">
                         </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__top_left__time_format">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_left__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__top_left__height">
+                            </div>
                         </div>
-                    </div>
-                </div>                
-     
-                <div id="top_left_image-vars" style="display: none;">
-                    <div class="column">
-                        <label>Immagine Attuale: <span id="overlays__top_left__path_current"></span></label>
-                        <img id="overlays__top_left__path" height="200"></img>
-                    </div>
-                    <div class="column vertical-center">
-                        <label>Cambia immagine</label>
-                        <input type="file" class="image-picker" name="overlays__top_left__path">
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_left__width">
-                        </div>
-                        <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__top_left__height">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__top_left__padding_ratio">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__top_left__over_the_picture">
-                            <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__top_left__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__top_left__over_the_picture">
+                                <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
                         </div>
                     </div>
                 </div>
 
      <!-------------------------------------------------------------------------->
                 
-                <br>
-                <h4>In basso a destra</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio" value="" name="overlays__bottom_right__type" checked onclick="javascript:toggle_type_of_overlay('bottom_right', 'neither')">
-                        <label class="label-inline" for="bottom_right_empty">Niente</label><br>
+                <div class="sheet-inner">
+                    <div class="row">
+                        <h4>In basso a destra</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__bottom_right__type" checked onclick="javascript:toggle_type_of_overlay('bottom_right', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__bottom_right__type" onclick="javascript:toggle_type_of_overlay('bottom_right', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__bottom_right__type" onclick="javascript:toggle_type_of_overlay('bottom_right', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
                     </div>
-                    <div class="column">
-                        <input type="radio" value="text" name="overlays__bottom_right__type" onclick="javascript:toggle_type_of_overlay('bottom_right', 'text')">
-                        <label class="label-inline" for="bottom_right_text">Testo</label><br>
-                    </div>
-                    <div class="column">    
-                        <input type="radio" value="image" name="overlays__bottom_right__type" onclick="javascript:toggle_type_of_overlay('bottom_right', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
-                    </div>
-                </div>  
 
-                <div id="bottom_right_text-vars" style="display: none;">
-                    <label for="bottom_right_text-content">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__bottom_right__text"></textarea>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label for="overlays__bottom_right__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_right__font_color">
+                    <div id="bottom_right_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="bottom_right_text-content">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__bottom_right__text"></textarea>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label for="overlays__bottom_right__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_right__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__bottom_right__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__bottom_right__background_color">
+                            </div>
                         </div>
-                        <div class="column">
-                            <label for="overlays__bottom_right__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__bottom_right__background_color">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__bottom_right__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__bottom_right__font_size">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_right__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_right__time_format">
+                            </div>
                         </div>
+                    </div>                
+         
+                    <div id="bottom_right_image-vars"  class="overlay-fields" style="display: none;">
                         <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
+                            <label>Immagine Attuale: <span id="overlays__bottom_right__path_current"></span></label>
+                            <img id="overlays__bottom_right__path" height="200"></img>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_right__date_format">
+                        <div class="column vertical-center">
+                            <label>Cambia immagine</label>
+                            <input type="file" class="image-picker" name="overlays__bottom_right__path">
                         </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__bottom_right__time_format">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_right__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_right__height">
+                            </div>
                         </div>
-                    </div>
-                </div>                
-     
-                <div id="bottom_right_image-vars" style="display: none;">
-                    <div class="column">
-                        <label>Immagine Attuale: <span id="overlays__bottom_right__path_current"></span></label>
-                        <img id="overlays__bottom_right__path" height="200"></img>
-                    </div>
-                    <div class="column vertical-center">
-                        <label>Cambia immagine</label>
-                        <input type="file" class="image-picker" name="overlays__bottom_right__path">
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_right__width">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__bottom_right__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
                         </div>
-                        <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_right__height">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__bottom_right__padding_ratio">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
-                        </div>
-                    </div>
-                </div>  
-
+                    </div>  
+                </div>
 
      <!-------------------------------------------------------------------------->
                 
-                <br>
-                <h4>In basso al centro</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio" value="" name="overlays__bottom_center__type" checked onclick="javascript:toggle_type_of_overlay('bottom_center', 'neither')">
-                        <label class="label-inline" for="bottom_center_empty">Niente</label><br>
-                    </div>
-                    <div class="column">
-                        <input type="radio" value="text" name="overlays__bottom_center__type" onclick="javascript:toggle_type_of_overlay('bottom_center', 'text')">
-                        <label class="label-inline" for="bottom_center_text">Testo</label><br>
-                    </div>
-                    <div class="column">    
-                        <input type="radio" value="image" name="overlays__bottom_center__type" onclick="javascript:toggle_type_of_overlay('bottom_center', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
-                    </div>
-                </div>
-                
-                <div id="bottom_center_text-vars" style="display: none;">
-                    <label for="bottom_center_text-content">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__bottom_center__text"></textarea>
-                    
-                     <div class="row">
-                        <div class="column">
-                            <label for="overlays__bottom_center__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_center__font_color">
-                        </div>
-                        <div class="column">
-                            <label for="overlays__bottom_center__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__bottom_center__background_color">
-                        </div>
-                    </div>
-                    
+                <div class="sheet-inner">
                     <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__bottom_center__font_size">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
-                        </div>
+                        <h4>In basso al centro</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__bottom_center__type" checked onclick="javascript:toggle_type_of_overlay('bottom_center', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__bottom_center__type" onclick="javascript:toggle_type_of_overlay('bottom_center', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__bottom_center__type" onclick="javascript:toggle_type_of_overlay('bottom_center', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
                     </div>
                     
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_center__date_format">
+                    <div id="bottom_center_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="bottom_center_text-content">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__bottom_center__text"></textarea>
+                        
+                         <div class="row">
+                            <div class="column">
+                                <label for="overlays__bottom_center__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_center__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__bottom_center__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__bottom_center__background_color">
+                            </div>
                         </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__bottom_center__time_format">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__bottom_center__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
                         </div>
-                    </div>
-                </div>                
-     
-                <div id="bottom_center_image-vars" style="display: none;">
-                    <div class="column">
-                        <label>Immagine Attuale: <span id="overlays__bottom_center__path_current"></span></label>
-                        <img id="overlays__bottom_center__path" height="200"></img>
-                    </div>
-                    <div class="column vertical-center">
-                        <label>Cambia immagine</label>
-                        <input type="file"  class="image-picker" name="overlays__bottom_center__path">
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_center__width">
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_center__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_center__time_format">
+                            </div>
                         </div>
+                    </div>                
+         
+                    <div id="bottom_center_image-vars"  class="overlay-fields" style="display: none;">
                         <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_center__height">
+                            <label>Immagine Attuale: <span id="overlays__bottom_center__path_current"></span></label>
+                            <img id="overlays__bottom_center__path" height="200"></img>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__bottom_center__padding_ratio">
+                        <div class="column vertical-center">
+                            <label>Cambia immagine</label>
+                            <input type="file"  class="image-picker" name="overlays__bottom_center__path">
                         </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_center__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_center__height">
+                            </div>
                         </div>
-                    </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__bottom_center__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
+                        </div>
+                    </div> 
                 </div> 
 
      <!-------------------------------------------------------------------------->
                 
-                <br>
-                <h4>In basso a sinistra</h4>
-                <div class="row">
-                    <div class="column">
-                        <input type="radio" value="" name="overlays__bottom_left__type" checked onclick="javascript:toggle_type_of_overlay('bottom_left', 'neither')">
-                        <label class="label-inline" for="bottom_left_empty">Niente</label><br>
+                <div class="sheet-inner">
+                    <div class="row">
+                        <h4>In basso a sinistra</h4>
+                        <label class="toggle">
+                            <input type="radio" value="" name="overlays__bottom_left__type" checked onclick="javascript:toggle_type_of_overlay('bottom_left', 'neither')">
+                            <span class="label">Niente</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="text" name="overlays__bottom_left__type" onclick="javascript:toggle_type_of_overlay('bottom_left', 'text')">
+                            <span class="label">Testo</span>
+                        </label><br>
+                        <label class="toggle">
+                            <input type="radio" value="image" name="overlays__bottom_left__type" onclick="javascript:toggle_type_of_overlay('bottom_left', 'image')">
+                            <span class="label">Immagine</span>
+                        </label><br>
                     </div>
-                    <div class="column">
-                        <input type="radio" value="text" name="overlays__bottom_left__type" onclick="javascript:toggle_type_of_overlay('bottom_left', 'text')">
-                        <label class="label-inline" for="bottom_left_text">Testo</label><br>
-                    </div>
-                    <div class="column">    
-                        <input type="radio" value="image" name="overlays__bottom_left__type" onclick="javascript:toggle_type_of_overlay('bottom_left', 'image')">
-                        <label class="label-inline" for="female">Immagine</label><br>
+                    
+                    <div id="bottom_left_text-vars"  class="overlay-fields" style="display: none;">
+                        <label for="bottom_left_text-content">Testo</label>
+                        <textarea placeholder="Testo..." name="overlays__bottom_left__text"></textarea>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label for="overlays__bottom_left__font_color">Colore Testo (RGBA):</label>
+                                <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_left__font_color">
+                            </div>
+                            <div class="column">
+                                <label for="overlays__bottom_left__background_color">Colore Sfondo (RGBA):</label>
+                                <input type="text" placeholder="#00000000"  name="overlays__bottom_left__background_color">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Dimensione del font:</label>
+                                <input type="text" placeholder="30"  name="overlays__bottom_left__font_size">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
+                                <br> 
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_left__date_format">
+                            </div>
+                            <div class="column">
+                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_left__time_format">
+                            </div>
+                        </div>
+                    </div>                
+         
+                    <div id="bottom_left_image-vars"  class="overlay-fields" style="display: none;">
+                        <div class="column">
+                            <label>Immagine Attuale: <span id="overlays__bottom_left__path_current"></span></label>
+                            <img id="overlays__bottom_left__path" height="200"></img>
+                        </div>
+                        <div class="column vertical-center">
+                            <label>Cambia immagine</label>
+                            <input type="file" class="image-picker" name="overlays__bottom_left__path">
+                        </div>
+
+                        <div class="row">
+                            <div class="column">
+                                <label>Larghezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_left__width">
+                            </div>
+                            <div class="column">
+                                <label>Altezza:</label>
+                                <input type="text" placeholder="100"  name="overlays__bottom_left__height">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="column">
+                                <label>Margine (% dim. immagine):</label>
+                                <input type="text" placeholder="20"  name="overlays__bottom_left__padding_ratio">
+                            </div>
+                            <div class="column">
+                                <br>
+                                <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
+                                <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
+                                <br>                    
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="bottom_left_text-vars" style="display: none;">
-                    <label for="bottom_left_text-content">Testo</label>
-                    <textarea placeholder="Testo..." name="overlays__bottom_left__text"></textarea>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label for="overlays__bottom_left__font_color">Colore Testo (RGBA):</label>
-                            <input type="text" placeholder="#FFFFFFFF"  name="overlays__bottom_left__font_color">
-                        </div>
-                        <div class="column">
-                            <label for="overlays__bottom_left__background_color">Colore Sfondo (RGBA):</label>
-                            <input type="text" placeholder="#00000000"  name="overlays__bottom_left__background_color">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Dimensione del font:</label>
-                            <input type="text" placeholder="30"  name="overlays__bottom_left__font_size">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
-                            <br> 
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_left__date_format">
-                        </div>
-                        <div class="column">
-                            <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                            <input type="text" placeholder="%H:%M"  name="overlays__bottom_left__time_format">
-                        </div>
-                    </div>
-                </div>                
-     
-                <div id="bottom_left_image-vars" style="display: none;">
-                    <div class="column">
-                        <label>Immagine Attuale: <span id="overlays__bottom_left__path_current"></span></label>
-                        <img id="overlays__bottom_left__path" height="200"></img>
-                    </div>
-                    <div class="column vertical-center">
-                        <label>Cambia immagine</label>
-                        <input type="file" class="image-picker" name="overlays__bottom_left__path">
-                    </div>
-
-                    <div class="row">
-                        <div class="column">
-                            <label>Larghezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_left__width">
-                        </div>
-                        <div class="column">
-                            <label>Altezza:</label>
-                            <input type="text" placeholder="100"  name="overlays__bottom_left__height">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="column">
-                            <label>Margine (% dim. immagine):</label>
-                            <input type="text" placeholder="20"  name="overlays__bottom_left__padding_ratio">
-                        </div>
-                        <div class="column">
-                            <br>
-                            <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
-                            <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
-                            <br>                    
-                        </div>
-                    </div>
-                </div>  
+            </div>
 
      <!-------------------------------------------------------------------------->
              
-                <hr />   
-
-                <div class="center">
-                    <input id="save" class="button-primary" type="submit" value="Salva" style="font-size:20pt;height:unset;padding:1rem 3rem;text-transform:none;">
-                </div>     
+            <div class="center">
+                <input id="save" class="button-primary" type="submit" value="Salva">
+            </div>     
         </form>
        
     </div>

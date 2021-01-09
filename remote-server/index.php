@@ -7,15 +7,15 @@ $config_path = "pannello/config/";
 $config_file = "pannello/config/configuration.json";
 $backup_config_file = "pannello/config/backup/configuration_".date('Y-m-d_H:i:s').".json";
 $config_images_path = "pannello/config/images/";
-$config_images_index = "pannello/config/config_images";
+//$config_images_index = "pannello/config/config_images";
 
 // If it's not a POST, return the config file and the images index
 if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $config_string = file_get_contents($config_file);
-    $config_images_string = file_get_contents($config_images_index);
+    //$config_images_string = file_get_contents($config_images_index);
     $config = json_decode($config_string);
-    $config_images = array_filter(explode("\n", $config_images_string));
-    $response = array("configuration" => $config, "images" => $config_images);
+    //$config_images = array_filter(explode("\n", $config_images_string));
+    $response = array("configuration" => $config); //, "images" => $config_images);
     echo json_encode($response);
 
 // If it's a POST, store picture or logs or new config with images
@@ -67,13 +67,13 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
         }
         // Store eventual images uploaded
         $config_images_feedback = "";
-        $config_images_index_file = fopen($config_images_index, "w");
+        //$config_images_index_file = fopen($config_images_index, "w");
         foreach($_FILES as $image){
             if(is_uploaded_file($image['tmp_name'])) {
                 if(move_uploaded_file($image['tmp_name'], $config_images_path.$image['name'])) {
                     $config_images_feedback .= $image['name']." uploaded - ";
                     // Write the name to the index
-                    fwrite($config_images_index_file, $image['name']."\n");
+                    //fwrite($config_images_index_file, $image['name']."\n");
                 } else {
                     $config_images_feedback .= $image['name']." failed to store - ";
                 }
@@ -82,7 +82,7 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             }
             $response["config-images"] = $config_images_feedback;
         }
-        fclose($config_images_index_file);
+        //fclose($config_images_index_file);
     }
     echo json_encode($response)."\n";
 }

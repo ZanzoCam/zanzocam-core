@@ -66,12 +66,13 @@ This step installs a few libraries required for the webcam to work.
     - Uncomment the IT locale in the proper file:  `sudo perl -pi -e 's/# it_IT.UTF-8 UTF-8/it_IT.UTF-8 UTF-8/g' /etc/locale.gen`
     - Generate locales: `sudo locale-gen it_IT.UTF-8`
     - Update locales: `sudo update-locale it_IT.UTF-8`
+- Set timezone: `sudo timedatectl set-timezone Europe/Rome`
     
 - Create alias for `ll` in `~/.bashrc`: `nano ~/.bashrc`
     - Add at the end: `alias ll="ls -lah"`
+
 - Update the index: `sudo apt update`
 - Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu`
-- Set timezone: `sudo timedatectl set-timezone Europe/Rome`
 - Setup cronjob to turn off HDMI at reboot:
     - `sudo nano /etc/cron.d/no-hdmi`
     - Content:
@@ -79,21 +80,23 @@ This step installs a few libraries required for the webcam to work.
 # Disable the HDMI port (to save power)
 @reboot /usr/bin/tvservice -o
 ```
-- Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
-- Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
-- Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
-- Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server /var/www`
-- Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
-- Enter the webcam folder: `cd webcam`
-- Create venv: `python3 -m venv venv`
-- Activate venv: `source venv/bin/activate`
-- Install the requirements: `pip install -r requirements.txt`
-- Leave venv: `deactivate`
+- Install the Python scripts:
+    - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
+    - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
+    - Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
+    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server /var/www`
+    - Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
+    - Create venv in the home: `cd ~ && python3 -m venv venv`
+    - Activate venv: `source venv/bin/activate`
+    - Enter the webcam folder: `cd webcam`
+    - Install the package: `pip install .`
+    - Leave venv: `deactivate`
 
 
 ### Setup the autohotspot feature
 
-This step makes the RPI able to generate its own WiFi network (SSID: zanzocam-setup, Password: webcam) when no known WiFi network is detected.
+This step makes the RPI able to generate its own WiFi network 
+(SSID: zanzocam-setup, Password: webcam) when no known WiFi network is detected.
 
 Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection)
 
@@ -442,12 +445,15 @@ server {
 ### Create the image
 
 - Insert the SD card into the computer and mount it
-- Clone it into an image: `dd if=/dev/sdX of=zanzocam.img bs=4M status=progress oflag=sync` with `sudo`
+- Resize `rootfs` to be approximately 3.5G (can be done with GParted).
+- Clone the resized content of the SD into an image: `dd if=/dev/sdX of=zanzocam.img bs=4M status=progress oflag=sync` with `sudo`
 - Install resizing tool: `sudo apt install -y qemu-utils`
 - Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 4G`
 
-The image is ready to be flashed on any SD card. Note that the filesystem will not expand.
+The image is ready to be flashed on any SD card larger than 4GB. 
+Note that the filesystem will not expand.
 
-If you want to upload/send it, compress it first with `tar -czvf zanzocam.tar.gz zanzocam.img`
+If you want to upload/send it, compress it first with 
+`tar -czvf zanzocam.tar.gz zanzocam.img`
 
 

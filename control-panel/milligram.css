@@ -677,13 +677,17 @@ img {
 }
 
 #container {
+  background-color: #eee;
   max-width: 800px;
   margin: 3rem auto;
   border-radius: 3rem;
   font-family: 'Raleway', sans-serif;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  background-color: white;
-  padding: 5%;
+  padding: min(5rem, 5%);
+}
+
+#config {
+    margin:0;
 }
 
 .center {
@@ -696,9 +700,14 @@ hr {
 }
 
 h3 {
-    margin-top: 2rem;
+    margin-right: 3rem;
     font-weight: 400;
     color: var(--accent);
+}
+h4 {
+    margin-right: 3rem;
+    line-height: 1.5;
+    margin-bottom: 0;
 }
 
 label {
@@ -714,6 +723,69 @@ label {
     font-weight: 700;
 }
 
+.sheet {
+    background-color: white;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: min(3rem, 5%);
+    border-radius: 1rem;
+    box-shadow: 0px 0px 10px 0px #777;
+}
+.sheet-inner {
+    background-color: white;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: min(3rem, 5%);
+    border-radius: 1rem;
+    box-shadow: 0px 0px 5px 0px #999;
+}
+
+.overlay-fields {
+    margin-top: 3rem;
+}
+
+.button-primary {
+    font-size:20pt !important;
+    height:unset !important;
+    padding:1rem 3rem !important;
+    margin:0 !important;
+    text-transform:none !important;
+}
+
+
+/**** Toggle Radio button *****/
+
+.toggle {
+    margin: 0;
+    height: 100%;
+    align-self: center;
+}
+.toggle input {
+    display: none;
+}
+.toggle .label {
+    background-color: var(--accent);
+    border: 0.1rem solid var(--accent);
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    height: 3.8rem;
+    letter-spacing: .1rem;
+    line-height: 3.8rem;
+    padding: 0 3.0rem;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.toggle input:checked + .label {
+    background-color: var(--dark-accent);
+    border-color: var(--dark-accent);
+    color: #fff;
+    outline: 0;
+}
 
 
 /* ********** Clouds *********** */
