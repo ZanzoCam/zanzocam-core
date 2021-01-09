@@ -54,14 +54,14 @@ class Camera:
         # Image name
         self.photo_name = PATH / '.temp_image.jpg'
         now = datetime.datetime.now()
-        processed_image_name = self.name
+        self.processed_image_name = self.name
         
         if self.add_date_to_name:
-            processed_image_name += "_" + now.strftime("%Y-%m-%d")
+            self.processed_image_name += "_" + now.strftime("%Y-%m-%d")
         if self.add_time_to_name:
-            processed_image_name += "_" + now.strftime("%H:%M:%S")
-        processed_image_name += "." + self.extension
-        self.processed_image_name = PATH / processed_image_name
+            self.processed_image_name += "_" + now.strftime("%H:%M:%S")
+        self.processed_image_name += "." + self.extension
+        self.processed_image_path = PATH / self.processed_image_name
         
 
     def __getattr__(self, name):
@@ -81,7 +81,7 @@ class Camera:
         log("Cleaning up image files")
         try:
             os.remove(self.photo_name)
-            os.remove(self.processed_image_name)
+            os.remove(self.processed_image_path)
         except Exception as e:
             log_error(f"Failed to clean up image files.", e)
             log("WARNING: The filesystem might fill up if the old pictures "
@@ -374,10 +374,10 @@ class Overlay:
             if self.width and self.height:
                 image = image.resize((self.width, self.height))
 
-            padding_width = math.ceil(self.width*self.padding_ratio)
-            padding_height = math.ceil(self.height*self.padding_ratio)
+            padding_width = math.ceil(image.width*self.padding_ratio)
+            padding_height = math.ceil(image.height*self.padding_ratio)
 
-            overlay_size = (self.width+padding_width*2, self.height+padding_height*2)
+            overlay_size = (image.width+padding_width*2, image.height+padding_height*2)
             overlay = Image.new("RGBA", overlay_size, color=self.background_color)
             overlay.paste(image, (padding_width, padding_height), mask=image)
 

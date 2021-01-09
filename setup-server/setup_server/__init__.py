@@ -9,7 +9,6 @@ from flask import Flask, render_template, request, abort
 app = Flask(__name__)
 
 
-
 initial_data = "/var/www/setup-server/setup_server/initial_data.json"
 log_buffer = "/var/www/setup-server/setup_server/logs.txt"
 
@@ -29,7 +28,6 @@ def log(message, dot="- "):
 def setup():
     """ The initial page with the form """
     clear_logs()
-
     # Load any previously stored initial data
     try:
         with open(initial_data, 'r') as d:
@@ -50,11 +48,10 @@ def shoot():
         return json.dumps({"success": False, "server_url": "#"})
 
     try:
-        shoot_proc = subprocess.run(["/home/zanzocam-bot/webcam/venv/bin/z-webcam"])
+        shoot_proc = subprocess.run(["/home/zanzocam-bot/venv/bin/z-webcam"])
     except subprocess.CalledProcessError as e:
         return json.dumps({"success": False, "server_url": data['server_url']})
 
-    print("Returning")
     return json.dumps({"success": True, "server_url": data['server_url']})
 
 
@@ -62,11 +59,9 @@ def shoot():
 def setting_up():
     """ The page with the logs """
     clear_logs()
-
     # Save new initial data to a file
     with open(initial_data, 'w') as d:
         json.dump(request.form, d, indent=4)
-
     return render_template("setting-up.html", title="Setup")
 
 
@@ -79,20 +74,17 @@ def get_logs():
     return json.dumps(logs)
 
 
-
 @app.route("/setup/start", methods=["POST"])
 def start_setup():
     """ Actually sets up the Pi """
-
     try:
         with open(initial_data, 'r') as d:
             data = json.load(d)
     except Exception:
         abort(404)  # Data must be there!
 
+    # Write the wpa_supplicant.conf file
     error=False
-
-    # Write the wpa_supplicant.conf file.
     log("Setup WiFi")
     with open(".tmp-wpa_supplicant", "w") as f:
         f.writelines(dedent(f"""
@@ -105,18 +97,18 @@ def start_setup():
             }}
             """))
     create_wpa_conf = subprocess.run(
-        [   
-            "/usr/bin/sudo", 
-            "mv", 
-            ".tmp-wpa_supplicant", 
+        [
+            "/usr/bin/sudo",
+            "mv",
+            ".tmp-wpa_supplicant",
             "/etc/wpa_supplicant/wpa_supplicant.conf"
-        ], 
+        ],
         stdout=subprocess.PIPE)
     if not create_wpa_conf:
-        log(dedent(f"""ERRORE! Non e' stato possibile configurare il WiFi. 
+        log(dedent(f"""ERRORE! Non e' stato possibile configurare il WiFi.
                 Usa SSH per configurarlo manualmente:
-                 - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf 
-                 - Copiaci dentro: 
+                 - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+                 - Copiaci dentro:
 
                 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
                 update_config=1
@@ -126,8 +118,7 @@ def start_setup():
                     psk="{data['wifi_password']}"
                 }}"""),  dot="\n===> ")
         error=True
-        
-    
+
     # Write the initial configuration.json to bootstrap the webcam
     log("Setup dati del server remoto")
     webcam_minimal_conf = {
@@ -154,27 +145,6 @@ def start_setup():
 
 
 
-class RedirectText:
-    """ Per ottenere i logs di Ansible """
-    def __init__(self, logger):
-        self.output = logger
-    def flush(self):
-        pass
-    def write(self, string):
-        if ("fatal" in string or "ERROR!" in string) and "ignoring" not in string:
-            self.output(f"ERRORE!  {string}", dot="\n===> ")
-        if "TASK" in string:
-            string = string.replace("*", "")
-            string = string.replace("TASK [", " ")
-            string = string.replace("]", "")
-            string = string.strip()
-            if string != "" and not "ok: " in string:
-                self.output(string, dot="  ->")
-
-
-
-
-
 @app.errorhandler(400)
 def handle_bad_request(e):
     return render_template("error.html", title="400", message="400 - Bad Request"), 400
@@ -194,9 +164,7 @@ def handle_not_found(e):
 @app.errorhandler(405)
 def handle_method_not_allowed(e):
     return render_template("error.html", title="405", message="405 - Method Not Allowed"), 405
-    
+
 @app.errorhandler(500)
 def handle_internal_error(e):
     return render_template("error.html", title="500", message="500 - Internal Server Error"), 500
-
-        

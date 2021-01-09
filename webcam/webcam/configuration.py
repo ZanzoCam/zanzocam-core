@@ -73,12 +73,17 @@ class Configuration:
         """
         Restores the configuration file from its backup copy.
         """
+        log("Restoring the old configuration file.")
         try:
             shutil.copy2(str(self._path) + ".bak", self._path)
+            log("The next run will use the following server configuration:")
+            print(json.dumps(self.server, indent=4))
+            
         except Exception as e:
             log_error("Cannot restore the configuration file from its backup.", e)
             log(f"WARNING! The current situation is very fragile, "
-                 "please fix this error before a failure occurs.")
+                 "please fix this error before a failure occurs "+
+                 "(if it haven't happened already).")
 
 
     def images_to_download(self) -> List[str]:

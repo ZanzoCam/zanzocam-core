@@ -43,7 +43,7 @@ class System:
         Returns None if an error occurs.
         """
         try:
-            with open("../zanzocam/.VERSION") as v:
+            with open("/home/zanzocam-bot/zanzocam/.VERSION") as v:
                 return v.readline().strip()
         except Exception as e:
             log_error("Could not get version information.", e)
@@ -231,7 +231,7 @@ class System:
             d.writelines(
                 "# ZANZOCAM - shoot picture\n"
                 f"{cron_string} zanzocam-bot "
-                " /home/zanzocam-bot/webcam/venv/bin/z-webcam "
+                " /home/zanzocam-bot/venv/bin/z-webcam "
                 " >> /home/zanzocam-bot/webcam/logs.txt 2>&1\n")
                 
         # Backup the old crontab in the home
