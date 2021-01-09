@@ -134,17 +134,7 @@
 	    document.getElementById("main-form").style.display="block"; 
 
 	    // Get all the form input elements
-	    const { elements } = document.querySelector('form')
-	    
-	    // Check to Niente all the radio boxes for the overlays
-	    //for (const radio of elements){
-	    //    if (radio.type === "radio"){
-	    //        keys = radio.name.split("__");
-	    //        if (keys.length===3 && keys[0]==="overlays" && keys[2]==="type"){
-	                
-	    //        }
-	    //    }
-	    //}
+	    const { elements } = document.querySelector('form');
         
         for (const [ key, value ] of Object.entries(data) ) {
             // Nested objects should be processed recursively
@@ -180,12 +170,12 @@
                 }
             }
             // Special processing is needed for the server protocol radio switch
-	        if (prefix == "server__" &&  key == "protocol"){
+	        if (prefix === "server__" &&  key === "protocol"){
 	            toggle_server_protocol(value);
 	        }
 	        // Special processing is needed for the overlay type radio switch
 	        prefixes = prefix.split("__");
-	        if (prefixes[0] == "overlays" &&  key == "type"){
+	        if (prefixes[0] === "overlays" &&  key === "type"){
 	            toggle_type_of_overlay(prefixes[1], value);
 	        }
         }
@@ -394,13 +384,10 @@
     
     // Toggle http or ftp in the server section
     function toggle_server_protocol(value) {
-        var http_block = document.getElementById("server_protocol_http-vars");
-        var ftp_block = document.getElementById("server_protocol_ftp-vars");
-        http_block.style.display = value==="http" ? "block" : "none";
-        ftp_block.style.display = value==="ftp" ? "block" : "none";
-        document.querySelectorAll('[name^="server__protocol__'+ value +'"]').forEach((item) => {
-            item.value = "";
-        });
+        var http_block = document.getElementById("server_protocol_HTTP-vars");
+        var ftp_block = document.getElementById("server_protocol_FTP-vars");
+        http_block.style.display = value==="HTTP" ? "block" : "none";
+        ftp_block.style.display = value==="FTP" ? "block" : "none";
     }
     
     // Toggle text or image config in the overlays section
@@ -409,9 +396,6 @@
         var image_block = document.getElementById(position+"_image-vars");
         text_block.style.display = value==="text" ? "block" : "none";
         image_block.style.display = value==="image" ? "block" : "none";
-        document.querySelectorAll('[name^="overlays__'+position+'__'+ value +'"]').forEach((item) => {
-            item.value = "";
-        });
     }
   </script>
 
@@ -457,21 +441,21 @@
                 <div class="row">
                     <h3>Server:</h3>
                     <label class="toggle">
-                        <input type="radio" value="HTTP" name="server__protocol" checked onclick="javascript:toggle_server_protocol('http')">
+                        <input type="radio" value="HTTP" name="server__protocol" onclick="javascript:toggle_server_protocol('HTTP')">
                         <span class="label">HTTP</span>
                     </label><br>
                     <label class="toggle">
-                        <input type="radio" value="FTP" name="server__protocol" checked onclick="javascript:toggle_server_protocol('ftp')">
+                        <input type="radio" value="FTP" name="server__protocol" checked onclick="javascript:toggle_server_protocol('FTP')">
                         <span class="label">FTP</span>
                     </label><br>
                 </div> 
                 
-                <div id="server_protocol_http-vars">
+                <div id="server_protocol_HTTP-vars">
                     <label for="server__url">URL del server:</label>
                     <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
                 </div>
                 
-                <div id="server_protocol_ftp-vars" style="display: none;">
+                <div id="server_protocol_FTP-vars" style="display: none;">
                     <label for="server__hostname">Hostname:</label>
                     <input type="text" placeholder="example.com" id="server-hostname" name="server__hostname">
                 </div>
