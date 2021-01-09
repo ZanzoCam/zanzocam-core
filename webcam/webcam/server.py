@@ -227,24 +227,23 @@ class _HttpServer:
         """
         # NOTE: Errors here must escalate
         overlays_url = self.url + ("" if self.url.endswith("/") else "/") + REMOTE_IMAGES_PATH
-        for image in images_list:
-            # Download from the server
-            r = requests.get(f"{overlays_url}{image}",
-                                stream=True,
-                                auth=self.credentials,
-                                timeout=REQUEST_TIMEOUT)
-            # Save image to file
-            if r.status_code == 200:
-                r.raw.decode_content = True
-                with open(IMAGE_OVERLAYS_PATH / image ,'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-                log(f"New overlay image downloaded: {image}")
+        # Download from the server
+        r = requests.get(f"{overlays_url}{image_name}",
+                            stream=True,
+                            auth=self.credentials,
+                            timeout=REQUEST_TIMEOUT)
+        # Save image to file
+        if r.status_code == 200:
+            r.raw.decode_content = True
+            with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+            log(f"New overlay image downloaded: {image_name}")
 
-            # Report every other status code as a failed download
-            else:
-                log_error(f"New overlay image failed to download: {image}")
-                log(f"Response status code: {r.status_code}")
-                raise ValueError("Overlay image failed to download: {image}")
+        # Report every other status code as a failed download
+        else:
+            log_error(f"New overlay image failed to download: {image_name}")
+            log(f"Response status code: {r.status_code}")
+            raise ValueError("Overlay image failed to download: {image_name}")
 
 
     def send_logs(self, path: Path):
