@@ -316,6 +316,23 @@ class _HttpServer:
 
 ################################################################################
 
+class Patched_FTP_TLS(FTP_TLS):
+    """
+    Explicit FTP_TLS version with shared TLS session. 
+    Used to counteract "buggy" (or at least unusual) configuration on PureFTPd servers.
+    For reference: https://bugs.python.org/issue19500
+                   https://stackoverflow.com/questions/12164470/python-ftp-implicit-tls-connection-issue
+                   https://stackoverflow.com/questions/14659154/ftpes-session-reuse-required  --> fix comes from here
+    """
+    def ntransfercmd(self, cmd, rest=None):
+        conn, size = FTP.ntransfercmd(self, cmd, rest)
+        if self._prot_p:
+            conn = self.context.wrap_socket(conn,
+                                            server_hostname=self.host,
+                                            session=self.sock.session)  # this is the fix
+        return conn, size
+
+
 class _FtpServer:
     """
     Handles all communication with the server over an FTP connection.
@@ -351,7 +368,7 @@ class _FtpServer:
                                         passwd=self.password, 
                                         timeout=REQUEST_TIMEOUT*2)
             else:
-                self._ftp_client = FTP_TLS(host=self.hostname, 
+                self._ftp_client = Patched_FTP_TLS(host=self.hostname, 
                                             user=self.username, 
                                             passwd=self.password, 
                                             timeout=REQUEST_TIMEOUT*2)

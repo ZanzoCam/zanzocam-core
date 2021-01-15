@@ -91,7 +91,7 @@ class Configuration:
         List all the images that should be downloaded from the server
         """
         to_download = []
-        for position, data in self.overlays.items():
+        for position, data in getattr(self, "overlays", {}).items():
             if "path" in data.keys():
                 to_download.append(data["path"])
         return to_download
