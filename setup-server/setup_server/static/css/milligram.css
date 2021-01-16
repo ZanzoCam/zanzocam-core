@@ -699,8 +699,13 @@ hr {
 
 h3 {
     margin-top: 2rem;
+    margin-right: 3rem;
     font-weight: 400;
     color: var(--accent);
+}
+
+h4 {
+    margin-right: 3rem;
 }
 
 label {
@@ -714,6 +719,41 @@ label {
     margin-top:3rem;
     text-transform:none;
     font-weight: 700;
+}
+
+
+/**** Toggle Radio button *****/
+
+.toggle {
+    margin: 0;
+    height: 100%;
+    align-self: center;
+}
+.toggle input {
+    display: none;
+}
+.toggle .label {
+    background-color: #bbb;
+    border: 0.1rem solid #bbb;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    height: 3.8rem;
+    letter-spacing: .1rem;
+    line-height: 3.8rem;
+    padding: 0 3.0rem;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.toggle input:checked + .label {
+    background-color: var(--dark-accent);
+    border-color: var(--dark-accent);
+    color: #fff;
+    outline: 0;
 }
 
 

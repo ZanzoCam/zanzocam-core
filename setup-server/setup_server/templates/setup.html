@@ -87,23 +87,23 @@
     }
     
     function goOperational() {
-        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, "
-              "ZANZOCAM smettera' di produrre il suo hotspot in caso di "
-              "assenza di WiFi.\n\n"
-              "Sei sicuro\a di voler proseguire?")
+        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
+              "ZANZOCAM smettera' di produrre il suo hotspot in caso di " +
+              "assenza di WiFi.\n\n" +
+              "Sei sicuro\a di voler proseguire?");
         if(confirmation){
             fetch("/go_operational", {
                 method:'POST',
             })
-            .then(
-                alert("ZANZOCAM e' in modalita' operativa. Per ripristinare "
-                      "la modalita' setup, cancella il file OPERATIONAL dalla "
-                      "cartella /home/zanzocam-bot/ sulla partizione rootfs "
-                      "della scheda SD.")
-            ).catch(
-                alert("Qualcosa e' andato storto! 
-                      "ZANZOCAM non e' raggiungibile.")
-            )   
+            .then(r => {
+                alert("ZANZOCAM e' in modalita' operativa. Per ripristinare " +
+                      "la modalita' setup, cancella il file OPERATIONAL dalla " +
+                      "cartella /home/zanzocam-bot/ sulla partizione rootfs " +
+                      "della scheda SD.");
+            }).catch(r => {
+                alert("Qualcosa e' andato storto! " +
+                      "ZANZOCAM non e' raggiungibile.");
+            })   
         }
     }
 
