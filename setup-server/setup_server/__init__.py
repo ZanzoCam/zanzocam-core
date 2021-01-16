@@ -55,6 +55,16 @@ def shoot():
     return json.dumps({"success": True, "server_url": data['server_url']})
 
 
+@app.route("/go_operational", methods=["POST"])
+def go_operational():
+    """ Go into operational mode """
+    try:
+        with open("/home/zanzocam-bot/OPERATIONAL", "w"):
+            pass
+    except Exception:
+        abort(500)
+
+
 @app.route("/setting-up", methods=["POST"])
 def setting_up():
     """ The page with the logs """

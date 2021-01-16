@@ -36,12 +36,12 @@
                     </label><br>
                 </div>
                 
-                <div id="ftp-vars">
+                <div id="ftp-vars" style="display: none;">
                     <label for="server_hostname">Hostname:</label>
                     <input type="text" placeholder="example.com" name="server_hostname" value="{{ data.server_hostname }}">
                 </div>
                 
-                <div id="http-vars">
+                <div id="http-vars" style="display: none;">
                     <label for="server_url">URL del server:</label>
                     <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}">
                 </div>
@@ -55,7 +55,9 @@
             <div class="center">
                 <button id="configure" class="button setup-button" type="submit">Configura</button>
                 <button id="shoot" class="button setup-button" onclick="javascript:shootFirstPicture();" type="button">Scatta Foto</button>
+                <button id="mode" class="button setup-button"  onclick="javascript:goOperational();" type="button">Modalita' operativa</button>
             </div>     
+            
         </form>
 
         <p id="photo-feedback" class="center"></p>
@@ -71,6 +73,8 @@
         http_block.style.display = value==="HTTP" ? "block" : "none";
         ftp_block.style.display = value==="FTP" ? "block" : "none";
     }
+    toggle_server_protocol("{{ data.server_protocol }}");
+    
     
     function disableOnHotspot() {
         if(window.location.href === "http://10.0.0.5"){
@@ -79,6 +83,27 @@
             feedback = document.getElementById("photo-feedback");
             feedback.innerHTML = "Per scattare la foto di prova, riavvia il Raspberry "+
 			"e connettiti ad esso tramite il WiFi, invece che usare l'hotspot.";
+        }
+    }
+    
+    function goOperational() {
+        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, "
+              "ZANZOCAM smettera' di produrre il suo hotspot in caso di "
+              "assenza di WiFi.\n\n"
+              "Sei sicuro\a di voler proseguire?")
+        if(confirmation){
+            fetch("/go_operational", {
+                method:'POST',
+            })
+            .then(
+                alert("ZANZOCAM e' in modalita' operativa. Per ripristinare "
+                      "la modalita' setup, cancella il file OPERATIONAL dalla "
+                      "cartella /home/zanzocam-bot/ sulla partizione rootfs "
+                      "della scheda SD.")
+            ).catch(
+                alert("Qualcosa e' andato storto! 
+                      "ZANZOCAM non e' raggiungibile.")
+            )   
         }
     }
 

@@ -30,7 +30,9 @@ class System:
         self.status["version"] = self.get_version()
         self.status["last reboot"] = self.get_last_reboot_time()
         self.status["uptime"] = self.get_uptime()
-        self.status["autohotspot check"] = self.run_autohotspot()
+        self.status["operational"] = self.check_operational_status()
+        if not self.status["operational"]:
+            self.status["autohotspot check"] = self.run_autohotspot()
         self.status['wifi ssid'] = self.get_wifi_ssid()
         self.status['internet access'] = self.check_internet_connectivity()
         self.status['disk size'] = self.get_filesystem_size()
@@ -80,7 +82,18 @@ class System:
         except Exception as e:
             log_error("Could not get uptime information.", e)
         return None
-
+        
+        
+    def check_operational_status(self) -> Optional[str]:
+        """ 
+        Checks whether ZANZOCAM is supposed to be in operational or setup mode
+        """
+        try:
+            return os.path.exists("/home/zanzocam-bot/OPERATIONAL")
+        except Exception as e:
+            log_error("Failed to check operational status. "
+                      "Assuming setup mode", e)
+            return False
 
     def run_autohotspot(self) -> Optional[bool]:
         """
