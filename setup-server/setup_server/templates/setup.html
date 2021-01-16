@@ -24,9 +24,27 @@
                 <label for="wifi_password">Password:</label>
                 <input type="text" name="wifi_password" value="{{ data.wifi_password }}" required>                
             
-            <h3>Server:</h3>
-                <label for="server_url">URL del server:</label>
-                <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}" required>
+                <div class="row">
+                    <h3>Server:</h3>
+                    <label class="toggle">
+                        <input type="radio" value="HTTP" name="server_protocol" onclick="javascript:toggle_server_protocol('HTTP')">
+                        <span class="label">HTTP</span>
+                    </label><br>
+                    <label class="toggle">
+                        <input type="radio" value="FTP" name="server_protocol" checked onclick="javascript:toggle_server_protocol('FTP')">
+                        <span class="label">FTP</span>
+                    </label><br>
+                </div>
+                
+                <div id="ftp-vars">
+                    <label for="server_hostname">Hostname:</label>
+                    <input type="text" placeholder="example.com" name="server_hostname" value="{{ data.server_hostname }}">
+                </div>
+                
+                <div id="http-vars">
+                    <label for="server_url">URL del server:</label>
+                    <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}">
+                </div>
                 
                 <label for="server_username">Username del server (se necessario):</label>
                 <input type="text" placeholder="username"  name="server_username" value="{{ data.server_username }}">
@@ -46,6 +64,14 @@
     
     
     <script>
+    function toggle_server_protocol(value){
+        // Toggle http or ftp in the server section
+        var http_block = document.getElementById("http-vars");
+        var ftp_block = document.getElementById("ftp-vars");
+        http_block.style.display = value==="HTTP" ? "block" : "none";
+        ftp_block.style.display = value==="FTP" ? "block" : "none";
+    }
+    
     function disableOnHotspot() {
         if(window.location.href === "http://10.0.0.5"){
             button = document.getElementById("shoot");
@@ -86,6 +112,8 @@
             configure.disabled = false;
         });
     };
+    
+    toggle_server_protocol({{ data.server_protocol }});
     </script>
     
 {% endblock %}

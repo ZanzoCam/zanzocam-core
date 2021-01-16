@@ -123,11 +123,15 @@ def start_setup():
     log("Setup dati del server remoto")
     webcam_minimal_conf = {
         "server": {
-            "url": data['server_url'],
+            "protocol": data['server_protocol'],
             "username": data['server_username'],
             "password": data['server_password']
         }
     }
+    if data['server_protocol'] == "FTP":
+        webcam_minimal_conf["server"]["hostname"] = data["server_hostname"]
+    else:
+        webcam_minimal_conf["server"]["url"] = data["server_url"]
     try:
         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
