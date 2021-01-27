@@ -56,6 +56,26 @@ class Configuration:
         """
         return json.dumps(vars(self), indent=4, default=lambda x: str(x))
 
+    
+    def is_outside_of_working_hours(self):
+        """
+        Compares the current time with the start-stop times and 
+        return True if outside the interval, False if within.
+        """
+        start_time_string = getattr(self, "start_night", "23:59:59")
+        end_time_string = getattr(self, "end_night", "00:00:01")
+        current_time_string = datetime.datetime.now().strftime('%H:%M:%S')
+
+        log(f"Checking if now ({current_time_string}) it's night time (night starts at {start_time_string} and ends at {end_time_string})")
+
+        start_time = datetime.datetime.strptime(start_time_string, "%H:%M:%S")
+        end_time = datetime.datetime.strptime(end_time_string, "%H:%M:%S")
+        current_time = datetime.datetime.strptime(current_time_string, "%H:%M:%S")
+
+        if current_time >= start_time or current_time <= end_time:
+            return True
+        return False
+
 
     def backup(self):
         """

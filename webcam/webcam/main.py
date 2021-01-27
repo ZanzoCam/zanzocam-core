@@ -36,6 +36,16 @@ def main():
                       e, fatal="cannot proceed without any data. Exiting.")
             raise RuntimeError(e)
 
+        # Verify if we're into the active hours or not, if defined
+        try:
+            if initial_configuration.is_outside_of_working_hours():
+                log("The current time is outside working hours. Turning off.")
+                return
+        except Exception as e:
+            log_error("An error occurred trying to assess if the current time is within working hours. " +
+                      "Assuming YES.", e)
+        log("The current time is inside working hours. Proceeding.")
+
         initial_server = Server(initial_configuration.server)
 
         # Getting the new configuration from the server

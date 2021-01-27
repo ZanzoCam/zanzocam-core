@@ -70,7 +70,7 @@ class Camera:
         Logs the access to highlight values that are not set, but were used.
         """
         value = self.defaults.get(name, None)
-        log(f"WARNING: Accessing default value for {name}: {value}")
+        #log(f"WARNING: Accessing default value for {name}: {value}")
         return value
         
         
@@ -244,7 +244,7 @@ class Overlay:
         Logs the access to highlight values that are not set, but were used.
         """
         value = self.defaults.get(name, None)
-        log(f"WARNING: Accessing default value for {name}: {value}")
+        #log(f"WARNING: Accessing default value for {name}: {value}")
         return value
         
     
