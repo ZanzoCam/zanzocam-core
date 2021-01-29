@@ -13,7 +13,7 @@
     </p>
 
      
-    <div id="main-form"">
+    <div id="main-form">
     
         <form id="config" method="POST" action="/setting-up">
 
@@ -27,11 +27,11 @@
                 <div class="row">
                     <h3>Server:</h3>
                     <label class="toggle">
-                        <input type="radio" value="HTTP" name="server_protocol" onclick="javascript:toggle_server_protocol('HTTP')">
+                        <input type="radio" value="HTTP" name="server_protocol" {% if data.server_protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')">
                         <span class="label">HTTP</span>
                     </label><br>
                     <label class="toggle">
-                        <input type="radio" value="FTP" name="server_protocol" checked onclick="javascript:toggle_server_protocol('FTP')">
+                        <input type="radio" value="FTP" name="server_protocol" {% if data.server_protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')">
                         <span class="label">FTP</span>
                     </label><br>
                 </div>
@@ -51,11 +51,27 @@
                 
                 <label for="server_password">Password del server (se necessaria):</label>
                 <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}">
+
+                <div class="row">
+                    <h3>Hotspot:</h3>
+                    <label class="toggle">
+                        <input type="radio" value="ON" name="hotspot_allowed" {% if data.hotspot_allowed=="ON" %}checked{%endif%} onchange="javascript:turnHotspotON()">
+                        <span class="label">ON</span>
+                    </label><br>
+                    <label class="toggle">
+                        <input type="radio" value="OFF" name="hotspot_allowed" {% if data.hotspot_allowed=="OFF" %}checked{%endif%} onchange="javascript:turnHotspotOFF()">
+                        <span class="label">OFF</span>
+                    </label><br>
+                </div>
+                <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZANZOCAM di generare o meno un hotspot quando perde contatto
+                con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM e' gia' in grado di collegarsi
+                con un'altra rete WiFi o e' collegata via rete Ethernet.<br>
+                Si consiglia di selezionare ON durante il setup della webcam, e di selezionare OFF una volta che il sistema e'
+                completamente funzionante.</p>
             
             <div class="center">
                 <button id="configure" class="button setup-button" type="submit">Configura</button>
                 <button id="shoot" class="button setup-button" onclick="javascript:shootFirstPicture();" type="button">Scatta Foto</button>
-                <button id="mode" class="button setup-button"  onclick="javascript:goOperational();" type="button">Modalita' operativa</button>
             </div>     
             
         </form>
@@ -86,26 +102,41 @@
         }
     }
     
-    function goOperational() {
+    function turnHotspotOFF() {
         confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
               "ZANZOCAM smettera' di produrre il suo hotspot in caso di " +
               "assenza di WiFi.\n\n" +
               "Sei sicuro\a di voler proseguire?");
         if(confirmation){
-            fetch("/go_operational", {
+            fetch("/hotspot/OFF", {
                 method:'POST',
             })
             .then(r => {
-                alert("ZANZOCAM e' in modalita' operativa. Per ripristinare " +
-                      "la modalita' setup, cancella il file OPERATIONAL dalla " +
-                      "cartella /home/zanzocam-bot/ sulla partizione rootfs " +
-                      "della scheda SD.");
+                alert("Modifica completata con successo.");
             }).catch(r => {
                 alert("Qualcosa e' andato storto! " +
                       "ZANZOCAM non e' raggiungibile.");
             })   
         }
     }
+    function turnHotspotON() {
+        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
+              "ZANZOCAM comincera' a produrre il suo hotspot in caso di " +
+              "assenza di WiFi.\n\n" +
+              "Sei sicuro\a di voler proseguire?");
+        if(confirmation){
+            fetch("/hotspot/ON", {
+                method:'POST',
+            })
+            .then(r => {
+                alert("Modifica completata con successo.");
+            }).catch(r => {
+                alert("Qualcosa e' andato storto! " +
+                      "ZANZOCAM non e' raggiungibile.");
+            })   
+        }
+    }
+
 
     function shootFirstPicture() {
         button = document.getElementById("shoot");
@@ -137,8 +168,6 @@
             configure.disabled = false;
         });
     };
-    
-    toggle_server_protocol({{ data.server_protocol }});
     </script>
     
 {% endblock %}

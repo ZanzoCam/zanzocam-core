@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, abort
 app = Flask(__name__)
 
 
-initial_data = "/var/www/setup-server/setup_server/initial_data.json"
+INITIAL_DATA = "/var/www/setup-server/setup_server/initial_data.json"
 log_buffer = "/var/www/setup-server/setup_server/logs.txt"
 
 
@@ -30,7 +30,7 @@ def setup():
     clear_logs()
     # Load any previously stored initial data
     try:
-        with open(initial_data, 'r') as d:
+        with open(INITIAL_DATA, 'r') as d:
             data = json.load(d)
     except Exception:
         data = {}
@@ -42,7 +42,7 @@ def setup():
 def shoot():
     """ Shoot a test picture """
     try:
-        with open(initial_data, 'r') as d:
+        with open(INITIAL_DATA, 'r') as d:
             data = json.load(d)
     except Exception:
         return json.dumps({"success": False, "server_url": "#"})
@@ -55,14 +55,25 @@ def shoot():
     return json.dumps({"success": True, "server_url": data['server_url']})
 
 
-@app.route("/go_operational", methods=["POST"])
-def go_operational():
-    """ Go into operational mode """
-    try:
-        with open("/home/zanzocam-bot/OPERATIONAL", "w"):
-            pass
-    except Exception:
-        abort(500)
+@app.route("/hotspot/<value>", methods=["POST"])
+def go_operational(value):
+    """ Allow the hotspot to turn on or not """
+    if value in ["ON", "OFF"]:
+        try:
+            with open("/home/zanzocam-bot/HOTSPOT_ALLOWED", "w") as f:
+                f.write(value)
+            
+            data = {}
+            with open(INITIAL_DATA, 'r') as d:
+                data = json.load(d)
+            data["hotspot_allowed"] = value
+            with open(INITIAL_DATA, 'w') as d:
+                json.dump(data, d, indent=4)
+
+        except Exception:
+            abort(500)
+    abort(404)
+
 
 
 @app.route("/setting-up", methods=["POST"])
@@ -70,7 +81,7 @@ def setting_up():
     """ The page with the logs """
     clear_logs()
     # Save new initial data to a file
-    with open(initial_data, 'w') as d:
+    with open(INITIAL_DATA, 'w') as d:
         json.dump(request.form, d, indent=4)
     return render_template("setting-up.html", title="Setup")
 
@@ -88,7 +99,7 @@ def get_logs():
 def start_setup():
     """ Actually sets up the Pi """
     try:
-        with open(initial_data, 'r') as d:
+        with open(INITIAL_DATA, 'r') as d:
             data = json.load(d)
     except Exception:
         abort(404)  # Data must be there!

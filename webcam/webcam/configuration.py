@@ -62,8 +62,9 @@ class Configuration:
         Compares the current time with the start-stop times and 
         return True if outside the interval, False if within.
         """
-        start_time_string = getattr(self, "start_night", "23:59:59")
-        end_time_string = getattr(self, "end_night", "00:00:01")
+        time_data = getattr(self, "time", {})
+        start_time_string = getattr(time_data, "start_night", "23:59:59")
+        end_time_string = getattr(time_data, "end_night", "00:00:01")
         current_time_string = datetime.datetime.now().strftime('%H:%M:%S')
 
         log(f"Checking if now ({current_time_string}) it's night time (night starts at {start_time_string} and ends at {end_time_string})")

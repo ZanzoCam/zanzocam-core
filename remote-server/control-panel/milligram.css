@@ -677,7 +677,7 @@ img {
 }
 
 #container {
-  background-color: #eee;
+  background-color: white;
   max-width: 800px;
   margin: 3rem auto;
   border-radius: 3rem;
@@ -750,6 +750,11 @@ label {
     padding:1rem 3rem !important;
     margin:0 !important;
     text-transform:none !important;
+}
+
+.bordered-font {
+  text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
+  font-weight: 700;
 }
 
 

@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 import os
+import math
 import shutil
 import requests
 import datetime
@@ -31,8 +32,8 @@ class System:
         self.status["version"] = self.get_version()
         self.status["last reboot"] = self.get_last_reboot_time()
         self.status["uptime"] = self.get_uptime()
-        self.status["operational"] = self.check_operational_status()
-        if not self.status["operational"]:
+        self.status["hotspot"] = self.check_hotspot_allowed()
+        if self.status["hotspot"] != "OFF":
             self.status["autohotspot check"] = self.run_autohotspot()
         self.status['wifi ssid'] = self.get_wifi_ssid()
         self.status['internet access'] = self.check_internet_connectivity()
@@ -85,15 +86,17 @@ class System:
         return None
         
         
-    def check_operational_status(self) -> Optional[str]:
+    def check_hotspot_allowed(self) -> Optional[str]:
         """ 
-        Checks whether ZANZOCAM is supposed to be in operational or setup mode
+        Checks whether ZANZOCAM can turn on its hotspot at need
         """
         try:
-            return os.path.exists("/home/zanzocam-bot/OPERATIONAL")
+            with open("/home/zanzocam-bot/HOTSPOT_ALLOWED") as h:
+                return h.read().strip()
+
         except Exception as e:
-            log_error("Failed to check operational status. "
-                      "Assuming setup mode", e)
+            log_error("Failed to check if the hotspot is allowed. "
+                      "Assuming yes.", e)
             return False
 
     def run_autohotspot(self) -> Optional[bool]:
@@ -222,31 +225,52 @@ class System:
         """
         Modifies the system according to the new configuration.
         """
-        if 'crontab' in vars(configuration).keys():
-            self.update_crontab(configuration.crontab)
+        if 'crontab' in vars(configuration).keys() or 'time' in vars(configuration).keys():
+            self.update_crontab(getattr(configuration, "time", {}), getattr(configuration, "crontab", {}))
 
-    def update_crontab(self, cron: Dict) -> None:
+
+    def update_crontab(self, time: Dict, cron: Dict) -> None:
         """ 
         Updates the crontab and tries to recover for potential issues.
         Might refuse to update it in case of misconfigurations, in which case it
         will restore the old one and log the exceptions.
-        """    
-        # Create the crontab string
-        cron_string = " ".join([
-            cron.get('minute', '*'),
-            cron.get('hour', '*'),
-            cron.get('day', '*'),
-            cron.get('month', '*'),
-            cron.get('weekday', '*')
-        ])
+        """
+        cron_strings = []
+
+        # If a time in minutes is given, calculate the equivalent cron values
+        if time:
+            frequency = time.get("frequency", "60")
+            start_night = time.get("start_night", "23:59:00").split(":")[:2]
+            end_night = time.get("end_night", "00:00:00").split(":")[:2]
+            
+            # Compute every trigger time and save a cron string
+            start_total_minutes = int(end_night[0])*60 + int(end_night[1])
+            end_total_minutes = int(start_night[0])*60 + int(start_night[1])
+
+            while(start_total_minutes < end_total_minutes):
+                hour = math.floor(start_total_minutes/60)
+                minute = start_total_minutes - (hour*60)
+                cron_strings.append(f"{minute} {hour} * * *")
+                start_total_minutes += frequency
+
+        # If instead cron is given, only create one string with the given cron parameters
+        if cron:
+            cron_strings = [" ".join([
+                cron.get('minute', '*'),
+                cron.get('hour', '*'),
+                cron.get('day', '*'),
+                cron.get('month', '*'),
+                cron.get('weekday', '*')
+            ])]
         
         # Creates a file with the right content
         with open(".tmp-cronjob-file", 'w') as d:
-            d.writelines(
-                "# ZANZOCAM - shoot picture\n"
-                f"{cron_string} zanzocam-bot "
-                " /home/zanzocam-bot/venv/bin/z-webcam "
-                " >> /home/zanzocam-bot/webcam/logs.txt 2>&1\n")
+            d.writelines("# ZANZOCAM - shoot picture\n")
+            for line in cron_strings:
+                d.writelines(
+                    f"{line} zanzocam-bot "
+                    " /home/zanzocam-bot/venv/bin/z-webcam "
+                    " >> /home/zanzocam-bot/webcam/logs.txt 2>&1\n")
                 
         # Backup the old crontab in the home
         backup_cron = subprocess.run([
@@ -299,17 +323,3 @@ class System:
                     log("cron file restored successfully.")
                     log("Please investigate the cause of the issue!")
             log("+++++++++++++++++++++++++++++++++++++++++++")
-                
-
-
-
-
-
-
-
-
-
-
-
-
-

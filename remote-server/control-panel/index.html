@@ -397,6 +397,16 @@
         text_block.style.display = value==="text" ? "block" : "none";
         image_block.style.display = value==="image" ? "block" : "none";
     }
+
+    function setColorField(fieldToColor, color){
+        fieldToColor.value = color;
+        fieldToColor.style.backgroundColor = color;
+    }
+    function resetColorField(fieldToColor){
+        fieldToColor.style.backgroundColor = 'white';
+    }
+
+
   </script>
 
 </head>
@@ -468,31 +478,62 @@
             </div>
             
             <div class="sheet">
-                <h3>Crontab:</h3>
-            
+                <h3>Orario:</h3>
+
                 <div class="row">
                     <div class="column">
-                        <label class="label-inline">Minuti:</label>
-                        <input type="text" placeholder="*"  name="crontab__minute">
+                        <label class="label-inline">Inizia a scattare alle:</label>
+                        <input type="text" placeholder="00:01" name="time__end_night">
                     </div>
                     <div class="column">
-                        <label class="label-inline">Ora:</label>
-                        <input type="text" placeholder="*"  name="crontab__hour">
+                        <label class="label-inline">Smetti di scattare alle:</label>
+                        <input type="text" placeholder="23:59" name="time__start_night">
                     </div>
                     <div class="column">
-                        <label class="label-inline">Giorno:</label>
-                        <input type="text" placeholder="*"  name="crontab__day">
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">Mese:</label>
-                        <input type="text" placeholder="*"  name="crontab__month">
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">G. settimana:</label>
-                        <input type="text" placeholder="*"  name="crontab__weekday">
+                        <label class="label-inline">Frequenza scatti:</label>
+                        <select name="time__frequency">
+                          <option value="5" >Ogni 5 minuti</option>
+                          <option value="15" >Ogni 15 minuti</option>
+                          <option value="30" >Ogni 30 minuti</option>
+                          <option value="60" selected="selected">Ogni ora</option>
+                          <option value="120" >Ogni 2 ore</option>
+                          <option value="240" >Ogni 4 ore</option>
+                          <option value="480" >Ogni 8 ore</option>
+                        </select>
                     </div>
                 </div>
-            
+
+                <details>
+                    <summary>Modalita' esperto (configuratione crontab diretta)</summary>
+                    
+                    <p>
+                    <br>
+                    <b>NOTA BENE:</b> se anche uno solo di questi campi contiene un valore, 
+                    la frequenza definita sopra verra' ignorata.
+                    </p>
+                    <div class="row">
+                        <div class="column">
+                            <label class="label-inline">Minuti:</label>
+                            <input type="text" placeholder="*"  name="crontab__minute">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Ora:</label>
+                            <input type="text" placeholder="*"  name="crontab__hour">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Giorno:</label>
+                            <input type="text" placeholder="*"  name="crontab__day">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Mese:</label>
+                            <input type="text" placeholder="*"  name="crontab__month">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">G. settimana:</label>
+                            <input type="text" placeholder="*"  name="crontab__weekday">
+                        </div>
+                    </div>
+                </details>
             </div>
             
      <!-------------------------------------------------------------------------->
@@ -552,12 +593,30 @@
                         
                 <div class="row">
                     <div class="column">
-                        <label for="image__rotation">Angolo Rotazione:</label>
+                        <label>Angolo Rotazione:</label>
                         <input type="text" placeholder="0"  name="image__rotation">
                     </div>
                     <div class="column">
-                        <label for="image__background_color">Colore Sfondo (RGBA):</label>
-                        <input type="text" placeholder="#00000000"  name="image__background_color">
+
+                        <label>Colore Sfondo (RGBA):</label>
+                        <input class="bordered-font" value="" oninput="document.getElementById('image__background_color').selectedIndex = 0; resetColorField(this);"/>
+                        <select id="image__background_color" name="image__background_color" onchange="setColorField(this.previousElementSibling, this.value);" onload="setColorField(this.previousElementSibling, this.value);">
+                            <option value=""></option>
+                            <option value="white">bianco</option>
+                            <option value="#ccc">grigio chiaro</option>
+                            <option value="#999">grigio</option>
+                            <option value="#333">grigio scuro</option>
+                            <option value="black">nero</option>
+                            <option value="red">rosso</option>
+                            <option value="yellow">giallo</option>
+                            <option value="green">verde</option>
+                            <option value="blue">blu</option>
+                        </select>
+                        
+
+
+                        <!--label for="image__background_color">Colore Sfondo (RGBA):</label>
+                        <input type="text" placeholder="#00000000"  name="image__background_color"-->
                     </div>
                 </div>
                 
