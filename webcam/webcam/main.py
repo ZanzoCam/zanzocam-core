@@ -135,9 +135,10 @@ def main():
         # If we had trouble with the new config, restore the old from the backup
         # TODO assess the situation better! Maybe the failure is unrelated.
         errors_were_raised_str = "successfully"
-        if errors_were_raised and initial_configuration:
-            initial_configuration.restore_backup()
-            initial_server.upload_failure_report(configuration.server, initial_configuration.server)
+        if errors_were_raised:
+            if initial_configuration:
+                initial_configuration.restore_backup()
+                initial_server.upload_failure_report(configuration.server, initial_configuration.server)
             errors_were_raised_str = "with errors"
             
         end = datetime.datetime.now()
