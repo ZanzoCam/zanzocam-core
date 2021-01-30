@@ -38,13 +38,13 @@ def main():
 
         # Verify if we're into the active hours or not, if defined
         try:
-            if initial_configuration.is_outside_of_working_hours():
+            if not initial_configuration.is_active_hours():
                 log("The current time is outside working hours. Turning off.")
                 return
         except Exception as e:
-            log_error("An error occurred trying to assess if the current time is within working hours. " +
+            log_error("An error occurred trying to assess if the current time is within active hours. " +
                       "Assuming YES.", e)
-        log("The current time is inside working hours. Proceeding.")
+        log("The current time is inside active hours. Proceeding.")
 
         initial_server = Server(initial_configuration.server)
 

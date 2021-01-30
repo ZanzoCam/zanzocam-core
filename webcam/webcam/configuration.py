@@ -57,23 +57,37 @@ class Configuration:
         return json.dumps(vars(self), indent=4, default=lambda x: str(x))
 
     
-    def is_outside_of_working_hours(self):
+    def is_active_hours(self):
         """
         Compares the current time with the start-stop times and 
-        return True if outside the interval, False if within.
+        return True if inside the interval, False if outside.
         """
         time_data = getattr(self, "time", {})
-        start_time_string = getattr(time_data, "start_night", "23:59:59")
-        end_time_string = getattr(time_data, "end_night", "00:00:01")
-        current_time_string = datetime.datetime.now().strftime('%H:%M:%S')
+        
+        start_time_string = time_data.get("start_activity", "00:00")
+        if start_time_string.count(":") > 1:
+            ":".join(start_time_string.split(":")[:2])
 
-        log(f"Checking if now ({current_time_string}) it's night time (night starts at {start_time_string} and ends at {end_time_string})")
+        end_time_string = time_data.get("stop_activity", "23:59")
+        if end_time_string.count(":") > 1:
+            ":".join(end_time_string.split(":")[:2])
 
-        start_time = datetime.datetime.strptime(start_time_string, "%H:%M:%S")
-        end_time = datetime.datetime.strptime(end_time_string, "%H:%M:%S")
-        current_time = datetime.datetime.strptime(current_time_string, "%H:%M:%S")
+        current_time_string = datetime.datetime.now().strftime('%H:%M')
 
-        if current_time >= start_time or current_time <= end_time:
+        log(f"Checking if {current_time_string} is into active interval ({start_time_string} to {end_time_string})")
+
+        try:
+            start_time = datetime.datetime.strptime(start_time_string, "%H:%M")
+        except Exception as e:
+            log_error(f"Could not read the activity start time as a time value.", e)
+
+        try:
+            end_time = datetime.datetime.strptime(end_time_string, "%H:%M")
+        except Exception as e:
+            log_error(f"Could not read the activity end time as a time value.", e)
+
+        current_time = datetime.datetime.strptime(current_time_string, "%H:%M")  # Converting back from the string so the date doesn't matter
+        if current_time >= start_time and current_time <= end_time:
             return True
         return False
 

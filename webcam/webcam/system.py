@@ -240,14 +240,20 @@ class System:
         # If a time in minutes is given, calculate the equivalent cron values
         if time:
             frequency = time.get("frequency", "60")
-            start_night = time.get("start_night", "23:59:00").split(":")[:2]
-            end_night = time.get("end_night", "00:00:00").split(":")[:2]
+            start_time = time.get("start_activity", "00:00:00").split(":")[:2]
+            stop_time = time.get("stop_activity", "23:59:00").split(":")[:2]
+
+            try:
+                frequency = int(frequency)
+            except Exception as e:
+                log_error("Could not convert the frequency value to minutes! Using fallback value of 10 minutes")
+                frequency = 10
             
             # Compute every trigger time and save a cron string
-            start_total_minutes = int(end_night[0])*60 + int(end_night[1])
-            end_total_minutes = int(start_night[0])*60 + int(start_night[1])
+            start_total_minutes = int(start_time[0])*60 + int(start_time[1])
+            stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
 
-            while(start_total_minutes < end_total_minutes):
+            while(start_total_minutes < stop_total_minutes):
                 hour = math.floor(start_total_minutes/60)
                 minute = start_total_minutes - (hour*60)
                 cron_strings.append(f"{minute} {hour} * * *")

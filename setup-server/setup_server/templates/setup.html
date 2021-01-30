@@ -3,13 +3,13 @@
 {% block content %}
     <p>
     Inserisci qua sotto i dati del WiFi e i dati necessari per la
-    configurazione iniziale del software della webcam.
+    configurazione iniziale.
     </p>
     
     <p>
     Questi dati potranno essere cambiati in seguito utilizzando il file di 
     configurazione salvato sul server. La webcam scarichera' il file aggiornato
-    appena prima di fare l'upload di una nuova foto.
+    appena prima di scattare una nuova foto.
     </p>
 
      
@@ -27,11 +27,11 @@
                 <div class="row">
                     <h3>Server:</h3>
                     <label class="toggle">
-                        <input type="radio" value="HTTP" name="server_protocol" {% if data.server_protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')">
+                        <input type="radio" value="HTTP" name="server_protocol" {% if data.server_protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')" style="display:none;">
                         <span class="label">HTTP</span>
                     </label><br>
                     <label class="toggle">
-                        <input type="radio" value="FTP" name="server_protocol" {% if data.server_protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')">
+                        <input type="radio" value="FTP" name="server_protocol" {% if data.server_protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')"  style="display:none;">
                         <span class="label">FTP</span>
                     </label><br>
                 </div>
@@ -55,7 +55,7 @@
                 <div class="row">
                     <h3>Hotspot:</h3>
                     <label class="toggle">
-                        <input type="radio" value="ON" name="hotspot_allowed" {% if data.hotspot_allowed=="ON" %}checked{%endif%} onchange="javascript:turnHotspotON()">
+                        <input type="radio" value="ON" name="hotspot_allowed" {% if not data.hotspot_allowed or data.hotspot_allowed=="ON" %}checked{%endif%} onchange="javascript:turnHotspotON()">
                         <span class="label">ON</span>
                     </label><br>
                     <label class="toggle">
