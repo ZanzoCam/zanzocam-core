@@ -29,6 +29,7 @@ def main():
         for key, value in status.items():
             log(f" - {key}: {value}")
 
+        initial_configuration = None
         try:
             initial_configuration = Configuration()
         except Exception as e:
