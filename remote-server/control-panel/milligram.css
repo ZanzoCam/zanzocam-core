@@ -769,8 +769,8 @@ label {
     display: none;
 }
 .toggle .label {
-    background-color: var(--accent);
-    border: 0.1rem solid var(--accent);
+    background-color: #bbb;
+    border: 0.1rem solid #bbb;
     color: #fff;
     cursor: pointer;
     display: inline-block;
@@ -786,8 +786,8 @@ label {
     white-space: nowrap;
 }
 .toggle input:checked + .label {
-    background-color: var(--dark-accent);
-    border-color: var(--dark-accent);
+    background-color: var(--accent);
+    border-color: var(--accent);
     color: #fff;
     outline: 0;
 }

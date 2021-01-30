@@ -91,7 +91,7 @@ class System:
         Checks whether ZANZOCAM can turn on its hotspot at need
         """
         try:
-            with open("/home/zanzocam-bot/HOTSPOT_ALLOWED") as h:
+            with open("/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED", "r+") as h:
                 return h.read().strip()
 
         except Exception as e:
