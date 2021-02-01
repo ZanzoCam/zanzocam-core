@@ -159,9 +159,9 @@
                     if (localMode){
                         server_url = document.getElementById("server-url").value;
                         document.getElementById(prefix+key).alt = "Preview non disponibile in modalita' offline";
-                        document.getElementById(prefix+key).src = server_url + "pannello/config/images/" + value;
+                        document.getElementById(prefix+key).src = server_url + "configuration/overlays/" + value;
                     } else {
-                        document.getElementById(prefix+key).src = url + "pannello/config/images/" + value;
+                        document.getElementById(prefix+key).src = url + "configuration/overlays/" + value;
                     }
                     document.getElementById(prefix+key+"_current").innerHTML = "<b>"+value+"</b>";
                 // If it's not an object, you can safely fill the value in
@@ -181,7 +181,7 @@
             // Special processing is needed for color fields
             if (key === "font_color" || key === "background_color"){
                 dropdown = document.getElementById(prefix+key);
-	            setColorField(dropdown.previousElementSibling, value, prefix+key);
+	            setColorField(dropdown.nextElementSibling, value, prefix+key);
             }
         }
     }
@@ -391,8 +391,8 @@
     function toggle_server_protocol(value) {
         var http_block = document.getElementById("server_protocol_HTTP-vars");
         var ftp_block = document.getElementById("server_protocol_FTP-vars");
-        http_block.style.display = value==="HTTP" ? "block" : "none";
-        ftp_block.style.display = value==="FTP" ? "block" : "none";
+        http_block.style.display = value==="HTTP" ? "flex" : "none";
+        ftp_block.style.display = value==="FTP" ? "flex" : "none";
     }
     
     // Toggle text or image config in the overlays section
@@ -553,22 +553,42 @@
                         <span class="label">FTP</span>
                     </label><br>
                 </div> 
-                
-                <div id="server_protocol_HTTP-vars">
-                    <label for="server__url">URL del server:</label>
-                    <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
-                </div>
-                
-                <div id="server_protocol_FTP-vars" style="display: none;">
-                    <label for="server__hostname">Hostname:</label>
-                    <input type="text" placeholder="example.com" id="server-hostname" name="server__hostname">
-                </div>
-                
+
                 <label for="server__username">Username (se necessario):</label>
                 <input type="text" placeholder="username"  name="server__username">
                 
                 <label for="server__password">Password (se necessaria):</label>
                 <input type="text" placeholder="password"  name="server__password">
+                
+                <div id="server_protocol_HTTP-vars" class="row">
+                    <div class="column">
+                        <label for="server__url">URL del server:</label>
+                        <input type="text" placeholder="https://example.com/foto" id="server-url" name="server__url">
+                    </div>
+                </div>
+                
+                <div id="server_protocol_FTP-vars" style="display: none; flex-direction:column!important;">
+                    <div class="row">
+                        <div class="column">
+                            <label>Hostname:</label>
+                            <input type="text" placeholder="example.com" id="server-hostname" name="server__hostname">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="column">
+                            <label class="label-inline">Sottocartella (se necessaria):</label>
+                            <input type="text" name="server__subfolder">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Avanzate:</label>
+                            <div style="padding: 10px;">
+                                <input type="checkbox"  name="server__tls">
+                                <label class="label-inline" checked>Usa TLS</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
             
             <div class="sheet">
@@ -658,6 +678,17 @@
                 <label class="label-inline" for="image__add_time_to_name">Aggiungi l'ora al nome della foto</label>
                 <br>
                 <br>
+
+                <div class="row">
+                    <div class="column">
+                        <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                        <input type="text" placeholder="%d %B %Y"  name="image__date_format">
+                    </div>
+                    <div class="column">
+                        <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
+                        <input type="text" placeholder="%H:%M"  name="image__time_format">
+                    </div>
+                </div>
                 
                 <div class="row">
                     <div class="column">
@@ -690,25 +721,23 @@
                         <label>Angolo Rotazione:</label>
                         <input type="text" placeholder="0"  name="image__rotation">
                     </div>
-                    <div class="column">
+                    <div class="column color-selector">
                         <label>Colore Sfondo (RGBA):</label>
-                        <span>
-                            <input value="" name="image__background_color" oninput="setColorField(this, this.value, 'image__background_color');"/>
-                            <select id="image__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                <option value=""></option>
-                                <option value="#ffffff">bianco</option>
-                                <option value="#cccccc">grigio chiaro</option>
-                                <option value="#999999">grigio</option>
-                                <option value="#333333">grigio scuro</option>
-                                <option value="#000000">nero</option>
-                                <option value="#ff0000">rosso</option>
-                                <option value="#ffff00">giallo</option>
-                                <option value="#008000">verde</option>
-                                <option value="#0000ff">blu</option>
-                                <option value="#00000088">nero semitrasparente</option>
-                                <option value="#ffffff88">bianco semitrasparente</option>
-                            </select>
-                        </span>
+                        <select id="image__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                            <option value=""></option>
+                            <option value="#ffffff">bianco</option>
+                            <option value="#cccccc">grigio chiaro</option>
+                            <option value="#999999">grigio</option>
+                            <option value="#333333">grigio scuro</option>
+                            <option value="#000000">nero</option>
+                            <option value="#ff0000">rosso</option>
+                            <option value="#ffff00">giallo</option>
+                            <option value="#008000">verde</option>
+                            <option value="#0000ff">blu</option>
+                            <option value="#00000088">nero semitrasparente</option>
+                            <option value="#ffffff88">bianco semitrasparente</option>
+                        </select>
+                        <input value="" name="image__background_color" oninput="setColorField(this, this.value, 'image__background_color');"/>
                     </div>
                 </div>
                 
@@ -750,50 +779,6 @@
                         <label for="overlays__top_right__text">Testo</label>
                         <textarea placeholder="Testo..." name="overlays__top_right__text"></textarea>
                         
-                        
-                        <div class="row">
-                            <div class="column">
-                                <label for="overlays__top_right__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_right__font_color" oninput="setColorField(this, this.value, 'overlays__top_right__font_color');"/>
-                                    <select id="overlays__top_right__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_right__background_color" oninput="setColorField(this, this.value, 'overlays__top_right__background_color');"/>
-                                    <select id="overlays__top_right__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
                         <div class="row">
                             <div class="column">
                                 <label>Dimensione del font:</label>
@@ -806,17 +791,46 @@
                                 <br> 
                             </div>
                         </div>
-                        
+
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_right__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_right__font_color">Colore Testo (RGBA):</label>
+                                    <select id="overlays__top_right__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_right__font_color" oninput="setColorField(this, this.value, 'overlays__top_right__font_color');"/>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__top_right__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
+                                    <select id="overlays__top_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_right__background_color" oninput="setColorField(this, this.value, 'overlays__top_right__background_color');"/>
                             </div>
                         </div>
+                        
                     </div>
                     
                     <div id="top_right_image-vars"  class="overlay-fields" style="display: none;">
@@ -882,49 +896,6 @@
                         <label for="top_center_text-content">Testo</label>
                         <textarea placeholder="Testo..." name="overlays__top_center__text"></textarea>
                         
-                         <div class="row">
-                            <div class="column">
-                                <label for="overlays__top_center__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_center__font_color" oninput="setColorField(this, this.value, 'overlays__top_center__font_color');"/>
-                                    <select id="overlays__top_center__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__top_center__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_center__background_color" oninput="setColorField(this, this.value, 'overlays__top_center__background_color');"/>
-                                    <select id="overlays__top_center__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
                         <div class="row">
                             <div class="column">
                                 <label>Dimensione del font:</label>
@@ -939,13 +910,45 @@
                         </div>
                         
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_center__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_center__font_color">Colore Testo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__top_center__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_center__font_color" oninput="setColorField(this, this.value, 'overlays__top_center__font_color');"/>
+                                </span>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__top_center__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_center__background_color">Colore Sfondo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__top_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_center__background_color" oninput="setColorField(this, this.value, 'overlays__top_center__background_color');"/>
+                                </span>
                             </div>
                         </div>
                     </div>                
@@ -1010,49 +1013,6 @@
                         <label for="top_left_text-content">Testo</label>
                         <textarea placeholder="Testo..." name="overlays__top_left__text"></textarea>
                         
-                         <div class="row">
-                            <div class="column">
-                                <label for="overlays__top_left__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_left__font_color" oninput="setColorField(this, this.value, 'overlays__top_left__font_color');"/>
-                                    <select id="overlays__top_left__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__top_left__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__top_left__background_color" oninput="setColorField(this, this.value, 'overlays__top_left__background_color');"/>
-                                    <select id="overlays__top_left__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
                         <div class="row">
                             <div class="column">
                                 <label>Dimensione del font:</label>
@@ -1067,13 +1027,45 @@
                         </div>
                         
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__top_left__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_left__font_color">Colore Testo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__top_left__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_left__font_color" oninput="setColorField(this, this.value, 'overlays__top_left__font_color');"/>
+                                </span>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__top_left__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__top_left__background_color">Colore Sfondo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__top_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__top_left__background_color" oninput="setColorField(this, this.value, 'overlays__top_left__background_color');"/>
+                                </span>
                             </div>
                         </div>
                     </div>                
@@ -1139,49 +1131,6 @@
                         
                         <div class="row">
                             <div class="column">
-                                <label for="overlays__bottom_right__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_right__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__font_color');"/>
-                                    <select id="overlays__bottom_right__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__bottom_right__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_right__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__background_color');"/>
-                                    <select id="overlays__bottom_right__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="column">
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__bottom_right__font_size">
                             </div>
@@ -1194,13 +1143,45 @@
                         </div>
                         
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_right__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_right__font_color">Colore Testo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_right__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_right__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__font_color');"/>
+                                </span>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_right__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_right__background_color">Colore Sfondo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_right__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__background_color');"/>
+                                </span>
                             </div>
                         </div>
                     </div>                
@@ -1264,49 +1245,6 @@
                         <label for="bottom_center_text-content">Testo</label>
                         <textarea placeholder="Testo..." name="overlays__bottom_center__text"></textarea>
                         
-                         <div class="row">
-                            <div class="column">
-                                <label for="overlays__bottom_center__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_center__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__font_color');"/>
-                                    <select id="overlays__bottom_center__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__bottom_center__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_center__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__background_color');"/>
-                                    <select id="overlays__bottom_center__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
                         <div class="row">
                             <div class="column">
                                 <label>Dimensione del font:</label>
@@ -1321,13 +1259,45 @@
                         </div>
                         
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_center__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_center__font_color">Colore Testo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_center__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_center__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__font_color');"/>
+                                </span>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_center__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_center__background_color">Colore Sfondo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_center__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__background_color');"/>
+                                </span>
                             </div>
                         </div>
                     </div>                
@@ -1393,49 +1363,6 @@
                         
                         <div class="row">
                             <div class="column">
-                                <label for="overlays__bottom_left__font_color">Colore Testo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_left__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__font_color');"/>
-                                    <select id="overlays__bottom_left__font_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="column">
-                                <label for="overlays__bottom_left__background_color">Colore Sfondo (RGBA):</label>
-                                <span>
-                                    <input value="" name="overlays__bottom_left__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__background_color');"/>
-                                    <select id="overlays__bottom_left__background_color" onchange="setColorField(this.previousElementSibling, this.value);">
-                                        <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
-                                        <option value="#999999">grigio</option>
-                                        <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
-                                        <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
-                                        <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
-                                    </select>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="column">
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__bottom_left__font_size">
                             </div>
@@ -1448,13 +1375,45 @@
                         </div>
                         
                         <div class="row">
-                            <div class="column">
-                                <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%d %B %Y"  name="overlays__bottom_left__date_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_left__font_color">Colore Testo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_left__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_left__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__font_color');"/>
+                                </span>
                             </div>
-                            <div class="column">
-                                <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                                <input type="text" placeholder="%H:%M"  name="overlays__bottom_left__time_format">
+                            <div class="column color-selector">
+                                <label for="overlays__bottom_left__background_color">Colore Sfondo (RGBA):</label>
+                                <span>
+                                    <select id="overlays__bottom_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
+                                        <option value=""></option>
+                                        <option value="#ffffff">bianco</option>
+                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#999999">grigio</option>
+                                        <option value="#333333">grigio scuro</option>
+                                        <option value="#000000">nero</option>
+                                        <option value="#ff0000">rosso</option>
+                                        <option value="#ffff00">giallo</option>
+                                        <option value="#008000">verde</option>
+                                        <option value="#0000ff">blu</option>
+                                        <option value="#00000088">nero semitrasparente</option>
+                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                    </select>
+                                    <input value="" name="overlays__bottom_left__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__background_color');"/>
+                                </span>
                             </div>
                         </div>
                     </div>                

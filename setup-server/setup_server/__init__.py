@@ -10,16 +10,16 @@ app = Flask(__name__)
 
 
 INITIAL_DATA = "/var/www/setup-server/setup_server/initial_data.json"
-log_buffer = "/var/www/setup-server/setup_server/logs.txt"
+LOG_BUFFER = "/var/www/setup-server/setup_server/logs.txt"
 
 
 
 def clear_logs():
-    with open(log_buffer, 'w') as d:
+    with open(LOG_BUFFER, 'w') as d:
         pass
 
 def log(message, dot="- "):
-    with open(log_buffer, 'a') as d:
+    with open(LOG_BUFFER, 'a') as d:
         d.writelines(f"{dot}{message}\n")
 
 
@@ -35,24 +35,6 @@ def setup():
     except Exception:
         data = {}
     return render_template("setup.html", title="Setup", data=data)
-
-
-
-@app.route("/shoot", methods=["GET"])
-def shoot():
-    """ Shoot a test picture """
-    try:
-        with open(INITIAL_DATA, 'r') as d:
-            data = json.load(d)
-    except Exception:
-        return json.dumps({"success": False, "server_url": "#"})
-
-    try:
-        shoot_proc = subprocess.run(["/home/zanzocam-bot/venv/bin/z-webcam"])
-    except subprocess.CalledProcessError as e:
-        return json.dumps({"success": False, "server_url": data['server_url']})
-
-    return json.dumps({"success": True, "server_url": data['server_url']})
 
 
 @app.route("/hotspot/<value>", methods=["POST"])
@@ -83,14 +65,28 @@ def setting_up():
     # Save new initial data to a file
     with open(INITIAL_DATA, 'w') as d:
         json.dump(request.form, d, indent=4)
-    return render_template("setting-up.html", title="Setup")
+    return render_template("setting-up.html", 
+        title="Setup",
+        initial_message="Preparazione setup",
+        progress_message="Setup in corso (non lasciare la pagina!)",
+        dont_leave_message="Il setup non e' ancora completo!",
+        async_url="/setup/start",
+        async_process_completed_message_short="Setup completato!",
+        async_process_completed_message_long="Setup completato! "+
+                    "Riavvia il Raspberry Pi se non e' ancora collegato alla "+
+                    "rete da te specificata, poi configura il tuo server e infine " +
+                    "scatta una foto di prova per far partire la webcam.",
+        async_process_failed_message_short="Setup fallito!",
+        async_process_failed_message_long="Il setup non e' andato a buon fine. Controlla i log "+
+                "prima di lasciare la pagina e riprova.",
+        )
 
 
-@app.route("/setup/logs", methods=["GET"])
+@app.route("/logs", methods=["GET"])
 def get_logs():
     """ Endpoint for fetching the latest logs"""
-    global log_buffer
-    with open(log_buffer, 'r') as d:
+    global LOG_BUFFER
+    with open(LOG_BUFFER, 'r') as d:
         logs = d.readlines()
     return json.dumps(logs)
 
@@ -167,6 +163,56 @@ def start_setup():
     log("Setup completo")
     return json.dumps(True), 200
 
+
+
+@app.route("/shoot-picture")
+def shoot():
+    """ The page where a picture can be shoot """
+    clear_logs()
+    return render_template("setting-up.html", 
+        camera=True,
+        title="Scatta Foto",
+        initial_message="Preparazione scatto foto",
+        progress_message="ZANZOCAM sta scattando (non lasciare la pagina!)",
+        dont_leave_message="La foto non e' ancora stata scattata!",
+        async_url="/shoot-picture/start",
+        async_process_completed_message_short="Foto scattata!",
+        async_process_completed_message_long="Foto scattata! Vai sul tuo server per assicurarti che sia arrivata.",
+        async_process_failed_message_short="Foto non scattata!",
+        async_process_failed_message_long="Lo scatto della foto non e' andato a buon fine. "+
+                "Verifica che tutti i parametri siano corretti e controlla i log per capire cosa non ha funzionato.",
+        )
+
+
+@app.route("/shoot-picture/start", methods=["POST"])
+def start_shoot():
+    """ Actually shoots the picture """
+    error = False
+    try:
+        with open(INITIAL_DATA, 'r') as d:
+            data = json.load(d)
+
+        try:
+            with open(LOG_BUFFER, 'w') as l:                
+                shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                while shoot_proc.poll() is None:
+                    line = shoot_proc.stdout.read(1).decode('utf-8')
+                    l.writelines(line)
+
+        except subprocess.CalledProcessError as e:
+            error = "Il processo ha generato un errore: " + str(e)
+
+    except Exception as e:
+        error = "Si e' verificato un errore inaspettato: " + str(e)
+
+    print("DONE!!")
+    # If there was an error at some point, return 500
+    if error:
+        with open(LOG_BUFFER, 'a') as l:
+            l.writelines(error)
+        abort(500)
+
+    return "", 200
 
 
 

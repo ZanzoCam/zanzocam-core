@@ -757,6 +757,22 @@ label {
   font-weight: 700;
 }
 
+.color-selector {
+  min-height: 80px;
+}
+
+.color-selector select{
+  color: white;
+  position: absolute;
+  max-width: 270px;
+}
+
+.color-selector input{
+  position: absolute;
+  max-width: 220px;
+  border-right-style: hidden;
+}
+
 
 /**** Toggle Radio button *****/
 

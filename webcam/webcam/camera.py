@@ -35,6 +35,8 @@ class Camera:
             "extension": "jpg",
             "add_date_to_name": True,
             "add_time_to_name": True,
+            "time_format": "%H:%M:%S",
+            "date_format": "%Y-%m-%d",
             "width": 100,
             "height": 100,
             "ver_flip": False,
@@ -130,7 +132,7 @@ class Camera:
         rendered_overlays = []
         for position, data in self.overlays.items():
             try:
-                overlay = Overlay(position, data, photo.width, photo.height)
+                overlay = Overlay(position, data, photo.width, photo.height, self.date_format, self.time_format)
                 if overlay.rendered_image:
                     rendered_overlays.append(overlay)
                     
@@ -181,12 +183,14 @@ class Overlay:
     """
     Represents one overlay to add to the picture.
     """
-    def __init__(self, position: str, data: Dict, photo_width: int, photo_height: int):
+    def __init__(self, position: str, data: Dict, photo_width: int, photo_height: int, date_format: Optional[str], time_format: Optional[str]):
         log(f"Creating overlay {position}")
         
         # Populate the attributes with the overlay data 
         for key, value in data.items():
             setattr(self, key, value)
+        self.date_format = date_format if date_format else "%Y-%m-%d"
+        self.time_format = time_format if time_format else "%H:%M:%S"
 
         # Store position information
         try:
@@ -216,8 +220,6 @@ class Overlay:
             "font_size": 25,
             "padding_ratio": 0.2,
             "text": "~~~ DEFAULT TEXT ~~~",
-            "time_format": "%H:%M:%S",
-            "date_format": "%Y-%m-%d",
             "font_color": (0, 0, 0),
             "background_color": (255, 255, 255, 0),
             "image": "fallback-pixel.png",

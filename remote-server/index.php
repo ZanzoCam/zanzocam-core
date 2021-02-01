@@ -3,10 +3,10 @@ header('Content-Type: application/json');
 
 $image_path = "pictures/";
 $logs_path = "logs/";
-$config_path = "pannello/config/";
-$config_file = "pannello/config/configuration.json";
-$backup_config_file = "pannello/config/backup/configuration_".date('Y-m-d_H:i:s').".json";
-$config_images_path = "pannello/config/images/";
+$config_path = "configuration/";
+$config_file = "configuration/configuration.json";
+$backup_config_file = "configuration/backup/configuration_".date('Y-m-d_H:i:s').".json";
+$config_images_path = "configuration/overlays/";
 //$config_images_index = "pannello/config/config_images";
 
 // If it's not a POST, return the config file and the images index

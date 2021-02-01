@@ -4,66 +4,23 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta content="text/html; charset=ISO-8859-1">
-
-  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700&family=Roboto&display=swap" rel="stylesheet"> 
-
-  <link href="{{ url_for('static', filename='milligram.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/milligram.css') }}" rel="stylesheet">
 
 </head>
-<body>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  border: none;
-  font-family: 'Raleway', sans-serif;
-}
-
-body {
-  background-color: #9ec3f2;
-}
-
-#container {
-  max-width: 800px;
-  margin: 3rem auto;
-  border-radius: 3rem;
-  font-family: 'Raleway', sans-serif;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  background-color: white;
-  padding: 5%;
-}
-
-.center {
-    text-align: center;
-}
-
-hr {
-    border-bottom: 1px solid var(--dark-accent);
-    margin: 2em;
-}
-
-h3 {
-    margin-top: 2rem;
-    font-weight: 400;
-    color: var(--accent);
-}
-
-label {
-    font-weight: 500;
-}
-
-details > summary {
-  list-style: none;
-}
-
-</style>
+<body class="grass">
+<div class="raspberry" style="margin-left: 5%; animation-delay: 5s;"></div>
+<div class="raspberry" style="margin-left: 15%; animation-delay: -3s;"></div>
+<div class="raspberry" style="margin-left: 25%; animation-delay: 1s;"></div>
+<div class="raspberry" style="margin-left: 75%; animation-delay: 2s;"></div>
+<div class="raspberry" style="margin-left: 85%; animation-delay: -2s;"></div>
+<div class="raspberry" style="margin-left: 95%; animation-delay: 5s;"></div>
 
 <div id="container">
     
     <div class="center">
         <h1>Errore!</h1>
         <h2>{{ message }}</h2>
-        <a href="/" class="button">Vai al setup</a>
+        <a href="/" class="button">Torna alla Home</a>
     </div>
 </div>
 

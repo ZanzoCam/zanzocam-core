@@ -71,7 +71,7 @@
             
             <div class="center">
                 <button id="configure" class="button setup-button" type="submit">Configura</button>
-                <button id="shoot" class="button setup-button" onclick="javascript:shootFirstPicture();" type="button">Scatta Foto</button>
+                <a href="/shoot-picture" id="shoot" class="button setup-button" type="button">Scatta Foto</a>
             </div>     
             
         </form>
@@ -137,8 +137,7 @@
         }
     }
 
-
-    function shootFirstPicture() {
+    /* function shootFirstPicture() {
         button = document.getElementById("shoot");
         configure = document.getElementById("configure");
         feedback = document.getElementById("photo-feedback");
@@ -167,7 +166,7 @@
             button.disabled = false;
             configure.disabled = false;
         });
-    };
+    }; */
     </script>
     
 {% endblock %}

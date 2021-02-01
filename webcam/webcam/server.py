@@ -357,24 +357,24 @@ class _FtpServer:
         # password can be blank  (TODO really it can? Check)
         self.password = parameters.get("password", "")
         self.endpoint = f"ftp://{self.username}@{self.hostname}"
-        self.no_tls = parameters.get("not_tls", False)
-        # self.use_sftp = parameters.get("sftp", False)  # TODO can we support SFTP easily?
-        
+        self.tls = parameters.get("tls", True)
+        self.subfolder = parameters.get("subfolder")
         # Estabilish the FTP connection
         try:
-            if self.no_tls:
-                self._ftp_client = FTP(host=self.hostname, 
-                                        user=self.username, 
-                                        passwd=self.password, 
-                                        timeout=REQUEST_TIMEOUT*2)
-            else:
+            if self.tls:
                 self._ftp_client = Patched_FTP_TLS(host=self.hostname, 
                                             user=self.username, 
                                             passwd=self.password, 
                                             timeout=REQUEST_TIMEOUT*2)
                 self._ftp_client.prot_p()  # Set up secure data connection.
+            else:
+                self._ftp_client = FTP(host=self.hostname, 
+                                        user=self.username, 
+                                        passwd=self.password, 
+                                        timeout=REQUEST_TIMEOUT*2)
+            if self.subfolder:
+                self._ftp_client.cwd(self.subfolder)
                 
-            self._ftp_client.cwd('zanzocam')
         except Exception as e:
             log_error("Failed to estabilish a connection with the FTP server", e,
                       fatal="Exiting.")
@@ -392,7 +392,7 @@ class _FtpServer:
             self.configuration_string += line
 
         # Fetch the new config
-        response = self._ftp_client.retrlines("RETR config/configuration.json", store_line)
+        response = self._ftp_client.retrlines("RETR configuration/configuration.json", store_line)
 
         # Make sure the server did not reply with an error
         if "226" in response:
@@ -411,7 +411,7 @@ class _FtpServer:
         # NOTE: Errors here can escalate
         with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as overlay:
             response = self._ftp_client.retrbinary(
-                            f"RETR config/overlays/{image_name}", overlay.write)
+                            f"RETR configuration/overlays/{image_name}", overlay.write)
         if not "226" in response:
             raise ValueError(f"The server replied with an error code for {image_name}: " + response)
         log(f"New overlay image downloaded: {image_name}")
