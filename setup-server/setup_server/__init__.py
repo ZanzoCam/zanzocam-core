@@ -38,7 +38,7 @@ def setup():
 
 
 @app.route("/hotspot/<value>", methods=["POST"])
-def go_operational(value):
+def toggle_hotspot(value):
     """ Allow the hotspot to turn on or not """
     if value in ["ON", "OFF"]:
         try:
@@ -147,6 +147,8 @@ def start_setup():
     }
     if data['server_protocol'] == "FTP":
         webcam_minimal_conf["server"]["hostname"] = data["server_hostname"]
+        webcam_minimal_conf["server"]["subfolder"] = data["server_subfolder"]
+        webcam_minimal_conf["server"]["tls"] = data["server_tls"]
     else:
         webcam_minimal_conf["server"]["url"] = data["server_url"]
     try:

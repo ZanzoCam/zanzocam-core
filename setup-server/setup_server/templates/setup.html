@@ -36,9 +36,26 @@
                     </label><br>
                 </div>
                 
-                <div id="ftp-vars" style="display: none;">
-                    <label for="server_hostname">Hostname:</label>
-                    <input type="text" placeholder="example.com" name="server_hostname" value="{{ data.server_hostname }}">
+                <div id="ftp-vars" style="display: none; flex-direction:column!important;">
+                    <div class="row">
+                        <div class="column">
+                            <label>Hostname:</label>
+                            <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="column">
+                            <label class="label-inline">Sottocartella (se necessaria):</label>
+                            <input type="text" name="server_subfolder">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Avanzate:</label>
+                            <div style="padding: 10px;">
+                                <input type="checkbox"  name="server_tls">
+                                <label class="label-inline" checked>Usa TLS</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div id="http-vars" style="display: none;">
