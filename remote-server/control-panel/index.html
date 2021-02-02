@@ -173,6 +173,10 @@
 	        if (prefix === "server__" &&  key === "protocol"){
 	            toggle_server_protocol(value);
 	        }
+	        // Special processing is needed for the resolution selector (height is the discriminant0)
+	        if (prefix === "image__" &&  key === "height"){
+	            document.getElementById("resolution_selector").value = value; 
+	        }
 	        // Special processing is needed for the overlay type radio switch
 	        prefixes = prefix.split("__");
 	        if (prefixes[0] === "overlays" &&  key === "type"){
@@ -230,7 +234,12 @@
             
             // Fields that are hidden should not be processed
             // but radios might be hidden by CSS to make the button style
-            if (!field.offsetParent && field.type !== "radio") { return; }
+            if (!field.offsetParent && 
+                field.type !== "radio" && 
+                field.name !== "image__width" && 
+                field.name !== "image__height") { 
+                    return; 
+            }
             
             // Empty strings are null
             if (value===""){ value = null; }
@@ -499,8 +508,6 @@
         return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
     }
     
-
-
   </script>
 
 </head>
@@ -678,41 +685,34 @@
                 <label class="label-inline" for="image__add_time_to_name">Aggiungi l'ora al nome della foto</label>
                 <br>
                 <br>
-
-                <div class="row">
-                    <div class="column">
-                        <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                        <input type="text" placeholder="%d %B %Y"  name="image__date_format">
-                    </div>
-                    <div class="column">
-                        <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">formato</a>):</label>
-                        <input type="text" placeholder="%H:%M"  name="image__time_format">
-                    </div>
-                </div>
                 
                 <div class="row">
                     <div class="column">
-                        <label for="image__width">Larghezza:</label>
-                        <input type="text" placeholder="2592"  name="image__width">
+                        <label class="label-inline">Risoluzione:</label>
+                        <select id="resolution_selector">
+                          <option data-width=3280 data-height=2464 value=2464>8 Megapixel (4K), 4:3 (3280x2464)</option>
+                          <option data-width=2688 data-height=1520 value=1520> 4 Megapixel (2K), 16:9 (2688x1520)</option>
+                          <option data-width=2048 data-height=1536 value=1536> 3 Megapixel, 4:3 (2048x1536)</option>
+                          <option data-width=1920 data-height=1080 value=1080> 2 Megapixel (1080P), 4:3 (1920x1080)</option>
+                          <option data-width=1640 data-height=922 value=922> 1.5 Megapixel, 21:9 (1640x922)</option>
+                          <option data-width=1920 data-height=780 value=780> 1.5 Megapixel, 16:9 (1920x780)</option>
+                          <option data-width=1280 data-height=720 value=720> 1 Megapixel (720), 16:9 (1280x720)</option>
+                          <option data-width=640 data-height=480 value=480> 0.3 Megapixel, 4:3 (640x480)</option>
+                        </select>
+                        <div style="display:none;">
+                            <input type="text" id="image__width" name="image__width">
+                            <input type="text" id="image__height" name="image__height">
+                        </div>
                     </div>
                     <div class="column">
-                        <label for="image__height">Altezza:</label>
-                        <input type="text" placeholder="1944"  name="image__height">
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="column">
-                        <input type="checkbox"  name="image__hor_flip">
-                        <label class="label-inline" for="image__hor_flip">Speccha in orizzontale</label>
-                        <br>            
-                        <br>
-                    </div>
-                    <div class="column">
-                        <input type="checkbox"  name="image__ver_flip">
-                        <label class="label-inline" for="image__ver_flip">Specchia in verticale</label>
-                        <br>
-                        <br>
+                        <div class="row" style="padding: 20px 0 0 20px;">
+                            <input type="checkbox"  name="image__hor_flip">
+                            <label class="label-inline" for="image__hor_flip">Speccha in orizzontale</label>
+                        </div>
+                        <div class="row" style="padding: 0 0 20px 20px;">
+                            <input type="checkbox"  name="image__ver_flip">
+                            <label class="label-inline" for="image__ver_flip">Specchia in verticale</label>
+                        </div>
                     </div>
                 </div>
                         
@@ -740,6 +740,28 @@
                         <input value="" name="image__background_color" oninput="setColorField(this, this.value, 'image__background_color');"/>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="column">
+                        <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener noreferrer">istruzioni</a>):</label>
+                        <input type="text" placeholder="%d %B %Y"  name="image__date_format">
+                    </div>
+                    <div class="column">
+                        <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener noreferrer">istruzioni</a>):</label>
+                        <input type="text" placeholder="%H:%M"  name="image__time_format">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="column">
+                    <p>
+                        Per aggiungere data e ora nella foto, seleziona "Testo" nella posizione desiderata e 
+                        usa <b>%%TIME</b> per indicare l'ora, <b>%%DATE</b> per indicare la data.<br>
+                        Per esempio, se nel testo scrivi "Data di oggi: %%DATE", sull'immagine vedrai 
+                        qualcosa di simile a "Data di oggi: 01-01-2020"
+                    </p>
+                    </div>
+                </div>
+                
                 
                 <label>Se JPEG:</label>
                 <div class="row">
@@ -1494,6 +1516,15 @@
             });
         });
     })
+
+    // Resolution selector listener
+    document.getElementById("resolution_selector").onchange = function(event){
+        var width = event.target.options[event.target.selectedIndex].dataset.width;
+        var height = event.target.options[event.target.selectedIndex].dataset.height;
+        document.getElementById('image__width').value = width;
+        document.getElementById('image__height').value = height;
+    };
+
     
     // Hooks on the Save button click event to trigger the save operation
     form.onsubmit = async (e) => {

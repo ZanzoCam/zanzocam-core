@@ -7,7 +7,7 @@ CONFIGURATION_PATH = PATH / "configuration.json"
 CONFIGURATION_BACKUP_PATH = PATH / "configuration.json.bak"
 
 IMAGE_OVERLAYS_PATH = PATH / "overlays"
-REMOTE_IMAGES_PATH = "pannello/config/images/"
+REMOTE_IMAGES_PATH = "configuration/overlays/"
 
 LOGS_PATH = PATH/ "logs.txt"
 

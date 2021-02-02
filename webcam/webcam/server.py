@@ -243,7 +243,7 @@ class _HttpServer:
         else:
             log_error(f"New overlay image failed to download: {image_name}")
             log(f"Response status code: {r.status_code}")
-            raise ValueError("Overlay image failed to download: {image_name}")
+            raise ValueError(f"Overlay image failed to download: {image_name}")
 
 
     def send_logs(self, path: Path):
@@ -411,7 +411,7 @@ class _FtpServer:
         # NOTE: Errors here can escalate
         with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as overlay:
             response = self._ftp_client.retrbinary(
-                            f"RETR configuration/overlays/{image_name}", overlay.write)
+                            f"RETR {REMOTE_IMAGES_PATH}{image_name}", overlay.write)
         if not "226" in response:
             raise ValueError(f"The server replied with an error code for {image_name}: " + response)
         log(f"New overlay image downloaded: {image_name}")
