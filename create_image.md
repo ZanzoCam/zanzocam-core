@@ -381,6 +381,10 @@ fi
 ```
 - Make it executable:
     - `sudo chmod +x /usr/bin/autohotspot`
+    
+- Some boards actually come with rfkilled WiFi interface and wlan0 down. Therefore:
+    - `sudo nano /etc/crontab` (this file can run sudo commands)
+    - Append at the end of the file: `@reboot root rfkill unblock 0 && ifconfig wlan0 up && /usr/bin/autohotspot`
 
 - To test:
     - `sudo reboot`. 
