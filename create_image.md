@@ -399,7 +399,7 @@ fi
 ### Prepare setup server
 Once the Pi can generate its own network, we make it able to receive HTTP requests by setting up a web server: Nginx.
 
-Instructions (here)[https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md] for Nginx and (here)[https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04] for Flask.
+Instructions [here](https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md) for Nginx and [here](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) for Flask.
 
 - Install Nginx: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
 - Start Nginx: `sudo /etc/init.d/nginx start`
