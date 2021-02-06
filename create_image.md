@@ -452,7 +452,8 @@ server {
 - Resize `rootfs` to be approximately 3.5G (can be done with GParted).
 - Clone the resized content of the SD into an image: `dd if=/dev/sdX of=zanzocam.img bs=4M status=progress oflag=sync` with `sudo`
 - Install resizing tool: `sudo apt install -y qemu-utils`
-- Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 4G`
+- Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 3.8G`
+    - If you're building an image to be used with the Raspberry Imager, use a multiple of 512: `4080218624B` instead of `3.8G`
 
 The image is ready to be flashed on any SD card larger than 4GB. 
 Note that the filesystem will not expand.
