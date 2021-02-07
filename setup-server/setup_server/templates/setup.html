@@ -46,13 +46,13 @@
                     <div class="row">
                         <div class="column">
                             <label class="label-inline">Sottocartella (se necessaria):</label>
-                            <input type="text" name="server_subfolder">
+                            <input type="text" name="server_subfolder" value="{{ data.server_subfolder }}"?
                         </div>
                         <div class="column">
                             <label class="label-inline">Avanzate:</label>
                             <div style="padding: 10px;">
-                                <input type="checkbox"  name="server_tls">
-                                <label class="label-inline" checked>Usa TLS</label>
+                                <input type="checkbox" name="server_tls" {% if data.server_tls %}checked{%endif%}>
+                                <label class="label-inline">Usa TLS</label>
                             </div>
                         </div>
                     </div>
@@ -81,14 +81,14 @@
                     </label><br>
                 </div>
                 <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZANZOCAM di generare o meno un hotspot quando perde contatto
-                con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM e' gia' in grado di collegarsi
-                con un'altra rete WiFi o e' collegata via rete Ethernet.<br>
+                con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM è gia' in grado di collegarsi
+                con un'altra rete WiFi o è collegata via rete Ethernet.<br>
                 Si consiglia di selezionare ON durante il setup della webcam, e di selezionare OFF una volta che il sistema e'
                 completamente funzionante.</p>
             
             <div class="center">
                 <button id="configure" class="button setup-button" type="submit">Configura</button>
-                <a href="/shoot-picture" id="shoot" class="button setup-button" type="button">Scatta Foto</a>
+                <a href="/shoot-picture" id="shoot" class="button setup-button" type="button">Setup Foto</a>
             </div>     
             
         </form>
@@ -131,8 +131,8 @@
             .then(r => {
                 alert("Modifica completata con successo.");
             }).catch(r => {
-                alert("Qualcosa e' andato storto! " +
-                      "ZANZOCAM non e' raggiungibile.");
+                alert("Qualcosa è andato storto! " +
+                      "ZANZOCAM non è raggiungibile.");
             })   
         }
     }
@@ -148,8 +148,8 @@
             .then(r => {
                 alert("Modifica completata con successo.");
             }).catch(r => {
-                alert("Qualcosa e' andato storto! " +
-                      "ZANZOCAM non e' raggiungibile.");
+                alert("Qualcosa è andato storto! " +
+                      "ZANZOCAM non è raggiungibile.");
             })   
         }
     }
@@ -174,7 +174,7 @@
                     outcome['server_url'] +
                     "/pictures' target='_blank'>il tuo server</a> per assicurarti che sia stata ricevuta."
             } else {
-                feedback.innerHTML = "Si e' verificato un errore! "+
+                feedback.innerHTML = "Si è verificato un errore! "+
                     "Prova a riconfigurare ZANZOCAM e controlla che <a href='" + 
                     outcome['server_url'] +
                     "/pictures' target='_blank'>il tuo server</a> sia funzionante."         

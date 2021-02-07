@@ -614,7 +614,9 @@
                         <label class="label-inline">Frequenza scatti:</label>
                         <select name="time__frequency">
                           <option value=5 >Ogni 5 minuti</option>
+                          <option value=10 >Ogni 10 minuti</option>
                           <option value=15 >Ogni 15 minuti</option>
+                          <option value=20 >Ogni 20 minuti</option>
                           <option value=30 >Ogni 30 minuti</option>
                           <option value=60 selected="selected">Ogni ora</option>
                           <option value=120 >Ogni 2 ore</option>
@@ -690,7 +692,9 @@
                     <div class="column">
                         <label class="label-inline">Risoluzione:</label>
                         <select id="resolution_selector">
+                          <option data-width=4056 data-height=3040 value=3040>12 Megapixel, 4:3 (3280x2464)</option>
                           <option data-width=3280 data-height=2464 value=2464>8 Megapixel (4K), 4:3 (3280x2464)</option>
+                          <option data-width=2592 data-height=1944 value=1944>5 Megapixel, 4:3 (2592x1944)</option>
                           <option data-width=2688 data-height=1520 value=1520> 4 Megapixel (2K), 16:9 (2688x1520)</option>
                           <option data-width=2048 data-height=1536 value=1536> 3 Megapixel, 4:3 (2048x1536)</option>
                           <option data-width=1920 data-height=1080 value=1080> 2 Megapixel (1080P), 4:3 (1920x1080)</option>
@@ -725,17 +729,17 @@
                         <label>Colore Sfondo (RGBA):</label>
                         <select id="image__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                             <option value=""></option>
-                            <option value="#ffffff">bianco</option>
-                            <option value="#cccccc">grigio chiaro</option>
+                            <option value="#FFFFFF">bianco</option>
+                            <option value="#CCCCCC">grigio chiaro</option>
                             <option value="#999999">grigio</option>
                             <option value="#333333">grigio scuro</option>
                             <option value="#000000">nero</option>
-                            <option value="#ff0000">rosso</option>
-                            <option value="#ffff00">giallo</option>
+                            <option value="#FF0000">rosso</option>
+                            <option value="#FFFF00">giallo</option>
                             <option value="#008000">verde</option>
-                            <option value="#0000ff">blu</option>
+                            <option value="#0000FF">blu</option>
                             <option value="#00000088">nero semitrasparente</option>
-                            <option value="#ffffff88">bianco semitrasparente</option>
+                            <option value="#FFFFFF88">bianco semitrasparente</option>
                         </select>
                         <input value="" name="image__background_color" oninput="setColorField(this, this.value, 'image__background_color');"/>
                     </div>
@@ -743,27 +747,135 @@
 
                 <div class="row">
                     <div class="column">
-                        <label>Formato Data (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener noreferrer">istruzioni</a>):</label>
+                        <label>Formato Data:</label>
                         <input type="text" placeholder="%d %B %Y"  name="image__date_format">
                     </div>
                     <div class="column">
-                        <label>Formato Ora (<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener noreferrer">istruzioni</a>):</label>
+                        <label>Formato Ora:</label>
                         <input type="text" placeholder="%H:%M"  name="image__time_format">
                     </div>
                 </div>
                 <div class="row">
                     <div class="column">
-                    <p>
-                        Per aggiungere data e ora nella foto, seleziona "Testo" nella posizione desiderata e 
-                        usa <b>%%TIME</b> per indicare l'ora, <b>%%DATE</b> per indicare la data.<br>
-                        Per esempio, se nel testo scrivi "Data di oggi: %%DATE", sull'immagine vedrai 
-                        qualcosa di simile a "Data di oggi: 01-01-2020"
-                    </p>
+                        <details style="padding-bottom:1rem;">
+                            <summary>Come aggiungo ora e data alla foto?</summary>
+                            <p>
+                                <br>
+                                Per aggiungere data e ora nella foto, seleziona "Testo" nella posizione desiderata e 
+                                usa <b>%%TIME</b> per indicare l'ora, <b>%%DATE</b> per indicare la data.<br>
+                                Per esempio, se nel testo scrivi "Data di oggi: %%DATE", sull'immagine vedrai 
+                                qualcosa di simile a "Data di oggi: 01-01-2020".<br>
+                                Qua sotto c'e' la lista dei simboli che possono essere utilizzati per formattare data e ora.
+                            </p>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Simbolo</th>
+                                        <th>Significato</th>
+                                        <th>Esempio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>%H</td>
+                                        <td>Ora (24 ore), sempre con due cifre.</td>
+                                        <td>00, 01, ..., 23</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%I</td>
+                                        <td>Ora (12 ore), sempre con due cifre</td>
+                                        <td>01, 02, ..., 12</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%p</td>
+                                        <td>AM o PM (per distinguere le ore tra mattina e pomeriggio).</td>
+                                        <td>am, pm</td>
+                                    <tr>
+                                        <td>%M</td>
+                                        <td>Minuti nell'ora corrente, sempre con due cifre</td>
+                                        <td>00, 01, ..., 59</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%S</td>
+                                        <td>Secondi nel minuto corrente, sempre con due cifre.</td>
+                                        <td>00, 01, ..., 59</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%a</td>
+                                        <td>Nome del giorno della settimana, abbreviato</td>
+                                        <td>Lun, Mar, ..., Dom</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%A</td>
+                                        <td>Nome del giorno della settimana, completo</td>
+                                        <td>Lunedi', Martedi', ..., Domenica</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%u</td>
+                                        <td>Giorno della settimana come numero, dove 1 e' lunedi' e 7 e' domenica</td>
+                                        <td>1, 2, ..., 7</td>                                        
+                                    </tr>
+                                    <tr>
+                                        <td>%d</td>
+                                        <td>Giorno del mese, sempre con due cifre</td>
+                                        <td>01, 02, ..., 31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%b</td>
+                                        <td>Nome del mese, abbreviato</td>
+                                        <td>Gen, Feb, ..., Dic</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%B</td>
+                                        <td>Nome del mese, completo</td>
+                                        <td>Gennaio, Febbraio, ..., Dicembre</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%m</td>
+                                        <td>Numero del mese, sempre con due cifre</td>
+                                        <td>01, 02, ..., 12</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%y</td>
+                                        <td>Anno, senza secolo, sempre con due cifre</td>
+                                        <td>00, 01, ..., 99</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%Y</td>
+                                        <td>Anno completo, sempre con quattro cifre</td>
+                                        <td>0001, 0002, ..., 2010, 2011, ...</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%j</td>
+                                        <td>Giorno dell'anno, sempre con tre cifre</td>
+                                        <td>001, 002, ..., 366</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%W</td>
+                                        <td>Settimana dell'anno (iniziando da lunedi'), sempre con due cifre</td>
+                                        <td>00, 01, ..., 53</td>
+                                    </tr>
+                                    <tr>
+                                        <td>%V</td>
+                                        <td>Settimana dell'anno iniziando da lunedi', dove la prima settimana dell'anno e' la numero 1 e non la numero 0.</td>
+                                        <td>01, 02, ..., 53</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <p>Per altre opzioni, vai a 
+                                <a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener noreferrer">questo link</a>.
+                            </p>
+                        </details>
                     </div>
                 </div>
                 
-                
-                <label>Se JPEG:</label>
+                <div class="row">
+                    <div class="column">
+                        <label>Se JPEG:</label>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="column">
                         <label class="label-inline">Qualita':</label>
@@ -819,17 +931,17 @@
                                 <label for="overlays__top_right__font_color">Colore Testo (RGBA):</label>
                                     <select id="overlays__top_right__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_right__font_color" oninput="setColorField(this, this.value, 'overlays__top_right__font_color');"/>
                             </div>
@@ -837,17 +949,17 @@
                                 <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
                                     <select id="overlays__top_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_right__background_color" oninput="setColorField(this, this.value, 'overlays__top_right__background_color');"/>
                             </div>
@@ -937,17 +1049,17 @@
                                 <span>
                                     <select id="overlays__top_center__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_center__font_color" oninput="setColorField(this, this.value, 'overlays__top_center__font_color');"/>
                                 </span>
@@ -957,17 +1069,17 @@
                                 <span>
                                     <select id="overlays__top_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_center__background_color" oninput="setColorField(this, this.value, 'overlays__top_center__background_color');"/>
                                 </span>
@@ -1054,17 +1166,17 @@
                                 <span>
                                     <select id="overlays__top_left__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_left__font_color" oninput="setColorField(this, this.value, 'overlays__top_left__font_color');"/>
                                 </span>
@@ -1074,17 +1186,17 @@
                                 <span>
                                     <select id="overlays__top_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__top_left__background_color" oninput="setColorField(this, this.value, 'overlays__top_left__background_color');"/>
                                 </span>
@@ -1170,17 +1282,17 @@
                                 <span>
                                     <select id="overlays__bottom_right__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_right__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__font_color');"/>
                                 </span>
@@ -1190,17 +1302,17 @@
                                 <span>
                                     <select id="overlays__bottom_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_right__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_right__background_color');"/>
                                 </span>
@@ -1286,17 +1398,17 @@
                                 <span>
                                     <select id="overlays__bottom_center__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_center__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__font_color');"/>
                                 </span>
@@ -1306,17 +1418,17 @@
                                 <span>
                                     <select id="overlays__bottom_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_center__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_center__background_color');"/>
                                 </span>
@@ -1402,17 +1514,17 @@
                                 <span>
                                     <select id="overlays__bottom_left__font_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_left__font_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__font_color');"/>
                                 </span>
@@ -1422,17 +1534,17 @@
                                 <span>
                                     <select id="overlays__bottom_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#ffffff">bianco</option>
-                                        <option value="#cccccc">grigio chiaro</option>
+                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
                                         <option value="#000000">nero</option>
-                                        <option value="#ff0000">rosso</option>
-                                        <option value="#ffff00">giallo</option>
+                                        <option value="#FF0000">rosso</option>
+                                        <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
-                                        <option value="#0000ff">blu</option>
+                                        <option value="#0000FF">blu</option>
                                         <option value="#00000088">nero semitrasparente</option>
-                                        <option value="#ffffff88">bianco semitrasparente</option>
+                                        <option value="#FFFFFF88">bianco semitrasparente</option>
                                     </select>
                                     <input value="" name="overlays__bottom_left__background_color" oninput="setColorField(this, this.value, 'overlays__bottom_left__background_color');"/>
                                 </span>

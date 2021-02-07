@@ -35,8 +35,8 @@ class Camera:
             "extension": "jpg",
             "add_date_to_name": True,
             "add_time_to_name": True,
-            "time_format": "%H:%M:%S",
-            "date_format": "%Y-%m-%d",
+            "time_format": "%H:%M",
+            "date_format": "%d %B %Y",
             "width": 100,
             "height": 100,
             "ver_flip": False,
@@ -189,8 +189,8 @@ class Overlay:
         # Populate the attributes with the overlay data 
         for key, value in data.items():
             setattr(self, key, value)
-        self.date_format = date_format if date_format else "%Y-%m-%d"
-        self.time_format = time_format if time_format else "%H:%M:%S"
+        self.date_format = date_format if date_format else "%d %B %Y"
+        self.time_format = time_format if time_format else "%H:%M"
 
         # Store position information
         try:

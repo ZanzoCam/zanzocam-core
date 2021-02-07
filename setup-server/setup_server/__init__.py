@@ -69,15 +69,15 @@ def setting_up():
         title="Setup",
         initial_message="Preparazione setup",
         progress_message="Setup in corso (non lasciare la pagina!)",
-        dont_leave_message="Il setup non e' ancora completo!",
+        dont_leave_message="Il setup non è ancora completo!",
         async_url="/setup/start",
         async_process_completed_message_short="Setup completato!",
         async_process_completed_message_long="Setup completato! "+
-                    "Riavvia il Raspberry Pi se non e' ancora collegato alla "+
+                    "Riavvia il Raspberry Pi se non è ancora collegato alla "+
                     "rete da te specificata, poi configura il tuo server e infine " +
                     "scatta una foto di prova per far partire la webcam.",
         async_process_failed_message_short="Setup fallito!",
-        async_process_failed_message_long="Il setup non e' andato a buon fine. Controlla i log "+
+        async_process_failed_message_long="Il setup non è andato a buon fine. Controlla i log "+
                 "prima di lasciare la pagina e riprova.",
         )
 
@@ -122,7 +122,7 @@ def start_setup():
         ],
         stdout=subprocess.PIPE)
     if not create_wpa_conf:
-        log(dedent(f"""ERRORE! Non e' stato possibile configurare il WiFi.
+        log(dedent(f"""ERRORE! Non è stato possibile configurare il WiFi.
                 Usa SSH per configurarlo manualmente:
                  - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
                  - Copiaci dentro:
@@ -147,8 +147,8 @@ def start_setup():
     }
     if data['server_protocol'] == "FTP":
         webcam_minimal_conf["server"]["hostname"] = data["server_hostname"]
-        webcam_minimal_conf["server"]["subfolder"] = data["server_subfolder"]
-        webcam_minimal_conf["server"]["tls"] = data["server_tls"]
+        webcam_minimal_conf["server"]["subfolder"] = data.get("server_subfolder")
+        webcam_minimal_conf["server"]["tls"] = data.get("server_tls", False)
     else:
         webcam_minimal_conf["server"]["url"] = data["server_url"]
     try:
@@ -176,12 +176,12 @@ def shoot():
         title="Scatta Foto",
         initial_message="Preparazione scatto foto",
         progress_message="ZANZOCAM sta scattando (non lasciare la pagina!)",
-        dont_leave_message="La foto non e' ancora stata scattata!",
+        dont_leave_message="La foto non è ancora stata scattata!",
         async_url="/shoot-picture/start",
         async_process_completed_message_short="Foto scattata!",
         async_process_completed_message_long="Foto scattata! Vai sul tuo server per assicurarti che sia arrivata.",
         async_process_failed_message_short="Foto non scattata!",
-        async_process_failed_message_long="Lo scatto della foto non e' andato a buon fine. "+
+        async_process_failed_message_long="Lo scatto della foto non è andato a buon fine. "+
                 "Verifica che tutti i parametri siano corretti e controlla i log per capire cosa non ha funzionato.",
         )
 
@@ -196,18 +196,14 @@ def start_shoot():
 
         try:
             with open(LOG_BUFFER, 'w') as l:                
-                shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                while shoot_proc.poll() is None:
-                    line = shoot_proc.stdout.read(1).decode('utf-8')
-                    l.writelines(line)
+                shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
 
         except subprocess.CalledProcessError as e:
             error = "Il processo ha generato un errore: " + str(e)
 
     except Exception as e:
-        error = "Si e' verificato un errore inaspettato: " + str(e)
+        error = "Si è verificato un errore inaspettato: " + str(e)
 
-    print("DONE!!")
     # If there was an error at some point, return 500
     if error:
         with open(LOG_BUFFER, 'a') as l:
