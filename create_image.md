@@ -381,6 +381,10 @@ fi
 ```
 - Make it executable:
     - `sudo chmod +x /usr/bin/autohotspot`
+    
+- Some boards actually come with rfkilled WiFi interface and wlan0 down. Therefore:
+    - `sudo nano /etc/crontab` (this file can run sudo commands)
+    - Append at the end of the file: `@reboot root rfkill unblock 0 && ifconfig wlan0 up && /usr/bin/autohotspot`
 
 - To test:
     - `sudo reboot`. 
@@ -395,7 +399,7 @@ fi
 ### Prepare setup server
 Once the Pi can generate its own network, we make it able to receive HTTP requests by setting up a web server: Nginx.
 
-Instructions (here)[https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md] for Nginx and (here)[https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04] for Flask.
+Instructions [here](https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md) for Nginx and [here](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) for Flask.
 
 - Install Nginx: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
 - Start Nginx: `sudo /etc/init.d/nginx start`
@@ -448,7 +452,8 @@ server {
 - Resize `rootfs` to be approximately 3.5G (can be done with GParted).
 - Clone the resized content of the SD into an image: `dd if=/dev/sdX of=zanzocam.img bs=4M status=progress oflag=sync` with `sudo`
 - Install resizing tool: `sudo apt install -y qemu-utils`
-- Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 4G`
+- Shrink it to a smaller size (4GB should be safe): `sudo qemu-img resize zanzocam.img 3.8G`
+    - If you're building an image to be used with the Raspberry Imager, use a multiple of 512: `4080218624B` instead of `3.8G`
 
 The image is ready to be flashed on any SD card larger than 4GB. 
 Note that the filesystem will not expand.
