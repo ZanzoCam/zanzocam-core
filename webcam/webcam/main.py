@@ -1,5 +1,6 @@
 import os
 import json
+import locale
 import datetime
 
 from webcam.constants import *
@@ -21,6 +22,10 @@ def main():
         # Initial setup
         start = datetime.datetime.now()
         errors_were_raised = False
+        initial_configuration = None
+
+        # Setup locale
+        locale.setlocale(locale.LC_ALL, 'it_IT.utf8')
 
         system = System()
         status = system.report_general_status()  # TODO this can check if it's online and switch
@@ -29,7 +34,6 @@ def main():
         for key, value in status.items():
             log(f" - {key}: {value}")
 
-        initial_configuration = None
         try:
             initial_configuration = Configuration()
         except Exception as e:

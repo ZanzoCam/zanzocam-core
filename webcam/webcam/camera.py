@@ -106,6 +106,19 @@ class Camera:
         """
         log("Taking picture")
         camera = PiCamera()
+
+        if int(self.width) > camera.MAX_RESOLUTION.width:
+            log(f"WARNING! The requested image width ({self.width}) "
+                f"exceeds the maximum width resolution for this camera ({camera.MAX_RESOLUTION.width}). "
+                "Using the maximum width resolution instead.")
+            self.width = camera.MAX_RESOLUTION.width
+
+        if int(self.height) > camera.MAX_RESOLUTION.height:
+            log(f"WARNING! The requested image height ({self.height}) "
+                f"exceeds the maximum height resolution for this camera ({camera.MAX_RESOLUTION.height}). "
+                "Using the maximum height resolution instead.")
+            self.height = camera.MAX_RESOLUTION.height
+
         camera.resolution = (int(self.width), int(self.height))
         camera.vflip = self.ver_flip
         camera.hflip = self.hor_flip

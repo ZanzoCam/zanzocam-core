@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from textwrap import dedent
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request, abort, send_fron_directory
 
 app = Flask(__name__)
 
@@ -84,11 +84,18 @@ def setting_up():
 
 @app.route("/logs", methods=["GET"])
 def get_logs():
-    """ Endpoint for fetching the latest logs"""
+    """ Endpoint for fetching the latest logs as JSON"""
     global LOG_BUFFER
     with open(LOG_BUFFER, 'r') as d:
         logs = d.readlines()
     return json.dumps(logs)
+
+
+@app.route("/logs-download", methods=["GET"])
+def get_logs_2():
+    """ Endpoint for downloading the latest logs as a text file"""
+    global LOG_BUFFER
+    return send_from_directory("/".join(LOG_BUFFER.split("/")[:-1]), LOG_BUFFER.split("/")[-1])
 
 
 @app.route("/setup/start", methods=["POST"])
