@@ -5,7 +5,8 @@ import json
 import shutil
 import datetime
 import requests
-from ftplib import FTP, FTP_TLS
+from ftplib import FTP, FTP_TLS, error_perm
+from json import JSONDecodeError
 
 from webcam.constants import *
 from webcam.utils import log, log_error
@@ -166,7 +167,7 @@ class Server:
         # Note: Errors here MUST escalate
         log(f"Uploading picture to {self._server.endpoint}")
         # Upload the picture
-        self._server.upload_picture(image_name, image_path)
+        image_name = self._server.upload_picture(image_name, image_path)
         log(f"Picture {image_name} uploaded successfully.")
         
         
@@ -301,17 +302,24 @@ class _HttpServer:
                                      files=files, 
                                      auth=self.credentials,
                                      timeout=REQUEST_TIMEOUT)
-        response = raw_response.json()
-                                
+        try:
+            response = raw_response.json()
+        except JSONDecodeError as e:
+            log_error("An error occurred decoding the JSON: something is probably "+
+                      f"wrong with the server's index.php script. The reply is:\n{raw_response.text}")
+            raise e  # Remember, errors must escalate here
+
         # Make sure the server did not return an error
         reply = response.get("photo", "No field named 'photo' in the response")
         if reply != "":
             log_error("The server replied with an error.")
             log("The server replied:")
-            print(raw_response.text())
+            print(raw_response.text)
             log("The error is: " + reply)
             log("WARNING: the image was probably not sent!")
             return
+
+        return image_name
 
 
 ################################################################################
@@ -359,6 +367,7 @@ class _FtpServer:
         self.endpoint = f"ftp://{self.username}@{self.hostname}"
         self.tls = parameters.get("tls", True)
         self.subfolder = parameters.get("subfolder")
+        self.max_photos = parameters.get("max_photos", 0)
         # Estabilish the FTP connection
         try:
             if self.tls:
@@ -454,8 +463,47 @@ class _FtpServer:
             log(f"Cannot upload the picture: {image_path} does not exist!", 
                 fatal="Picture won't be uploaded.")
             raise ValueError(f"Picture file {image_path} does not exist")
-        
-        # Fetch the new overlay
+
+        # If the server is supposed to contain only a fixed amount of pictures, 
+        # apply the prefix to this one and scale the other pictures' prefixes.
+        # NOTE that in the HTTP version this is done by the PHP script
+        if self.max_photos:
+            image_name = "1__"+image_name
+
+            try:
+                server_images = [image.lstrip("pictures/") for image in self._ftp_client.nlst("pictures/")]
+                server_images.reverse() # Sort backwards to make the renaming work properly!
+                
+                log(f"Pictures already present on the server: {server_images}")
+                
+                log("Renaming pictures....")
+                for server_image_name in server_images: 
+                    split_name = server_image_name.split("__")
+
+                    if len(split_name) == 2:
+
+                        # Increase the image index and rename it
+                        try:
+                            position = int(split_name[0]) + 1
+                        except ValueError as e:
+                            if "invalid literal for int() with base 10" in str(e):
+                                log(f"Image with double underscore in the name could not be parsed: {server_image_name} . Ignoring it.")
+                                continue
+    
+                        new_name = f"{position}__{split_name[1]}"
+                        self._ftp_client.rename(f"pictures/{server_image_name}", f"pictures/{new_name}")
+
+                        # If position is above max_photos, delete that picture
+                        if position > self.max_photos:
+                            log(f"Deleting old picture on the server: {new_name} (only {self.max_photos} pictures are allowed)")
+                            self._ftp_client.delete(f"pictures/{new_name}")
+
+            except error_perm as resp:
+                if '550' in str(resp):
+                    log(f'Encountered a 550 FTP error: {str(resp)}')
+                    pass
+
+        # upload the picture
         response = self._ftp_client.storbinary(
             f"STOR pictures/{image_name}", open(image_path ,"rb"))
                 
@@ -465,4 +513,6 @@ class _FtpServer:
                             "uploading the picture: " + response)
             log("WARNING: the image was probably not sent!")
             raise ValueError(f"Failed to upload the picture")
+            
+        return image_name
 

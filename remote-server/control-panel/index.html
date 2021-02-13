@@ -561,12 +561,6 @@
                     </label><br>
                 </div> 
 
-                <label for="server__username">Username (se necessario):</label>
-                <input type="text" placeholder="username"  name="server__username">
-                
-                <label for="server__password">Password (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server__password">
-                
                 <div id="server_protocol_HTTP-vars" class="row">
                     <div class="column">
                         <label for="server__url">URL del server:</label>
@@ -589,13 +583,32 @@
                         <div class="column">
                             <label class="label-inline">Avanzate:</label>
                             <div style="padding: 10px;">
-                                <input type="checkbox"  name="server__tls">
-                                <label class="label-inline" checked>Usa TLS</label>
+                                <input type="checkbox" name="server__tls" checked>
+                                <label class="label-inline" >Usa TLS</label>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <label for="server__username">Username (se necessario):</label>
+                <input type="text" placeholder="username"  name="server__username">
                 
+                <label for="server__password">Password (se necessaria):</label>
+                <input type="text" placeholder="password"  name="server__password">
+
+
+                <label for="server__max_photos">Numero massimo di foto sul server (zero (0) significa "infinite"):</label>
+                <div class="row">
+                    <div class="column">
+                        <input type="text" placeholder="0"  name="server__max_photos">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="column">
+                        <p>NOTA: se hai selezionato "Numera le foto con un prefisso", non utilizzare un doppio underscore ( __ ) nel nome della foto.</p>
+                    </div>
+                </div>
+
             </div>
             
             <div class="sheet">
@@ -764,8 +777,10 @@
                                 Per aggiungere data e ora nella foto, seleziona "Testo" nella posizione desiderata e 
                                 usa <b>%%TIME</b> per indicare l'ora, <b>%%DATE</b> per indicare la data.<br>
                                 Per esempio, se nel testo scrivi "Data di oggi: %%DATE", sull'immagine vedrai 
-                                qualcosa di simile a "Data di oggi: 01-01-2020".<br>
+                                qualcosa di simile a "Data di oggi: 01 gennaio 2021".<br>
                                 Qua sotto c'e' la lista dei simboli che possono essere utilizzati per formattare data e ora.
+                                Qualunque altro simbolo (due punti, trattini, virgole ecc) verra' copiato nella data.<br>
+                                Per esempio, il formato "%d --> %B --> %Y" diventera' qualcosa di simile a "01 --> gennaio --> 2021".
                             </p>
 
                             <table>
@@ -870,24 +885,9 @@
                         </details>
                     </div>
                 </div>
-                
-                <div class="row">
-                    <div class="column">
-                        <label>Se JPEG:</label>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="column">
-                        <label class="label-inline">Qualita':</label>
-                        <input type="text" placeholder="90"  name="image__jpeg_quality">
-                    </div>
-                    <div class="column">
-                        <label class="label-inline">Subsampling:</label>
-                        <input type="text" placeholder="0"  name="image__jpeg_subsampling">
-                    </div>
-                </div>
+
             </div>
-                
+
             <div class="sheet">
                 <h3>Testo e Immagini:</h3>
 
