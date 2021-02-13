@@ -408,7 +408,7 @@ Instructions [here](https://www.raspberrypi.org/documentation/remote-access/web-
 - Install venv into `/var/www/setup-server`
     - Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
     - Activate venv: `source /var/www/setup-server/venv/bin/activate`
-- Install the requirements for Flask and Ansible: `pip install -r requirements.txt`
+- Install the dependencies: `pip install -r /var/www/setup-server/requirements.txt`
 - Leave venv: `deactivate`
 - Create a systemdunit file: `sudo nano /etc/systemd/system/setup-server.service`
     - Content:
