@@ -86,7 +86,7 @@ This step installs a few libraries required for the webcam to work.
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
     - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
     - Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
-    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server /var/www`
+    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server/* /var/www/setup-server`
     - Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
     - Create venv in the home: `cd ~ && python3 -m venv venv`
     - Activate venv: `source venv/bin/activate`
