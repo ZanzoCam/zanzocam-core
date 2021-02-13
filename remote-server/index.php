@@ -7,16 +7,15 @@ $config_path = "configuration/";
 $config_file = "configuration/configuration.json";
 $backup_config_file = "configuration/backup/configuration_".date('Y-m-d_H:i:s').".json";
 $config_images_path = "configuration/overlays/";
-//$config_images_index = "pannello/config/config_images";
+
 
 // If it's not a POST, return the config file and the images index
 if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $config_string = file_get_contents($config_file);
-    //$config_images_string = file_get_contents($config_images_index);
     $config = json_decode($config_string);
-    //$config_images = array_filter(explode("\n", $config_images_string));
-    $response = array("configuration" => $config); //, "images" => $config_images);
+    $response = array("configuration" => $config);
     echo json_encode($response);
+
 
 // If it's a POST, store picture or logs or new config with images
 } else {
@@ -34,6 +33,8 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $imageerror = $_FILES['photo']['error'];
     $imagetemp = $_FILES['photo']['tmp_name'];
 
+    
+    // Logs are being uploaded - store them
     if ($logs){
         if (file_put_contents($logs_path."logs_".date('Y-m-d_H:i:s').".txt", $logs)){
             $response["logs"] = "";
@@ -41,8 +42,47 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             $response["logs"] = "Failed to save the logs on the server.";
         }
     }
+
+
+    // A photo is being uploaded - store it and if needed delete/rename the others
     if ($imagename){
         if(is_uploaded_file($imagetemp)) {
+            
+            // Check what the config file contains with respect to pictures storage
+            $configurationFileAsString = file_get_contents($config_file);
+            $configurationFile = json_decode($configurationFileAsString, true);
+            
+            if (isset($configurationFile["server"]["max_photos"])){
+            
+                $maxPhotos = intval($configurationFile["server"]["max_photos"]);
+                
+                // If a maximum number of photos ia allowed, add a prefix to the current photo
+                if($maxPhotos){
+                    $imagename = "1__".$imagename;
+            
+                    // Delete the oldest pictures if there are more than maxPhotos pictures
+                    $pictures = glob($image_path."*.{jpg,png,gif}", GLOB_BRACE);
+                    $pictures = array_reverse($pictures);  // To allow the rename to work properly!
+                    
+                    // Rename the other pictures
+                    foreach ($pictures as $old_name){
+
+                        $path_parts = explode("/", $old_name);
+                        $exploded_name = explode("__", $path_parts[1]);
+
+                        if (count($exploded_name) == 2 && is_numeric($exploded_name[0])) {
+                            $position = $exploded_name[0] + 1;
+
+                            if($position > $maxPhotos){
+                                unlink($old_name);
+                            } else {
+                                rename($old_name, $path_parts[0]."/".$position."__".$exploded_name[1]);
+                            }
+                        }
+                    }
+                }
+            }
+            // Finally save the new picture 
             if(move_uploaded_file($imagetemp, $image_path.$imagename)) {
                 $response["photo"] = "";
             } else {
@@ -52,6 +92,8 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             $response["photo"] = "Failed to upload the picture.";
         }
     }
+
+    // A configuration file is being saved
     if ($config){
         // Store the config JSON
         if (file_put_contents($config_file, $config)){
@@ -67,13 +109,10 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
         }
         // Store eventual images uploaded
         $config_images_feedback = "";
-        //$config_images_index_file = fopen($config_images_index, "w");
         foreach($_FILES as $image){
             if(is_uploaded_file($image['tmp_name'])) {
                 if(move_uploaded_file($image['tmp_name'], $config_images_path.$image['name'])) {
                     $config_images_feedback .= $image['name']." uploaded - ";
-                    // Write the name to the index
-                    //fwrite($config_images_index_file, $image['name']."\n");
                 } else {
                     $config_images_feedback .= $image['name']." failed to store - ";
                 }
@@ -82,7 +121,6 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             }
             $response["config-images"] = $config_images_feedback;
         }
-        //fclose($config_images_index_file);
     }
     echo json_encode($response)."\n";
 }

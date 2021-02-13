@@ -472,9 +472,8 @@ class _FtpServer:
 
             try:
                 server_images = [image.lstrip("pictures/") for image in self._ftp_client.nlst("pictures/")]
-                server_images.reverse() # Sort backwards to make the renaming work properly!
-                
                 log(f"Pictures already present on the server: {server_images}")
+                server_images.reverse() # Sort backwards to make the renaming work properly!
                 
                 log("Renaming pictures....")
                 for server_image_name in server_images: 
