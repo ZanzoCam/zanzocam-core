@@ -42,7 +42,7 @@ def toggle_hotspot(value):
     """ Allow the hotspot to turn on or not """
     if value in ["ON", "OFF"]:
         try:
-            with open("/home/zanzocam-bot/HOTSPOT_ALLOWED", "w") as f:
+            with open("/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED", "w") as f:
                 f.write(value)
             
             data = {}
