@@ -91,7 +91,7 @@ This step installs a few libraries required for the webcam to work.
     - Create venv in the home: `cd ~ && python3 -m venv venv`
     - Activate venv: `source venv/bin/activate`
     - Enter the webcam folder: `cd webcam`
-    - Install the package: `pip install .`
+    - Install the package: `pip install -e .` (the `-e` is still important, will fix)
     - Leave venv: `deactivate`
 
 
