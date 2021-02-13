@@ -62,8 +62,9 @@ This step installs a few libraries required for the webcam to work.
     - Remove the user: `sudo deluser --remove-home pi`
     
 - Generate locales:
-    - Get rid of useless env vars: `unset $(awk 'BEGIN{for(v in ENVIRON) print v}' | grep "LC")`
+    - DONT: Get rid of useless env vars: `unset $(awk 'BEGIN{for(v in ENVIRON) print v}' | grep "LC")`
     - Uncomment the IT locale in the proper file:  `sudo perl -pi -e 's/# it_IT.UTF-8 UTF-8/it_IT.UTF-8 UTF-8/g' /etc/locale.gen`
+    - Comment the default EN locale in the proper file:  `sudo perl -pi -e 's/en_GB.UTF-8 UTF-8/# en_GB.UTF-8 UTF-8/g' /etc/locale.gen`
     - Generate locales: `sudo locale-gen it_IT.UTF-8`
     - Update locales: `sudo update-locale it_IT.UTF-8`
 - Set timezone: `sudo timedatectl set-timezone Europe/Rome`
