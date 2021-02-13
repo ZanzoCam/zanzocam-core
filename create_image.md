@@ -98,7 +98,7 @@ This step installs a few libraries required for the webcam to work.
 ### Setup the autohotspot feature
 
 This step makes the RPI able to generate its own WiFi network 
-(SSID: zanzocam-setup, Password: webcam) when no known WiFi network is detected.
+(SSID & password, see below) when no known WiFi network is detected.
 
 Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection)
 
@@ -108,7 +108,7 @@ Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberry
     - `sudo systemctl unmask hostapd`
     - `sudo systemctl disable hostapd`
     - `sudo systemctl disable dnsmasq`
-- Edit `hostapd` configuration file to create a network called `zaozocam-setup` and password `webcamdelrifugio`:
+- Edit `hostapd` configuration file to create a network called `zanzocam-setup` and password `webcamdelrifugio`:
     - `sudo nano /etc/hostapd/hostapd.conf`
     - Content:
 ```
