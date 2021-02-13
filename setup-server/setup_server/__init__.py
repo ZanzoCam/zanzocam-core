@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from textwrap import dedent
-from flask import Flask, render_template, request, abort, send_fron_directory
+from flask import Flask, render_template, request, abort, send_from_directory
 
 app = Flask(__name__)
 
