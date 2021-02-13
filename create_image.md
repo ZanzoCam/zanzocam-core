@@ -4,7 +4,7 @@
 
 This steps gives you a SD card that can connect to your WiFi network, so that you can control it through SSH. This is necessary for the later steps. You might want to delete your network information at the end of the process.
 
-- Download latest RPI OS [here](https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-12-04/2020-12-02-raspios-buster-armhf-lite.zip)
+- Download latest RPI OS [here](https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip)
 - Unzip it
 - Flash onto SD:
     - `dd if=nome-immagine.img of=/dev/sdX bs=4M status=progress oflag=sync` with `sudo`
