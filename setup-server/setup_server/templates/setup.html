@@ -12,46 +12,55 @@
     appena prima di scattare una nuova foto.
     </p>
 
-     
-    <div id="main-form">
-    
-        <form id="config" method="POST" action="/setting-up">
+    <div id="page">
 
-            <h3>WiFi:</h3>
+        <div class="sheet">
+            <form id="config" method="POST" action="/configure-wifi">
+                <h3>WiFi:</h3>
                 <label for="wifi_ssid">Nome della rete (SSID):</label>
-                <input type="text" name="wifi_ssid" value="{{ data.wifi_ssid }}">
+                <input type="text" name="wifi_ssid" value="{{ wifi_data.ssid }}">
                 
                 <label for="wifi_password">Password:</label>
-                <input type="text" name="wifi_password" value="{{ data.wifi_password }}" required>                
-            
+                <input type="text" name="wifi_password" value="{{ wifi_data.password }}" required>  
+
+                <div class="center">
+                    <button id="configure-wifi" class="button">Configura il WiFi</button> 
+                </div>
+                {% if feedback_sheet_name == "wifi" %}
+                <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{feedback }}</p>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="sheet">
+            <form id="config" method="POST" action="/configure-server">
                 <div class="row">
                     <h3>Server:</h3>
                     <label class="toggle">
-                        <input type="radio" value="HTTP" name="server_protocol" {% if data.server_protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')" style="display:none;">
+                        <input type="radio" value="HTTP" name="server_protocol" {% if server_data.protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')" style="display:none;">
                         <span class="label">HTTP</span>
-                    </label><br>
+                    </label>
                     <label class="toggle">
-                        <input type="radio" value="FTP" name="server_protocol" {% if data.server_protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')"  style="display:none;">
+                        <input type="radio" value="FTP" name="server_protocol" {% if server_data.protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')"  style="display:none;">
                         <span class="label">FTP</span>
-                    </label><br>
-                </div>
-                
+                    </label>
+                </div>            
                 <div id="ftp-vars" style="display: none; flex-direction:column!important;">
                     <div class="row">
                         <div class="column">
                             <label>Hostname:</label>
-                            <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname">
+                            <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname" value="{{ server_data.hostname }}">
                         </div>
                     </div>
                     <div class="row">
                         <div class="column">
                             <label class="label-inline">Sottocartella (se necessaria):</label>
-                            <input type="text" name="server_subfolder" value="{{ data.server_subfolder }}">
+                            <input type="text" name="server_subfolder" value="{{ server_data.subfolder }}">
                         </div>
                         <div class="column">
                             <label class="label-inline">Avanzate:</label>
                             <div style="padding: 10px;">
-                                <input type="checkbox" name="server_tls" {% if data.server_tls %}checked{%endif%}>
+                                <input type="checkbox" name="server_tls" {% if server_data.tls %}checked{%endif%}>
                                 <label class="label-inline">Usa TLS</label>
                             </div>
                         </div>
@@ -60,40 +69,53 @@
                 
                 <div id="http-vars" style="display: none;">
                     <label for="server_url">URL del server:</label>
-                    <input type="text" placeholder="https://example.com/foto" name="server_url" value="{{ data.server_url }}">
+                    <input type="text" name="server_url" value="{{ server_data.url }}">
                 </div>
                 
                 <label for="server_username">Username del server (se necessario):</label>
-                <input type="text" placeholder="username"  name="server_username" value="{{ data.server_username }}">
+                <input type="text" placeholder="username"  name="server_username" value="{{ server_data.username }}">
                 
                 <label for="server_password">Password del server (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server_password" value="{{ data.server_password }}">
+                <input type="text" placeholder="password"  name="server_password" value="{{ server_data.password }}">
 
-                <div class="row">
-                    <h3>Hotspot:</h3>
-                    <label class="toggle">
-                        <input type="radio" value="ON" name="hotspot_allowed" {% if not data.hotspot_allowed or data.hotspot_allowed=="ON" %}checked{%endif%} onchange="javascript:turnHotspotON()">
-                        <span class="label">ON</span>
-                    </label><br>
-                    <label class="toggle">
-                        <input type="radio" value="OFF" name="hotspot_allowed" {% if data.hotspot_allowed=="OFF" %}checked{%endif%} onchange="javascript:turnHotspotOFF()">
-                        <span class="label">OFF</span>
-                    </label><br>
+                <div class="center">
+                    <button id="configure-server" class="button">Configura Dati Server</button> 
                 </div>
-                <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZANZOCAM di generare o meno un hotspot quando perde contatto
-                con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM è gia' in grado di collegarsi
-                con un'altra rete WiFi o è collegata via rete Ethernet.<br>
-                Si consiglia di selezionare ON durante il setup della webcam, e di selezionare OFF una volta che il sistema e'
-                completamente funzionante.</p>
-            
-            <div class="center">
-                <button id="configure" class="button setup-button" type="submit">Configura</button>
-                <a href="/shoot-picture" id="shoot" class="button setup-button" type="button">Setup Foto</a>
-            </div>     
-            
-        </form>
 
-        <p id="photo-feedback" class="center"></p>
+            </form>
+            {% if feedback_sheet_name == "server" %}
+            <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{feedback }}</p>
+            {% endif %}
+        </div>
+
+        <div class="sheet">
+            <div class="row">
+                <h3>Hotspot:</h3>
+                <label class="toggle">
+                    <input type="radio" value="ON" name="hotspot_allowed" {% if not hotspot_value or hotspot_value=="ON" %}checked{%endif%} onchange="javascript:turnHotspotON()">
+                    <span class="label">ON</span>
+                </label>
+                <label class="toggle">
+                    <input type="radio" value="OFF" name="hotspot_allowed" {% if hotspot_value=="OFF" %}checked{%endif%} onchange="javascript:turnHotspotOFF()">
+                    <span class="label">OFF</span>
+                </label>
+                <br>
+            </div>
+            <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZANZOCAM di generare o meno un hotspot quando perde contatto
+            con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM è gia' in grado di collegarsi
+            con un'altra rete WiFi o è collegata via rete Ethernet.<br>
+            Si consiglia di selezionare ON durante il setup della webcam, e di selezionare OFF una volta che il sistema e'
+            completamente funzionante.</p>
+        </div>
+        
+        <div class="sheet">
+            <div class="row">
+                <h3>Webcam:</h3>
+                <a href="/setup-webcam" id="setup-webcam" class="button" type="button" style="margin: auto 0;">Setup Webcam</a>
+            </div>
+        </div>
+
+        
 
     </div>
     
@@ -106,14 +128,14 @@
         http_block.style.display = value==="HTTP" ? "block" : "none";
         ftp_block.style.display = value==="FTP" ? "block" : "none";
     }
-    toggle_server_protocol("{{ data.server_protocol }}");
+    toggle_server_protocol("{{ server_data.protocol }}");
     
     
     function disableOnHotspot() {
-        if(window.location.href === "http://10.0.0.5"){
-            button = document.getElementById("shoot");
+        if(window.location.href.includes("10.0.0.5")){
+            button = document.getElementById("setup-webcam");
             button.disabled = true;
-            feedback = document.getElementById("photo-feedback");
+            feedback = document.getElementById("feedback");
             feedback.innerHTML = "Per scattare la foto di prova, riavvia il Raspberry "+
 			"e connettiti ad esso tramite il WiFi, invece che usare l'hotspot.";
         }
@@ -153,37 +175,6 @@
             })   
         }
     }
-
-    /* function shootFirstPicture() {
-        button = document.getElementById("shoot");
-        configure = document.getElementById("configure");
-        feedback = document.getElementById("photo-feedback");
-        
-        button.innerHTML = "Sto scattando...";
-        feedback.innerHTML = "Sto scattando (ci vuole un minuto)...";
-        button.disabled = true;
-        configure.disabled = true;
-        
-        fetch("/shoot", {
-            method:'GET',
-        })
-        .then(response => response.json())
-        .then(outcome => {
-            if (outcome['success']){
-                feedback.innerHTML = "Foto scattata con successo! Visita <a href='" + 
-                    outcome['server_url'] +
-                    "/pictures' target='_blank'>il tuo server</a> per assicurarti che sia stata ricevuta."
-            } else {
-                feedback.innerHTML = "Si è verificato un errore! "+
-                    "Prova a riconfigurare ZANZOCAM e controlla che <a href='" + 
-                    outcome['server_url'] +
-                    "/pictures' target='_blank'>il tuo server</a> sia funzionante."         
-            }
-            button.innerHTML = "Scatta di nuovo";
-            button.disabled = false;
-            configure.disabled = false;
-        });
-    }; */
     </script>
     
 {% endblock %}

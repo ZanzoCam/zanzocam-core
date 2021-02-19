@@ -12,7 +12,7 @@
  
 :root {
   /*--accent: #9b4dca; */
-  --accent: #7ed58c;
+  --accent: #4f9f5c;
   --dark-accent: #1f6a0f;
   --light-accent: #7ed58c;
   --hbar: #f1f1f1;
@@ -712,6 +712,10 @@ label {
     font-weight: 500;
 }
 
+form {
+  margin: 0;
+}
+
 .setup-button {
     font-size:18pt;
     height:unset;
@@ -719,6 +723,15 @@ label {
     margin-top:3rem;
     text-transform:none;
     font-weight: 700;
+}
+
+.sheet {
+  background-color: white;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: min(3rem, 5%);
+  border-radius: 1rem;
+  box-shadow: 0px 0px 10px 0px #777;
 }
 
 

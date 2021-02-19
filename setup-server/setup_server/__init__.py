@@ -4,120 +4,83 @@ import json
 import subprocess
 from pathlib import Path
 from textwrap import dedent
-from flask import Flask, render_template, request, abort, send_from_directory
+from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
 
 app = Flask(__name__)
 
 
-INITIAL_DATA = "/var/www/setup-server/setup_server/initial_data.json"
-LOG_BUFFER = "/var/www/setup-server/setup_server/logs.txt"
+HOTSPOT_FLAG = "/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED"
+WIFI_DATA = "/var/www/setup-server/setup_server/config/wifi_data.json"
+SERVER_DATA = "/var/www/setup-server/setup_server/config/server_data.json"
 
+PICTURE_LOGS = "/var/www/setup-server/setup_server/config/picture_logs.txt"
+HOTSPOT_LOGS = "/var/www/setup-server/setup_server/config/hotspot_logs.txt"
 
-
-def clear_logs():
-    with open(LOG_BUFFER, 'w') as d:
-        pass
-
-def log(message, dot="- "):
-    with open(LOG_BUFFER, 'a') as d:
-        d.writelines(f"{dot}{message}\n")
+PREVIEW_IMAGE =  "/var/www/setup-server/setup_server/static/previews/zanzocam-preview.jpg"
+PREVIEW_URL =  "/static/previews/zanzocam-preview.jpg"
 
 
 
 @app.route("/", methods=["GET"])
-def setup():
-    """ The initial page with the form """
-    clear_logs()
-    # Load any previously stored initial data
+def setup(feedback=None, feedback_sheet_name=None, feedback_type=None):
+    """ The initial page with the forms """
+
     try:
-        with open(INITIAL_DATA, 'r') as d:
-            data = json.load(d)
-    except Exception:
-        data = {}
-    return render_template("setup.html", title="Setup", data=data)
+        with open(WIFI_DATA, 'r') as d:
+            wifi_data = json.load(d)
+    except Exception as e:
+        print(e)
+        wifi_data = {}
 
-
-@app.route("/hotspot/<value>", methods=["POST"])
-def toggle_hotspot(value):
-    """ Allow the hotspot to turn on or not """
-    if value in ["ON", "OFF"]:
-        try:
-            with open("/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED", "w") as f:
-                f.write(value)
-            
-            data = {}
-            with open(INITIAL_DATA, 'r') as d:
-                data = json.load(d)
-            data["hotspot_allowed"] = value
-            with open(INITIAL_DATA, 'w') as d:
-                json.dump(data, d, indent=4)
-
-        except Exception:
-            abort(500)
-    abort(404)
-
-
-
-@app.route("/setting-up", methods=["POST"])
-def setting_up():
-    """ The page with the logs """
-    clear_logs()
-    # Save new initial data to a file
-    with open(INITIAL_DATA, 'w') as d:
-        json.dump(request.form, d, indent=4)
-    return render_template("setting-up.html", 
-        title="Setup",
-        initial_message="Preparazione setup",
-        progress_message="Setup in corso (non lasciare la pagina!)",
-        dont_leave_message="Il setup non è ancora completo!",
-        async_url="/setup/start",
-        async_process_completed_message_short="Setup completato!",
-        async_process_completed_message_long="Setup completato! "+
-                    "Riavvia il Raspberry Pi se non è ancora collegato alla "+
-                    "rete da te specificata, poi configura il tuo server e infine " +
-                    "scatta una foto di prova per far partire la webcam.",
-        async_process_failed_message_short="Setup fallito!",
-        async_process_failed_message_long="Il setup non è andato a buon fine. Controlla i log "+
-                "prima di lasciare la pagina e riprova.",
-        )
-
-
-@app.route("/logs", methods=["GET"])
-def get_logs():
-    """ Endpoint for fetching the latest logs as JSON"""
-    global LOG_BUFFER
-    with open(LOG_BUFFER, 'r') as d:
-        logs = d.readlines()
-    return json.dumps(logs)
-
-
-@app.route("/logs-download", methods=["GET"])
-def get_logs_2():
-    """ Endpoint for downloading the latest logs as a text file"""
-    global LOG_BUFFER
-    return send_from_directory("/".join(LOG_BUFFER.split("/")[:-1]), LOG_BUFFER.split("/")[-1])
-
-
-@app.route("/setup/start", methods=["POST"])
-def start_setup():
-    """ Actually sets up the Pi """
     try:
-        with open(INITIAL_DATA, 'r') as d:
-            data = json.load(d)
-    except Exception:
-        abort(404)  # Data must be there!
+        with open(SERVER_DATA, 'r') as d:
+            config_stub = json.load(d)
+    except Exception as e:
+        print(e)
+        config_stub = {}
+    server_data = config_stub.get('server', {})
 
-    # Write the wpa_supplicant.conf file
-    error=False
-    log("Setup WiFi")
+    try:
+        with open(HOTSPOT_FLAG, 'r') as d:
+            hotspot_value = d.read()
+    except Exception as e:
+        print(e)
+        hotspot_value = "ON"
+
+    return render_template("setup.html", 
+                                title="Setup", 
+                                wifi_data=wifi_data, 
+                                server_data=server_data, 
+                                hotspot_value=hotspot_value,
+                                feedback=feedback,
+                                feedback_sheet_name=feedback_sheet_name,
+                                feedback_type=feedback_type,
+)
+
+
+@app.route("/configure-wifi", methods=["POST"])
+def configure_wifi():
+    """ Save the WiFi data and run the hotspot script """
+    
+    ssid = request.form["wifi_ssid"]
+    password = request.form["wifi_password"]
+
+    wifi_data = {
+        "ssid": ssid,
+        "password": password
+    }
+
+    with open(WIFI_DATA, "w") as w:
+        json.dump(wifi_data, w)
+    
     with open(".tmp-wpa_supplicant", "w") as f:
         f.writelines(dedent(f"""
             ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
             update_config=1
 
             network={{
-                ssid="{data['wifi_ssid']}"
-                psk="{data['wifi_password']}"
+                ssid="{ssid}"
+                psk="{password}"
             }}
             """))
     create_wpa_conf = subprocess.run(
@@ -126,98 +89,221 @@ def start_setup():
             "mv",
             ".tmp-wpa_supplicant",
             "/etc/wpa_supplicant/wpa_supplicant.conf"
-        ],
-        stdout=subprocess.PIPE)
-    if not create_wpa_conf:
-        log(dedent(f"""ERRORE! Non è stato possibile configurare il WiFi.
-                Usa SSH per configurarlo manualmente:
-                 - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-                 - Copiaci dentro:
+        ])
 
-                ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-                update_config=1
+    try:
+        with open(HOTSPOT_LOGS, 'w') as l:                
+            shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
+    except subprocess.CalledProcessError as e:
+        return redirect(url_for('setup'), feedback="Si e' verificato un errore: " + str(e), feedback_sheet_name="wifi", feedback_type="negative")
 
-                network={{
-                    ssid="{data['wifi_ssid']}"
-                    psk="{data['wifi_password']}"
-                }}"""),  dot="\n===> ")
-        error=True
+    return redirect(url_for('setup'), feedback="Wifi configurato con successo", feedback_sheet_name="wifi", feedback_type="positive")
 
-    # Write the initial configuration.json to bootstrap the webcam
-    log("Setup dati del server remoto")
+
+@app.route("/configure-server", methods=["POST"])
+def configure_server():
+    """ Save the server data """
+
     webcam_minimal_conf = {
         "server": {
-            "protocol": data['server_protocol'],
-            "username": data['server_username'],
-            "password": data['server_password']
+            "protocol": request.form['server_protocol'],
+            "username": request.form['server_username'],
+            "password": request.form['server_password']
         }
     }
-    if data['server_protocol'] == "FTP":
-        webcam_minimal_conf["server"]["hostname"] = data["server_hostname"]
-        webcam_minimal_conf["server"]["subfolder"] = data.get("server_subfolder")
-        webcam_minimal_conf["server"]["tls"] = data.get("server_tls", False)
+    if request.form['server_protocol'] == "FTP":
+        webcam_minimal_conf["server"]["hostname"] = request.form["server_hostname"]
+        webcam_minimal_conf["server"]["subfolder"] = request.form.get("server_subfolder")
+        webcam_minimal_conf["server"]["tls"] = request.form.get("server_tls", False)
     else:
-        webcam_minimal_conf["server"]["url"] = data["server_url"]
+        webcam_minimal_conf["server"]["url"] = request.form["server_url"]
+
     try:
         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
     except Exception as e:
-        error = True
+        return f"Si e' verificato un errore nel salvare i dati del server: {e}", 500
 
-    # If there was an error at some point, return 500
-    if error:
-        log("Setup fallito")
-        abort(500)
+    try:
+        with open(SERVER_DATA, 'w') as d:
+            json.dump(webcam_minimal_conf, d, indent=4)
+    except Exception as e:
+        return f"Si e' verificato un errore nel salvare i dati del server: {e}", 500
 
-    log("Setup completo")
-    return json.dumps(True), 200
+    return redirect(url_for('setup'))
 
+
+
+# @app.route("/setup/start", methods=["POST"])
+# def start_setup():
+#     """ Actually sets up the Pi """
+#     try:
+#         with open(INITIAL_DATA, 'r') as d:
+#             data = json.load(d)
+#     except Exception:
+#         abort(404)  # Data must be there!
+
+#     # Write the wpa_supplicant.conf file
+#     error=False
+#     log("Setup WiFi")
+#     with open(".tmp-wpa_supplicant", "w") as f:
+#         f.writelines(dedent(f"""
+#             ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+#             update_config=1
+
+#             network={{
+#                 ssid="{data['wifi_ssid']}"
+#                 psk="{data['wifi_password']}"
+#             }}
+#             """))
+#     create_wpa_conf = subprocess.run(
+#         [
+#             "/usr/bin/sudo",
+#             "mv",
+#             ".tmp-wpa_supplicant",
+#             "/etc/wpa_supplicant/wpa_supplicant.conf"
+#         ],
+#         stdout=subprocess.PIPE)
+#     if not create_wpa_conf:
+#         log(dedent(f"""ERRORE! Non è stato possibile configurare il WiFi.
+#                 Usa SSH per configurarlo manualmente:
+#                  - Apri il file con: sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+#                  - Copiaci dentro:
+
+#                 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+#                 update_config=1
+
+#                 network={{
+#                     ssid="{data['wifi_ssid']}"
+#                     psk="{data['wifi_password']}"
+#                 }}"""),  dot="\n===> ")
+#         error=True
+
+#     # Write the initial configuration.json to bootstrap the webcam
+#     log("Setup dati del server remoto")
+#     webcam_minimal_conf = {
+#         "server": {
+#             "protocol": data['server_protocol'],
+#             "username": data['server_username'],
+#             "password": data['server_password']
+#         }
+#     }
+#     if data['server_protocol'] == "FTP":
+#         webcam_minimal_conf["server"]["hostname"] = data["server_hostname"]
+#         webcam_minimal_conf["server"]["subfolder"] = data.get("server_subfolder")
+#         webcam_minimal_conf["server"]["tls"] = data.get("server_tls", False)
+#     else:
+#         webcam_minimal_conf["server"]["url"] = data["server_url"]
+#     try:
+#         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
+#             json.dump(webcam_minimal_conf, d, indent=4)
+#     except Exception as e:
+#         error = True
+
+#     # If there was an error at some point, return 500
+#     if error:
+#         log("Setup fallito")
+#         abort(500)
+
+#     log("Setup completo")
+#     return json.dumps(True), 200
+
+
+
+@app.route("/hotspot/<value>", methods=["POST"])
+def toggle_hotspot(value):
+    """ Allow the hotspot to turn on or not """
+    if value in ["ON", "OFF"]:
+        try:
+            with open(HOTSPOT_FLAG, "w") as f:
+                f.write(value)
+            return f"Hotspot set to {value}", 200
+            
+        except Exception:
+            abort(500)
+    abort(404)
+
+
+
+@app.route("/setup-webcam")
+def setup_webcam():
+    """ The page where a picture can be shoot """
+    # Should be cleaned up immediately, or they're gonna show in the textarea at the beginning
+    global PICTURE_LOGS
+    clear_logs(PICTURE_LOGS)    
+
+    return render_template("setup-webcam.html", title="Setup Webcam", preview_url=PREVIEW_URL)
+
+
+@app.route("/preview-picture")
+def preview():
+    take_preview_picture = subprocess.run(
+        ["/usr/bin/raspistill", "-w", "800", "-h", "550", "-o", PREVIEW_IMAGE ])
+    return send_from_directory("/".join(PREVIEW_IMAGE.split("/")[:-1]), PREVIEW_IMAGE.split("/")[-1])    # Actually the image will be refreshed by Javascript
 
 
 @app.route("/shoot-picture")
 def shoot():
-    """ The page where a picture can be shoot """
-    clear_logs()
-    return render_template("setting-up.html", 
-        camera=True,
-        title="Scatta Foto",
-        initial_message="Preparazione scatto foto",
-        progress_message="ZANZOCAM sta scattando (non lasciare la pagina!)",
-        dont_leave_message="La foto non è ancora stata scattata!",
-        async_url="/shoot-picture/start",
-        async_process_completed_message_short="Foto scattata!",
-        async_process_completed_message_long="Foto scattata! Vai sul tuo server per assicurarti che sia arrivata.",
-        async_process_failed_message_short="Foto non scattata!",
-        async_process_failed_message_long="Lo scatto della foto non è andato a buon fine. "+
-                "Verifica che tutti i parametri siano corretti e controlla i log per capire cosa non ha funzionato.",
-        )
-
-
-@app.route("/shoot-picture/start", methods=["POST"])
-def start_shoot():
     """ Actually shoots the picture """
-    error = False
+    global PICTURE_LOGS
+    clear_logs(PICTURE_LOGS)    
+
     try:
-        with open(INITIAL_DATA, 'r') as d:
-            data = json.load(d)
-
-        try:
-            with open(LOG_BUFFER, 'w') as l:                
-                shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
-
-        except subprocess.CalledProcessError as e:
-            error = "Il processo ha generato un errore: " + str(e)
-
-    except Exception as e:
-        error = "Si è verificato un errore inaspettato: " + str(e)
-
-    # If there was an error at some point, return 500
-    if error:
-        with open(LOG_BUFFER, 'a') as l:
-            l.writelines(error)
+        with open(PICTURE_LOGS, 'w') as l:                
+            shoot_proc = subprocess.run(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
+            
+    except subprocess.CalledProcessError as e:
+        with open(PICTURE_LOGS, 'a') as l:
+            l.writelines(f"Si e' verificato un errore: {e}")
         abort(500)
 
-    return "", 200
+    return "OK", 200
+
+
+
+def clear_logs(logs_path):
+    with open(logs_path, 'w') as d:
+        pass
+
+
+@app.route("/logs/<kind>/<name>", methods=["GET"])
+def get_logs(kind: str, name: str):
+    """ Endpoint for fetching the latest logs """
+    logs_path = None
+
+    if name == "hotspot":
+        global HOTSPOT_LOGS
+        logs_path = HOTSPOT_LOGS
+    
+    elif name == "picture":
+        global PICTURE_LOGS
+        logs_path = PICTURE_LOGS
+
+    else:
+        return f"Logs not found for name {name}", 500
+
+    if kind == "json":
+        logs = {"content": ""}
+        try:
+            with open(logs_path, 'r') as d:
+                logs["content"] = "".join(d.readlines())
+
+        except FileNotFoundError:
+            with open(logs_path, "w"):
+                pass
+
+        return logs
+
+    elif kind == "text":
+        if not os.path.exists(logs_path):
+            with open(logs_path, "w"):
+                pass
+        return send_from_directory("/".join(logs_path.split("/")[:-1]), logs_path.split("/")[-1])
+
+    else:
+        return f"Logs type {kind} not understood", 500
+    
+
 
 
 
