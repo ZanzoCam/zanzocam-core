@@ -4,9 +4,10 @@ import os
 import math
 import datetime
 import textwrap
+from time import sleep
 from pathlib import Path
 from picamera import PiCamera
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 
 from webcam.constants import *
 from webcam.utils import log, log_error
@@ -33,8 +34,6 @@ class Camera:
         self.defaults = {
             "name": "no-name",
             "extension": "jpg",
-            "add_date_to_name": True,
-            "add_time_to_name": True,
             "time_format": "%H:%M",
             "date_format": "%d %B %Y",
             "width": 100,
@@ -54,16 +53,8 @@ class Camera:
             self.overlays = {}
         
         # Image name
-        self.photo_name = PATH / '.temp_image.jpg'
-        now = datetime.datetime.now()
-        self.processed_image_name = self.name
-        
-        if self.add_date_to_name:
-            self.processed_image_name += "_" + now.strftime("%Y-%m-%d")
-        if self.add_time_to_name:
-            self.processed_image_name += "_" + now.strftime("%H:%M:%S")
-        self.processed_image_name += "." + self.extension
-        self.processed_image_path = PATH / self.processed_image_name
+        self.temp_photo_path = PATH / ('.temp_image.' + self.extension)
+        self.processed_image_path = PATH / ('.final_image.' + self.extension)
         
 
     def __getattr__(self, name):
@@ -75,21 +66,6 @@ class Camera:
         #log(f"WARNING: Accessing default value for {name}: {value}")
         return value
         
-        
-    def clean_up(self) -> None:
-        """
-        Removes the images created during the processing.
-        """
-        log("Cleaning up image files")
-        try:
-            os.remove(self.photo_name)
-            os.remove(self.processed_image_path)
-        except Exception as e:
-            log_error(f"Failed to clean up image files.", e)
-            log("WARNING: The filesystem might fill up if the old pictures "
-                "are not removed, which can cause ZANZOCAM to fail.")
-        log("Cleanup complete")
-               
 
     def take_picture(self) -> None:
         """
@@ -104,8 +80,10 @@ class Camera:
         """ 
         Shoots the picture using PiCamera.
         """
-        log("Taking picture")
+        # Give the camera some time to adjust
+        log("Adjusting camera...")
         camera = PiCamera()
+        sleep(3)
 
         if int(self.width) > camera.MAX_RESOLUTION.width:
             log(f"WARNING! The requested image width ({self.width}) "
@@ -123,7 +101,11 @@ class Camera:
         camera.vflip = self.ver_flip
         camera.hflip = self.hor_flip
         camera.rotation = int(self.rotation)
-        camera.capture(str(PATH / self.photo_name))
+
+        camera.meter_mode = "matrix"
+        
+        log("Taking picture")
+        camera.capture(str(PATH / self.temp_photo_path))
         camera.close()
 
 
@@ -135,11 +117,14 @@ class Camera:
 
         # Open and measures the picture
         try:
-            photo = Image.open(self.photo_name).convert("RGBA")
+            photo = Image.open(self.temp_photo_path).convert("RGBA")
         except Exception as e:
             log_error("Failed to open the image for editing. "
                       "The photo will have no overlays applied.", e)
             return
+
+        #enhancer = ImageEnhance.Sharpness(photo)
+        #enhancer.enhance(2.0)
         
         # Create the overlay images
         rendered_overlays = []
@@ -183,11 +168,10 @@ class Camera:
         # Save the image appropriately
         if self.extension.lower() in ["jpg", "jpeg"]:
             image = image.convert('RGB')
-            image.save(PATH / self.processed_image_name, format='JPEG', 
+            image.save(PATH / self.processed_image_path, format='JPEG', 
                 subsampling=self.jpeg_subsampling, quality=self.jpeg_quality)
-       
         else:
-            image.save(PATH / self.processed_image_name)
+            image.save(PATH / self.processed_image_path)
         
         
 

@@ -114,15 +114,25 @@ def main():
             
         # Send the picture
         try:
-            if os.path.exists(PATH / camera.processed_image_name):
-                server.upload_picture(camera.processed_image_name, camera.processed_image_path)
-                camera.clean_up()
+            if os.path.exists(PATH / camera.temp_photo_path):
+                server.upload_picture(camera.processed_image_path, camera.name, camera.extension)
         except Exception as e:
             log_error("Something happened uploading the picture! It was "+
                       "probably not sent", e,
                       fatal="The error was unexpected, can't fix. The picture won't be uploaded.")
             raise RuntimeError(e)
-    
+
+        try:
+            log("Cleaning up image files")
+            os.remove(camera.temp_photo_path)
+            os.remove(server.final_image_path)
+            log("Cleanup complete")
+        except Exception as e:
+            log_error(f"Failed to clean up image files.", e)
+            log("WARNING: The filesystem might fill up if the old pictures "
+                "are not removed, which can cause ZANZOCAM to fail.")
+            errors_were_raised = True
+        
     # Catch expected fatal errors
     except RuntimeError as re:
         log("A fatal error occurred during the main procedure.")
@@ -148,7 +158,6 @@ def main():
         end = datetime.datetime.now()
         log(f"Execution completed {errors_were_raised_str} in: {end - start}")
         print("\n==========================================\n")
-
 
 
 

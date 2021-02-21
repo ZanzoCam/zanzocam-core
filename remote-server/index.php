@@ -57,8 +57,9 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
                 $maxPhotos = intval($configurationFile["server"]["max_photos"]);
                 
                 // If a maximum number of photos ia allowed, add a prefix to the current photo
-                if($maxPhotos){
-                    $imagename = "1__".$imagename;
+                if($maxPhotos > 1){
+                    $split_name = explode(".", $imagename);
+                    $imagename = $split_name[0]."__1.".$split_name[1];
             
                     // Delete the oldest pictures if there are more than maxPhotos pictures
                     $pictures = glob($image_path."*.{jpg,png,gif}", GLOB_BRACE);
@@ -67,16 +68,18 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
                     // Rename the other pictures
                     foreach ($pictures as $old_name){
 
-                        $path_parts = explode("/", $old_name);
-                        $exploded_name = explode("__", $path_parts[1]);
+                        $no_extension_name = explode(".", $old_name);
+                        $exploded_name = explode("__", $no_extension_name[0]);
 
-                        if (count($exploded_name) == 2 && is_numeric($exploded_name[0])) {
-                            $position = $exploded_name[0] + 1;
+                        if (count($exploded_name) == 2 && is_numeric($exploded_name[1])) {
+                            $name = $exploded_name[0];
+                            $position = $exploded_name[1] + 1;
+                            $extension = $no_extension_name[1];
 
                             if($position > $maxPhotos){
                                 unlink($old_name);
                             } else {
-                                rename($old_name, $path_parts[0]."/".$position."__".$exploded_name[1]);
+                                rename($old_name, $name."__".$position.".".$extension);
                             }
                         }
                     }

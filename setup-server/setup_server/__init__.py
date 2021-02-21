@@ -92,11 +92,12 @@ def configure_wifi():
         ])
     try:
         with open(HOTSPOT_LOGS, 'w') as l:                
-            shoot_proc = subprocess.Popen(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
-    except subprocess.CalledProcessError as e:
-        return redirect(url_for('setup'), feedback="Si e' verificato un errore: " + str(e), feedback_sheet_name="wifi", feedback_type="negative")
+            autohotspot = subprocess.Popen(["/usr/bin/autohotspot"], stdout=l, stderr=l)
 
-    return redirect(url_for('setup'), feedback="Wifi configurato con successo", feedback_sheet_name="wifi", feedback_type="positive")
+    except subprocess.CalledProcessError as e:
+        return redirect(url_for('setup', feedback=f"Si e' verificato un errore: {e}", feedback_sheet_name="wifi", feedback_type="negative"))
+
+    return redirect(url_for('setup', feedback="Wifi configurato con successo", feedback_sheet_name="wifi", feedback_type="positive"))
 
 
 @app.route("/configure-server", methods=["POST"])
@@ -121,15 +122,15 @@ def configure_server():
         with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
     except Exception as e:
-        return f"Si e' verificato un errore nel salvare i dati del server: {e}", 500
+        return redirect(url_for('setup', feedback=f"Si e' verificato un errore nel salvare i dati del server: {e}", feedback_sheet_name="server", feedback_type="negative"))
 
     try:
         with open(SERVER_DATA, 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
     except Exception as e:
-        return f"Si e' verificato un errore nel salvare i dati del server: {e}", 500
+        return redirect(url_for('setup', feedback=f"Si e' verificato un errore nel salvare i dati del server: {e}", feedback_sheet_name="server", feedback_type="negative"))
 
-    return redirect(url_for('setup'))
+    return redirect(url_for('setup', feedback="Server configurato con successo", feedback_sheet_name="server", feedback_type="positive"))
 
 
 

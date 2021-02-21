@@ -160,15 +160,27 @@ class Server:
             return
 
 
-    def upload_picture(self, image_name: str, image_path: Path) -> None:
+    def upload_picture(self, image_path: Path, image_name: str, image_extension: str) -> None:
         """
         Uploads the new picture to the server.
         """
         # Note: Errors here MUST escalate
         log(f"Uploading picture to {self._server.endpoint}")
+
+        if not image_name or not image_path or not image_extension:
+            log(f"Cannot upload the picture: picture name ({image_name}) " +
+                f"or location ({image_path}) or extension ({image_extension}) not given.", 
+                fatal="Picture won't be uploaded.")
+        
+        # Make sure the file in question exists
+        if not os.path.exists(image_path):
+            log(f"Cannot upload the picture: {image_path} does not exist!", 
+                fatal="Picture won't be uploaded.")
+            raise ValueError(f"Picture file {image_path} does not exist")
+
         # Upload the picture
-        image_name = self._server.upload_picture(image_name, image_path)
-        log(f"Picture {image_name} uploaded successfully.")
+        self.final_image_path = self._server.upload_picture(image_path, image_name, image_extension)
+        log(f"Picture {self.final_image_path.name} uploaded successfully.")
         
         
 
@@ -188,6 +200,7 @@ class _HttpServer:
             raise ValueError("No server URL is available.")
 
         self.endpoint = f"{self.url}"
+        self.max_photos = parameters.get("max_photos", 0)
 
         self.credentials = None
         if "username" in parameters.keys():
@@ -286,18 +299,18 @@ class _HttpServer:
             raise ValueError("The server replied with:" + str(reply))
 
 
-    def upload_picture(self, image_name: str, image_path: Path) -> None:
+    def upload_picture(self, image_path: Path, image_name: str, image_extension: str) -> None:
         """
         Uploads the new picture to the server.
         """
-        # NOTE: Errors from here must escalate
-        if not image_name or not image_path:
-            log(f"Cannot upload the picture: picture name ({image_name}) " +
-                f"or location ({image_location}) not given.", 
-                fatal="Picture won't be uploaded.")
+        # Deal only with the date-time if max_photos = 0, otherwise rename and send.
+        # The server will take care of numbering them if needed
+        date_time = datetime.datetime.now().strftime("_%Y-%m-%d_%H:%M:%S") if not self.max_photos else ""
+        final_image_path = image_path.parent / (image_name + date_time + "." + image_extension)
+        os.rename(image_path, final_image_path)
 
         # Upload the picture
-        files = {'photo': open(image_path, 'rb')}
+        files = {'photo': open(final_image_path, 'rb')}
         raw_response = requests.post(self.url, 
                                      files=files, 
                                      auth=self.credentials,
@@ -306,20 +319,20 @@ class _HttpServer:
             response = raw_response.json()
         except JSONDecodeError as e:
             log_error("An error occurred decoding the JSON: something is probably "+
-                      f"wrong with the server's index.php script. The reply is:\n{raw_response.text}")
+                      f"wrong with the server's code. The reply is:\n{raw_response.text}")
             raise e  # Remember, errors must escalate here
 
         # Make sure the server did not return an error
-        reply = response.get("photo", "No field named 'photo' in the response")
+        reply = response.get("photo", "< no field named 'photo' in the response >")
         if reply != "":
             log_error("The server replied with an error.")
             log("The server replied:")
             print(raw_response.text)
             log("The error is: " + reply)
             log("WARNING: the image was probably not sent!")
-            return
+            raise ValueError(reply)  # Remember, errors must escalate here
 
-        return image_name
+        return final_image_path
 
 
 ################################################################################
@@ -368,6 +381,7 @@ class _FtpServer:
         self.tls = parameters.get("tls", True)
         self.subfolder = parameters.get("subfolder")
         self.max_photos = parameters.get("max_photos", 0)
+
         # Estabilish the FTP connection
         try:
             if self.tls:
@@ -448,27 +462,27 @@ class _FtpServer:
                             "uploading the logs: " + response)
 
 
-    def upload_picture(self, image_name: str, image_path: Path) -> None:
+    def upload_picture(self, image_path: Path, image_name: str, image_extension: str) -> str:
         """
         Uploads the new picture to the server.
+        Returns the final image path (for cleanup operations)
         """
         # NOTE: Errors from here must escalate
-        if not image_name or not image_path:
-            log(f"Cannot upload the picture: picture name ({image_name}) " +
-                f"or location ({image_location}) not given.", 
-                fatal="Picture won't be uploaded.")
         
-        # Make sure the file in question exists
-        if not os.path.exists(image_path):
-            log(f"Cannot upload the picture: {image_path} does not exist!", 
-                fatal="Picture won't be uploaded.")
-            raise ValueError(f"Picture file {image_path} does not exist")
+        # Rename the picture according to max_photos
+        modifier = ""
+        if self.max_photos == 0:
+            modifier = datetime.datetime.now().strftime("_%Y-%m-%d_%H:%M:%S")
+        elif self.max_photos > 1:
+            modifier = "__1"
+        final_image_name = image_name + modifier + "." + image_extension 
+        final_image_path = image_path.parent / final_image_name
+        os.rename(image_path, final_image_path)
 
         # If the server is supposed to contain only a fixed amount of pictures, 
         # apply the prefix to this one and scale the other pictures' prefixes.
         # NOTE that in the HTTP version this is done by the PHP script
-        if self.max_photos:
-            image_name = "1__"+image_name
+        if self.max_photos > 1:
 
             try:
                 server_images = [image.lstrip("pictures/") for image in self._ftp_client.nlst("pictures/")]
@@ -482,14 +496,15 @@ class _FtpServer:
                     if len(split_name) == 2:
 
                         # Increase the image index and rename it
+                        name_without_position = "__".join(split_name[:-2])
                         try:
-                            position = int(split_name[0]) + 1
+                            position = int(split_name[-1]) + 1
                         except ValueError as e:
                             if "invalid literal for int() with base 10" in str(e):
                                 log(f"Image with double underscore in the name could not be parsed: {server_image_name} . Ignoring it.")
                                 continue
     
-                        new_name = f"{position}__{split_name[1]}"
+                        new_name = f"{name_without_position}__{position}"
                         self._ftp_client.rename(f"pictures/{server_image_name}", f"pictures/{new_name}")
 
                         # If position is above max_photos, delete that picture
@@ -502,9 +517,9 @@ class _FtpServer:
                     log(f'Encountered a 550 FTP error: {str(resp)}')
                     pass
 
-        # upload the picture
+        # Upload the picture
         response = self._ftp_client.storbinary(
-            f"STOR pictures/{image_name}", open(image_path ,"rb"))
+            f"STOR pictures/{final_image_name}", open(final_image_path ,"rb"))
                 
         # Make sure the server did not reply with an error
         if not "226" in response:
@@ -513,5 +528,5 @@ class _FtpServer:
             log("WARNING: the image was probably not sent!")
             raise ValueError(f"Failed to upload the picture")
             
-        return image_name
+        return final_image_path
 
