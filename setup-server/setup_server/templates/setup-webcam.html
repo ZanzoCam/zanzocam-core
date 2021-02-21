@@ -2,7 +2,6 @@
 
 {% block content %}
     
-    <h4 id="setup" style="margin:5rem 0 3rem 0;">Setup Foto</h4>
     <p>
     Ricorda che altre opzioni come rotazione, inversione verticale o orizzontale, scritte, loghi etc... 
     verranno applicate piu' tardi, quando la foto verra' inviata al server. La preview serve unicamente
@@ -11,7 +10,7 @@
 
     <!-- https://www.geeksforgeeks.org/maintain-the-aspect-ratio-of-a-div-with-css/ -->
     <div id="zanzocam-preview" style="padding-top:56%!important; background-color:#ccc; background-size: 100%; margin:30px auto; padding: 30px; border-radius:2rem;">
-        <a id="zanzocam-preview-button" class="button" onclick="refreshPreview();">Aggiorna</a>
+        <button id="zanzocam-preview-button" class="button" onclick="refreshPreview();">Aggiorna</button>
     </div>    
     
     <p>
@@ -20,7 +19,7 @@
     </p>
 
     <div class="center">
-        <a id="shoot-picture" onclick="shootPicture();" class="button setup-button" style="width:50%;">Scatta Foto</a>
+        <button id="shoot-picture" onclick="shootPicture();" class="button setup-button" style="width:50%;">Scatta Foto</button>
     </div>
     
     <div id="logs-block" class="center" style="display: none;">
@@ -76,7 +75,7 @@
     
     // Send the shoot-picture command to the server and read the logs
     const shootPicture = async () => {
-        document.getElementById("setup").innerHTML = "ZANZOCAM sta scattando (non lasciare la pagina!)";
+        document.getElementById("feedback").innerHTML = "ZANZOCAM sta scattando (non lasciare la pagina!)";
         document.getElementById("zanzocam-preview-button").disabled = true;
         document.getElementById("shoot-picture").disabled = true;
         document.getElementById("shoot-picture").innerHTML = 'Sto scattando...';
@@ -101,13 +100,11 @@
             document.getElementById("shoot-picture").disabled = false;
             document.getElementById("shoot-picture").innerHTML = 'Scatta Foto';
             if (!response.ok) {
-                document.getElementById("setup").innerHTML = "Foto non scattata!";
                 document.getElementById("feedback").innerHTML = "Lo scatto della foto non è andato a buon fine. "+
                 "Verifica che tutti i parametri siano corretti e controlla i log per capire cosa non ha funzionato.";
                 alert("Lo scatto della foto non è andato a buon fine. " +
                 "Verifica che tutti i parametri siano corretti e controlla i log per capire cosa non ha funzionato.");
             } else {
-                document.getElementById("setup").innerHTML = "Foto scattata!";
                 document.getElementById("feedback").innerHTML = "Foto scattata! Vai sul tuo server per assicurarti che sia arrivata.";
             }
         });

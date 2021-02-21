@@ -21,8 +21,10 @@
                 <input type="text" name="wifi_ssid" value="{{ wifi_data.ssid }}">
                 
                 <label for="wifi_password">Password:</label>
-                <input type="text" name="wifi_password" value="{{ wifi_data.password }}" required>  
-
+                <div class="row">
+                    <input type="password" name="wifi_password" value="{{ wifi_data.password }}" required> 
+                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
+                </div>
                 <div class="center">
                     <button id="configure-wifi" class="button">Configura il WiFi</button> 
                 </div>
@@ -76,8 +78,11 @@
                 <input type="text" placeholder="username"  name="server_username" value="{{ server_data.username }}">
                 
                 <label for="server_password">Password del server (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server_password" value="{{ server_data.password }}">
-
+                <div class="row">
+                    <input type="password" name="server_password" value="{{ server_data.password }}"> 
+                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
+                </div>
+            
                 <div class="center">
                     <button id="configure-server" class="button">Configura Dati Server</button> 
                 </div>
@@ -121,6 +126,16 @@
     
     
     <script>
+    function toggle_password(button) {
+        if( button.innerHTML == 'Mostra' ) {
+            button.innerHTML = 'Nascondi'
+            button.previousElementSibling.type="text";
+        } else {
+            button.innerHTML = 'Mostra'
+            button.previousElementSibling.type="password";
+        }
+    }
+
     function toggle_server_protocol(value){
         // Toggle http or ftp in the server section
         var http_block = document.getElementById("http-vars");

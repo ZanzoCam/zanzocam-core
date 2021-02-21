@@ -2,6 +2,7 @@
 <head>
   <title>ZANZOCAM - {{ title }}</title>
     
+  <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='logos/favicon.png') }}"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta content="text/html; charset=ISO-8859-1">
   <link href="{{ url_for('static', filename='css/milligram.css') }}" rel="stylesheet">
@@ -18,8 +19,8 @@
 <div id="container">
     
     <div class="center">
-        <h2>{{ title }}</h2>
-        <h1>ZANZOCAM</h1>
+        <img src="{{ url_for('static', filename='logos/logo-zanzocam.png') }}" alt="Logo ZANZOCAM" width="300px" style="margin-bottom: 3rem;">
+        <h1>{{ title }}</h1>
     </div>
 
     {% block content %}

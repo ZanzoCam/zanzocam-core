@@ -6,11 +6,10 @@
   <meta content="text/html; charset=ISO-8859-1">
   <link href="milligram.css" rel="stylesheet">
   <script type="text/javascript" src="jszip.js"></script>
+  <link rel="shortcut icon" type="image/png" href="logos/favicon.png"/>
+
   
   <script>  
-    var zipFile = null;   // Is the configuration file a ZIP or a JSON?
-    var zippedImagesData = {};
-    
     /*
      * Get JSON data from the server.
      * Useful if the page is hosted with the JSON on the remote server
@@ -27,6 +26,7 @@
     /*
      * Get JSON data from a local file.
      * Useful if this page is running from a local HTML file on an offline machine.
+     * No images will be available.
      */
     function loadDataFromFile(form){
         if (form.files.length === 0) {
@@ -35,83 +35,21 @@
         }        
         var filename = form.files[0].name;
         var extension = filename.substring(filename.lastIndexOf(".")+1, filename.length);
-        if (extension==="zip"){
-            loadDataFromZip(form, filename);
+        if (extension==="json"){
+            
+            const reader = new FileReader();
+            reader.onload = function fileReadCompleted() {
+                data = JSON.parse(reader.result);
+                last_loaded_data = data;
+                fillForm(last_loaded_data, "");
+            };
+            reader.readAsText(form.files[0]);
+
         } else {
-            loadDataFromJson(form, filename);
+            alert("ATTENZIONE! Il file che hai selezionato non è un file di configurazione. Il nome del file deve finire con .json.");
         }
     }
     
-    /*
-     * Get JSON data from a local text file.
-     * No images will be available unless the remote server wants to serve them.
-     */
-    function loadDataFromJson(form, filename){
-        // It's a simple JSON file
-        const reader = new FileReader();
-        reader.onload = function fileReadCompleted() {
-            data = JSON.parse(reader.result);
-            last_loaded_data = data;
-            fillForm(last_loaded_data, "");
-        };
-        reader.readAsText(form.files[0]);
-    }
-  
-    /*
-     * Get JSON data and the images from a local ZIP file.
-     * Images should be available in the ZIP file and they can be previewed.
-     */
-    function loadDataFromZip(form, filename){
-        // it's a complete ZIP file with the images
-        const reader = new FileReader();
-        reader.onload = function fileReadCompleted() {
-            var zip = new JSZip();
-            zip.loadAsync(reader.result, {createFolders:true})
-            .then((zip) => {
-            
-                // Read the configuration file
-                zip.file("configuration.json")
-                .async("string")
-                .then(content => {
-                
-                    // Load the configuration file
-                    data = JSON.parse(content);
-                    zipFile = filename;
-                    last_loaded_data = data;
-                    fillForm(last_loaded_data, "");
-                    
-                    // Once done, load all the images contained into it
-                    // and replace remote URLs with the local blobs
-                    zip.folder("images").forEach((image, data) => {
-                        data.async("arraybuffer")
-                        .then(
-                        function(content) {
-                            var buffer = new Uint8Array(content);
-                            var blob = new Blob([buffer.buffer]);
-                            var imageElement = document.querySelector("img[src*='"+image+"']");
-                            imageElement.src = URL.createObjectURL(blob);
-                            zippedImagesData[image] = blob;
-                        },
-                        function(e) {
-                            console.log(e);
-                            alert("Errore durante la lettura di: "+file.name);
-                        });
-                    });
-                    
-                }).catch(error => {
-                    console.log(error);
-                    alert("Errore durante il caricamento! Sei sicuro di aver "+
-                          "selezionato il file zip corretto? Il file deve "+
-                          "contenere un file di nome 'configuration.json' e " +
-                          "una cartella chiamata 'images' per essere caricato "+
-                          "correttamente.");
-                });
-            });
-        };
-        reader.readAsArrayBuffer(form.files[0]);
-    }
-  
-  
     /*
      * Load local images to render them in the configuration file.
      * Used to preview a new image that has been selected but is neither online
@@ -173,7 +111,22 @@
 	        if (prefix === "server__" &&  key === "protocol"){
 	            toggle_server_protocol(value);
 	        }
-	        // Special processing is needed for the resolution selector (height is the discriminant0)
+            // Special processing is needed for the max images switch
+	        if (prefix === "server__" &&  key === "max_photos"){
+                if (value != 0 && value != 1){
+                    // Toggle to the correct button
+                    document.getElementById("max_photos_value").checked = true;
+                    // Set the value of the toggle button
+                    document.getElementById("max_photos_value").value = value;
+                    // Write the value in the label too
+                    document.getElementById("max_photos_label").innerHTML = value;
+                    // Display the input to change the value
+                    document.getElementById("max_photos_input").style.display = "block";
+                    // Set the initial value to the config file value
+                    document.getElementById("max_photos_input").value = value;
+                }
+	        }
+	        // Special processing is needed for the resolution selector (height is the discriminant)
 	        if (prefix === "image__" &&  key === "height"){
 	            document.getElementById("resolution_selector").value = value; 
 	        }
@@ -299,15 +252,11 @@
         }
 	    // Send the JSON to the server or ask the user to save it locally
         if (localMode){
-            if (zipFile){
-                saveConfigurationToZip(formdata, images);
-            } else {
-                saveConfigurationToJson(formdata);
-            }
+            saveConfigurationToJson(formdata);
         } else {
 	        saveConfigurationToServer(formdata);
         }
-        save.disabled = false;  
+        save.disabled = false;
     };
     
     /*
@@ -321,62 +270,6 @@
         .then(response => response.json())
         .then(reply => {
             loadDataFromServer(url);
-        });
-    }
-    
-    /*
-     * Let the user download the ZIP file containing the JSOn and the images.
-     */
-    function saveConfigurationToZip(formdata, images){
-        var zip = new JSZip();
-        zip.file("configuration.json", serialized);
-        var img = zip.folder("images");
-    
-        var imagePickers = Array.from(document.querySelectorAll('.image-picker'));
-        imagePickers.forEach((item) => {
-                
-            // If the filepicker contains something, save it
-            if (item.files.length > 0){
-                img.file(item.files[0].name, item.files[0], {base64: true});
-                
-            // Otherwise, make sure to preserve whatever image the previous 
-            // config file came with.
-            } else {
-
-                var imageElement = document.getElementById(item.name);
-                var imageName = document.getElementById(item.name+"_current").textContent;
-                
-                if (imageElement && imageElement.src){
-                    if(imageElement.src.startsWith("blob:")){
-                        // it's a blob: read from the original ZIP
-                        img.file(imageName, zippedImagesData[imageName]);
-                                    
-                    } else {
-                        // In any other case we assume it's a URL, so try to
-                        // download it.
-                        fetch(imageElement.src)
-                        .then(function(response) {
-                            return response.blob();
-                        })
-                        .then(function(blob) {
-                            img.file(item.value, blob, {base64: true});
-                        })
-                        .catch((error) => {
-                            alert("Errore durante il salvataggio di "+
-                                imageElement.src +" Aggiungi manualmente questa "+
-                                "immagine sul server!");
-                        });
-                    }
-                }
-            }
-        });
-        zip.generateAsync({type:"blob"}).then(function(content) {
-            var download = document.createElement('a');
-            download.setAttribute("href", URL.createObjectURL(content));
-            download.setAttribute("download", "configuration.zip");
-            document.body.appendChild(download); // required for firefox
-            download.click();
-            download.remove();
         });
     }
     
@@ -410,6 +303,17 @@
         var image_block = document.getElementById(position+"_image-vars");
         text_block.style.display = value==="text" ? "block" : "none";
         image_block.style.display = value==="image" ? "block" : "none";
+    }
+
+    // Toggle passwords visibility
+    function toggle_password(button) {
+        if( button.innerHTML == 'Mostra' ) {
+            button.innerHTML = 'Nascondi'
+            button.previousElementSibling.type="text";
+        } else {
+            button.innerHTML = 'Mostra'
+            button.previousElementSibling.type="password";
+        }
     }
 
     // Sets a background and a text color to a color input field
@@ -507,7 +411,6 @@
         });
         return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
     }
-    
   </script>
 
 </head>
@@ -530,8 +433,8 @@
 <div id="container">
     
     <div class="center">
-        <h2>Impostazioni</h2>
-        <h1>ZANZOCAM</h1>
+        <img src="logos/logo-zanzocam.png" alt="Logo ZANZOCAM" width="300px" style="margin-bottom: 3rem;">
+        <h1>Impostazioni</h1>
     </div>
     
     <div id="loading" class="center">
@@ -591,24 +494,36 @@
                 </div>
 
                 <label for="server__username">Username (se necessario):</label>
-                <input type="text" placeholder="username"  name="server__username">
+                <input type="text" name="server__username">
                 
                 <label for="server__password">Password (se necessaria):</label>
-                <input type="text" placeholder="password"  name="server__password">
-
-
-                <label for="server__max_photos">Numero massimo di foto sul server (zero (0) significa "infinite"):</label>
                 <div class="row">
-                    <div class="column">
-                        <input type="text" placeholder="0"  name="server__max_photos">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="column">
-                        <p>NOTA: se hai selezionato "Numera le foto con un prefisso", non utilizzare un doppio underscore ( __ ) nel nome della foto.</p>
-                    </div>
+                    <input type="password" name="server__password">
+                    <button onclick="toggle_password(this);" type="button">Mostra</button> 
                 </div>
 
+                <label for="server__max_photos">Numero di foto da tenere:</label>
+                <div class="row">
+                    <div class="column">
+                        <div class="row">
+                            <label class="toggle">
+                                <input type="radio" value="1" name="server__max_photos"  checked onclick="javascript:document.getElementById('max_photos_input').style.display = 'none';">
+                                <span class="label">Solo una</span>
+                            </label><br>
+                            <label class="toggle">
+                                <input type="radio" id="max_photos_value" name="server__max_photos" value="" onclick="javascript:document.getElementById('max_photos_input').style.display = 'block';">
+                                <span class="label">Massimo: <span id="max_photos_label"></span></span>
+                            </label><br>
+                            <label class="toggle">
+                                <input type="radio" name="server__max_photos" value="0" onclick="javascript:document.getElementById('max_photos_input').style.display = 'none';">
+                                <span class="label">Tutte</span>
+                            </label><br>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <input type="text" id="max_photos_input" style="display:none;margin:0;" oninput="javascript:document.getElementById('max_photos_value').value=this.value;document.getElementById('max_photos_label').innerHTML=this.value">
+                    </div> 
+                </div>                   
             </div>
             
             <div class="sheet">
@@ -691,15 +606,8 @@
                         </select>
                     </div>
                 </div>
-                
-                <input type="checkbox"  name="image__add_date_to_name">
-                <label class="label-inline" for="image__add_date_to_name">Aggiungi la data al nome della foto</label>
-                <br>
-                
-                <input type="checkbox"  name="image__add_time_to_name">
-                <label class="label-inline" for="image__add_time_to_name">Aggiungi l'ora al nome della foto</label>
-                <br>
-                <br>
+
+                <p>NOTA: non utilizzare un doppio underscore ( __ ) nel nome della foto.</p>
                 
                 <div class="row">
                     <div class="column">
@@ -918,11 +826,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__top_right__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_right__over_the_picture">
                                 <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
 
@@ -995,11 +901,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__top_right__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_right__over_the_picture">
-                                <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__top_right__over_the_picture">Dentro il perimetro della foto</label>                  
                             </div>
                         </div>
                     </div>
@@ -1035,11 +939,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__top_center__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_center__over_the_picture">
                                 <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
                         
@@ -1113,11 +1015,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__top_center__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_center__over_the_picture">
-                                <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__top_center__over_the_picture">Dentro il perimetro della foto</label>               
                             </div>
                         </div>
                     </div>
@@ -1152,11 +1052,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__top_left__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_left__over_the_picture">
                                 <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
                         
@@ -1230,11 +1128,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__top_left__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_left__over_the_picture">
-                                <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__top_left__over_the_picture">Dentro il perimetro della foto</label>                  
                             </div>
                         </div>
                     </div>
@@ -1268,11 +1164,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__bottom_right__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
                                 <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
                         
@@ -1346,11 +1240,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__bottom_right__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
-                                <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__bottom_right__over_the_picture">Dentro il perimetro della foto</label>                
                             </div>
                         </div>
                     </div>  
@@ -1384,11 +1276,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__bottom_center__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
                                 <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
                         
@@ -1462,11 +1352,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__bottom_center__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
-                                <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__bottom_center__over_the_picture">Dentro il perimetro della foto</label>         
                             </div>
                         </div>
                     </div> 
@@ -1500,11 +1388,9 @@
                                 <label>Dimensione del font:</label>
                                 <input type="text" placeholder="30"  name="overlays__bottom_left__font_size">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
                                 <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
-                                <br> 
                             </div>
                         </div>
                         
@@ -1578,11 +1464,9 @@
                                 <label>Margine (% dim. immagine):</label>
                                 <input type="text" placeholder="20"  name="overlays__bottom_left__padding_ratio">
                             </div>
-                            <div class="column">
-                                <br>
+                            <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
-                                <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>
-                                <br>                    
+                                <label class="label-inline" for="overlays__bottom_left__over_the_picture">Dentro il perimetro della foto</label>           
                             </div>
                         </div>
                     </div>

@@ -1,7 +1,8 @@
 {
   "server": {
     "protocol": "HTTP",
-    "url": "http://46.101.245.13/uploads/"
+    "url": "http://46.101.245.13/uploads/",
+    "max_photos": "3"
   },
   "crontab": {
     "minute": "*/5",
