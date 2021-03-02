@@ -118,10 +118,8 @@
                     document.getElementById("max_photos_value").checked = true;
                     // Set the value of the toggle button
                     document.getElementById("max_photos_value").value = value;
-                    // Write the value in the label too
-                    document.getElementById("max_photos_label").innerHTML = value;
                     // Display the input to change the value
-                    document.getElementById("max_photos_input").style.display = "block";
+                    document.getElementById("max_photos_block").style.display = "block";
                     // Set the initial value to the config file value
                     document.getElementById("max_photos_input").value = value;
                 }
@@ -179,6 +177,9 @@
      * ready to be sent to the server or returned to the user.
      */
     function formdataToJson(formData){
+        console.log("Last loaded data: ");
+        console.log(last_loaded_data);
+
         var object = {};
         const form = document.getElementById('config');
         Array.from(form.elements).forEach((field) => {
@@ -202,9 +203,21 @@
                 value = field.checked ? true: false; 
             }
             // This is a file that has not been changed.
-            // Be sure to re-send the old value, or it will clear the field.        
-            if (value===null && field.type === "file"){
+            // Be sure to re-send the old value, or it will clear the field.    
+            if (field.type === "file"){
+                console.log("File field detected with value "+ value);
+            }    
+            if ((value===null || value==="") && field.type === "file"){
+                // Firefox
                 value = deepGet(key, last_loaded_data);
+            } else if (Object.prototype.toString.call(value) == '[object File]'){
+                // Chrome
+                if(field.files.length > 0){
+                    value = field.files[0].name;
+                } else {
+                    value = deepGet(key, last_loaded_data);
+                }
+
             }
             if (value !== null && value !== "" && typeof value !== 'undefined'){ 
 	            // Get the proper value from filepickers
@@ -216,6 +229,7 @@
 	        }
         });
         filtered_object = object
+        console.log(filtered_object);
         return filtered_object;
     }
 
@@ -500,30 +514,7 @@
                 <div class="row">
                     <input type="password" name="server__password">
                     <button onclick="toggle_password(this);" type="button">Mostra</button> 
-                </div>
-
-                <label for="server__max_photos">Numero di foto da tenere:</label>
-                <div class="row">
-                    <div class="column">
-                        <div class="row">
-                            <label class="toggle">
-                                <input type="radio" value="1" name="server__max_photos"  checked onclick="javascript:document.getElementById('max_photos_input').style.display = 'none';">
-                                <span class="label">Solo una</span>
-                            </label><br>
-                            <label class="toggle">
-                                <input type="radio" id="max_photos_value" name="server__max_photos" value="" onclick="javascript:document.getElementById('max_photos_input').style.display = 'block';">
-                                <span class="label">Massimo: <span id="max_photos_label"></span></span>
-                            </label><br>
-                            <label class="toggle">
-                                <input type="radio" name="server__max_photos" value="0" onclick="javascript:document.getElementById('max_photos_input').style.display = 'none';">
-                                <span class="label">Tutte</span>
-                            </label><br>
-                        </div>
-                    </div>
-                    <div class="column">
-                        <input type="text" id="max_photos_input" style="display:none;margin:0;" oninput="javascript:document.getElementById('max_photos_value').value=this.value;document.getElementById('max_photos_label').innerHTML=this.value">
-                    </div> 
-                </div>                   
+                </div> 
             </div>
             
             <div class="sheet">
@@ -608,6 +599,33 @@
                 </div>
 
                 <p>NOTA: non utilizzare un doppio underscore ( __ ) nel nome della foto.</p>
+
+                <!-- Note that this fields actually write to the server block! -->
+                <label for="server__max_photos">Numero di foto da tenere:</label>
+                <div class="row">
+                    <div class="column">
+                        <div class="row">
+                            <label class="toggle">
+                                <input type="radio" value="1" name="server__max_photos"  checked onclick="javascript:document.getElementById('max_photos_block').style.display = 'none';">
+                                <span class="label">Solo una</span>
+                            </label><br>
+                            <label class="toggle">
+                                <input type="radio" id="max_photos_value" name="server__max_photos" value="" onclick="javascript:document.getElementById('max_photos_block').style.display = 'block';">
+                                <span class="label">Multiple</span>
+                            </label><br>
+                            <label class="toggle">
+                                <input type="radio" name="server__max_photos" value="0" onclick="javascript:document.getElementById('max_photos_block').style.display = 'none';">
+                                <span class="label">Tutte</span>
+                            </label><br>
+                        </div>
+                    </div>
+                    <div class="column" id="max_photos_block" style="display:none;">
+                        <div class="row">
+                            <label style="margin:7px;">Quante:</label>
+                            <input id="max_photos_input" type="text" oninput="javascript:document.getElementById('max_photos_value').value=this.value;">
+                        </div> 
+                    </div> 
+                </div>
                 
                 <div class="row">
                     <div class="column">
