@@ -762,9 +762,14 @@ label {
 }
 
 .color-selector select{
-  color: white;
+  color: white;  /* to hide the selected value in case of semitransparency */ 
   position: absolute;
   max-width: 270px;
+}
+
+.color-selector select * {
+  background-color: white;
+  color: black;  /* to hide the selected value in case of semitransparency */ 
 }
 
 .color-selector input{
