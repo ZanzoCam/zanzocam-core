@@ -36,7 +36,7 @@ setup(
     
     use_scm_version = {
         "root": "..",
-        "relative_to": __file__,
+        "relative_to": os.path.dirname(__file__),
     },
     setup_requires=['setuptools_scm'],
 
