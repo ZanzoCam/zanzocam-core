@@ -3,6 +3,7 @@ setup.py for zanzocam-webcam.
 For reference see
 https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
+import os
 from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools_scm import get_version
@@ -32,6 +33,13 @@ REQUIREMENTS: dict = {
 setup(
     name='zanzocam-webcam',
     version=get_version(),
+    
+    use_scm_version = {
+        "root": "..",
+        "relative_to": __file__,
+    },
+    setup_requires=['setuptools_scm'],
+
 
     author='Sara Zanzottera',
     author_email='',
