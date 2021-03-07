@@ -31,12 +31,7 @@ REQUIREMENTS: dict = {
 
 
 setup(
-
-    setup_requires=['setuptools_scm'],
-    use_scm_version={"root": "..", "relative_to": os.path.dirname(__file__)},
-
-    name='zanzocam-webcam',
-#    version=get_version(),
+    name='webcam',
     author='Sara Zanzottera',
     author_email='',
     description='ZANZOCAM (Webcam module)',
@@ -44,6 +39,9 @@ setup(
     long_description_content_type='text/markdown',
     url='https://zansara.github.io/zanzocam/',
 
+    setup_requires=['setuptools_scm'],
+    use_scm_version={"root": "..", "relative_to": os.path.dirname(__file__)},
+    
     packages=find_packages(),
     python_requires='>=3.6, <4',
     classifiers=[
@@ -58,7 +56,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'z-webcam=zanzocam_webcam.main:main',
+            'z-webcam=webcam.main:main',
         ],
     },
 
