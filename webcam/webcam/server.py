@@ -474,7 +474,7 @@ class _FtpServer:
         if self.max_photos == 0:
             modifier = datetime.datetime.now().strftime("_%Y-%m-%d_%H:%M:%S")
         elif self.max_photos > 1:
-            modifier = "__1"
+            modifier = "__0"
         final_image_name = image_name + modifier + "." + image_extension
         final_image_path = image_path.parent / final_image_name
         os.rename(image_path, final_image_path)
@@ -484,40 +484,21 @@ class _FtpServer:
         # NOTE that in the HTTP version this is done by the PHP script
         if self.max_photos > 1:
 
-            try:
-                server_images = [image.lstrip("pictures") for image in self._ftp_client.nlst("pictures/")]
-                log(f"Pictures already present on the server: {server_images}")
-                server_images.reverse() # Sort backwards to make the renaming work properly!
-
-                log("Renaming pictures....")
-                for server_image_name in server_images:
-
-                    extensionless_name = ".".join(server_image_name.split(".")[:-1])
-                    extension = server_image_name.split(".")[-1]
-                    split_name = extensionless_name.split("__")
-
-                    # Increase the image index and rename it
-                    try:
-                        name_without_position = "__".join(split_name[:-1])
-                        position = int(split_name[-1]) + 1
-                    except ValueError as e:
-                        if "invalid literal for int() with base 10" in str(e):
-                            log(f"Image with double underscore in the name could not be parsed: {server_image_name} . Ignoring it.")
-                            continue
-
-                    new_name = f"{name_without_position}__{position}.{extension}"
-                    self._ftp_client.rename(f"pictures/{server_image_name}", f"pictures/{new_name}")
-
-                    # If position is above max_photos, delete that picture
-                    if position > self.max_photos:
-                        log(f"Deleting old picture on the server: {new_name} (only {self.max_photos} pictures are allowed)")
-                        self._ftp_client.delete(f"pictures/{new_name}")
-
-            except error_perm as resp:
-                if '550' in str(resp):
-                    log(f'Encountered a 550 FTP error: {str(resp)}')
-                    pass
-
+            # -1 because extremes are excluded! The second -1 is the step
+            # This procedure will also overwrite the oldest picture
+            for position in range(self.max_photos, -1, -1):
+                
+                old_name = f"{image_name}__{position}.{image_extension}"
+                new_name = f"{image_name}__{position+1}.{image_extension}"
+                
+                log(f"Renaming '{old_name}' to '{new_name}'")
+                try:
+                    self._ftp_client.rename(f"pictures/{old_name}", f"pictures/{new_name}")
+                except error_perm as resp:
+                    if '550' in str(resp):
+                        log(f"Encountered a 550 FTP error: {str(resp)}. probably the image didn't exist, ignore this error.")
+                        pass
+                        
         # Upload the picture
         response = self._ftp_client.storbinary(
             f"STOR pictures/{final_image_name}", open(final_image_path ,"rb"))
