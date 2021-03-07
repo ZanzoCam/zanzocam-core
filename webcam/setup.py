@@ -28,6 +28,7 @@ REQUIREMENTS: dict = {
         "Pillow",
         "requests",
         "setuptools_scm",  # for versioning
+        "importlib_metadata",  # py<3.8
     ],
     'test': [
         "pytest",
