@@ -4,7 +4,8 @@ For reference see
 https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 from pathlib import Path
-from setuptools import setup, find_packages, get_version
+from setuptools import setup, find_packages
+from setuptools_scm import get_version
 #try:
 #    from importlib.metadata import version, PackageNotFoundError
 #except (ImportError, ModuleNotFoundError):
