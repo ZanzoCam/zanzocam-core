@@ -6,6 +6,7 @@ import shutil
 import requests
 import datetime
 import subprocess
+from importlib.metadata import version, PackageNotFoundError
 
 from webcam.constants import *
 from webcam.utils import log, log_error
@@ -47,12 +48,11 @@ class System:
         Returns None if an error occurs.
         """
         try:
-            with open("/home/zanzocam-bot/zanzocam/.VERSION") as v:
-                return v.readline().strip()
-        except Exception as e:
-            log_error("Could not get version information.", e)
+            return version("zanzocam-webcam")
+        except PackageNotFoundError as e:
+            log("Could not get version information.", e)
         return None
-        
+
     def get_last_reboot_time(self) -> Optional[datetime.datetime]:
         """ 
         Read the last reboot time of ZANZOCAM as a datetime object.
