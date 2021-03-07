@@ -6,8 +6,11 @@ import shutil
 import requests
 import datetime
 import subprocess
-from importlib.metadata import version, PackageNotFoundError
-
+try:
+    from importlib_metadata import version, PackageNotFoundError
+except ModuleNotFoundError as e:
+    from importlib.metadata import version, PackageNotFoundError
+    
 from webcam.constants import *
 from webcam.utils import log, log_error
 from webcam.configuration import Configuration
