@@ -58,7 +58,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'z-webcam=webcam.main:main',
+            'z-webcam=zanzocam_webcam.main:main',
         ],
     },
 
