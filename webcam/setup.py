@@ -5,7 +5,11 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 from pathlib import Path
 from setuptools import setup, find_packages
-from importlib.metadata import version, PackageNotFoundError
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import version, PackageNotFoundError  # python_version<'3.8'
+    
 
 
 HERE = Path(__file__).parent.absolute()
@@ -16,9 +20,8 @@ try:
     __version__ = version("zanzocam-webcam")
 except PackageNotFoundError as e:
     print(f"Cannot retrieve version: {e}")
-    pass
 
-
+    
 REQUIREMENTS: dict = {
     'core': [
         "picamera",
