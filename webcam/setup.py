@@ -4,11 +4,11 @@ For reference see
 https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 from pathlib import Path
-from setuptools import setup, find_packages
-try:
-    from importlib.metadata import version, PackageNotFoundError
-except (ImportError, ModuleNotFoundError):
-    from importlib_metadata import version, PackageNotFoundError  # python_version<'3.8'
+from setuptools import setup, find_packages, get_version
+#try:
+#    from importlib.metadata import version, PackageNotFoundError
+#except (ImportError, ModuleNotFoundError):
+#    from importlib_metadata import version, PackageNotFoundError  # python_version<'3.8'
     
 
 
@@ -16,10 +16,10 @@ HERE = Path(__file__).parent.absolute()
 with (HERE / 'README.md').open('rt') as fh:
     LONG_DESCRIPTION = fh.read().strip()
     
-try:
-    __version__ = version("zanzocam-webcam")
-except PackageNotFoundError as e:
-    print(f"Cannot retrieve version: {e}")
+#try:
+#    __version__ = version("zanzocam-webcam")
+#except PackageNotFoundError as e:
+#    print(f"Cannot retrieve version: {e}")
 
     
 REQUIREMENTS: dict = {
@@ -40,7 +40,7 @@ REQUIREMENTS: dict = {
 
 setup(
     name='zanzocam-webcam',
-    version=__version__,
+    version=get_version(),
 
     author='Sara Zanzottera',
     author_email='',
