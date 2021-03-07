@@ -51,9 +51,9 @@ class System:
         Returns None if an error occurs.
         """
         try:
-            return version("zanzocam-webcam")
+            return version("webcam")
         except PackageNotFoundError as e:
-            log("Could not get version information.", e)
+            log(f"Could not get version information: {e}")
         return None
 
     def get_last_reboot_time(self) -> Optional[datetime.datetime]:
