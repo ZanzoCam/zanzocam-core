@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import setup, find_packages
 try:
     from importlib.metadata import version, PackageNotFoundError
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     from importlib_metadata import version, PackageNotFoundError  # python_version<'3.8'
     
 
