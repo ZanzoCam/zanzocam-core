@@ -6,7 +6,7 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 import os
 from pathlib import Path
 from setuptools import setup, find_packages
-from setuptools_scm import get_version
+#from setuptools_scm import get_version
 
 
 HERE = Path(__file__).parent.absolute()
@@ -31,16 +31,12 @@ REQUIREMENTS: dict = {
 
 
 setup(
-    name='zanzocam-webcam',
-    version=get_version(),
-    
-    use_scm_version = {
-        "root": "..",
-        "relative_to": os.path.dirname(__file__),
-    },
+
     setup_requires=['setuptools_scm'],
+    use_scm_version={"root": "..", "relative_to": os.path.dirname(__file__)},
 
-
+    name='zanzocam-webcam',
+#    version=get_version(),
     author='Sara Zanzottera',
     author_email='',
     description='ZANZOCAM (Webcam module)',
