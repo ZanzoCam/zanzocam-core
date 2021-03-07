@@ -5,11 +5,18 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 from pathlib import Path
 from setuptools import setup, find_packages
+from importlib.metadata import version, PackageNotFoundError
 
 
 HERE = Path(__file__).parent.absolute()
 with (HERE / 'README.md').open('rt') as fh:
     LONG_DESCRIPTION = fh.read().strip()
+    
+try:
+    __version__ = version("zanzocam-webcam")
+except PackageNotFoundError as e:
+    print(f"Cannot retrieve version: {e}")
+    pass
 
 
 REQUIREMENTS: dict = {
@@ -17,6 +24,7 @@ REQUIREMENTS: dict = {
         "picamera",
         "Pillow",
         "requests",
+        "setuptools_scm",  # for versioning
     ],
     'test': [
         "pytest",
@@ -27,15 +35,15 @@ REQUIREMENTS: dict = {
 
 
 setup(
-    name='zanzocam_webcam',
-    version="0.0.1",
+    name='zanzocam-webcam',
+    version=__version__,
 
     author='Sara Zanzottera',
     author_email='',
     description='ZANZOCAM (Webcam module)',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    url='',
+    url='https://zansara.github.io/zanzocam/',
 
     packages=find_packages(),
     python_requires='>=3.6, <4',
