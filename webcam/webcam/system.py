@@ -1,11 +1,13 @@
 from typing import Dict, Optional
 
 import os
+import sys
 import math
 import shutil
 import requests
 import datetime
 import subprocess
+from pathlib import Path
 try:
     from importlib_metadata import version, PackageNotFoundError
 except ModuleNotFoundError as e:
@@ -94,7 +96,7 @@ class System:
         Checks whether ZANZOCAM can turn on its hotspot at need
         """
         try:
-            with open("/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED", "r+") as h:
+            with open(Path(__file__).parent.parent / "HOTSPOT_ALLOWED", "r+") as h:
                 return h.read().strip()
 
         except Exception as e:
@@ -278,8 +280,8 @@ class System:
             for line in cron_strings:
                 d.writelines(
                     f"{line} zanzocam-bot "
-                    " /home/zanzocam-bot/venv/bin/z-webcam "
-                    " >> /home/zanzocam-bot/webcam/logs.txt 2>&1\n")
+                    f" {Path(sys.executable).parent}/z-webcam "
+                    f" >> {Path(__file__).parent.parent }/logs.txt 2>&1\n")
                 
         # Backup the old crontab in the home
         backup_cron = subprocess.run([

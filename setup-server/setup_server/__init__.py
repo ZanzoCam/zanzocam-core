@@ -9,7 +9,9 @@ from flask import Flask, render_template, request, abort, send_from_directory, r
 app = Flask(__name__)
 
 
-HOTSPOT_FLAG = "/home/zanzocam-bot/webcam/HOTSPOT_ALLOWED"
+HOTSPOT_FLAG = "/home/zanzocam-bot/venv/src/webcam/webcam/HOTSPOT_ALLOWED"
+CONFIG_DEST = "/home/zanzocam-bot/venv/src/webcam/webcam/configuration.json"
+
 WIFI_DATA = "/var/www/setup-server/setup_server/config/wifi_data.json"
 SERVER_DATA = "/var/www/setup-server/setup_server/config/server_data.json"
 
@@ -119,7 +121,7 @@ def configure_server():
         webcam_minimal_conf["server"]["url"] = request.form["server_url"]
 
     try:
-        with open("/home/zanzocam-bot/webcam/configuration.json", 'w') as d:
+        with open(CONFIG_DEST, 'w') as d:
             json.dump(webcam_minimal_conf, d, indent=4)
     except Exception as e:
         return redirect(url_for('setup', feedback=f"Si e' verificato un errore nel salvare i dati del server: {e}", feedback_sheet_name="server", feedback_type="negative"))
