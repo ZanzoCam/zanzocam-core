@@ -13,7 +13,8 @@ $config_images_path = "configuration/overlays/";
 if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $config_string = file_get_contents($config_file);
     $config = json_decode($config_string);
-    $response = array("configuration" => $config);
+    $overlays_list = glob($config_images_path.'*');
+    $response = array("configuration" => $config, "overlays_list" => $overlays_list);
     echo json_encode($response);
 
 
