@@ -86,7 +86,7 @@ This step installs a few libraries required for the webcam to work.
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
     - Create venv in the home: `cd ~ && python3 -m venv venv`
     - Activate venv: `source venv/bin/activate`
-    - Install Zanzocam webcam into it: `pip install -e git+https://github.com/ZanSara/zanzocam.git#egg=webcam&subdirectory=webcam`
+    - Install Zanzocam webcam into it: `pip install -e "git+https://github.com/ZanSara/zanzocam.git#egg=webcam&subdirectory=webcam"`
     - Leave venv: `deactivate`
 
 ### Setup the autohotspot feature
