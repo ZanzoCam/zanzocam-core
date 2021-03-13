@@ -82,18 +82,12 @@ This step installs a few libraries required for the webcam to work.
 # Disable the HDMI port (to save power)
 @reboot /usr/bin/tvservice -o
 ```
-- Install the Python scripts:
+- Install the webcam module:
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
-    - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
-    - Copy out the `webcam` folder: `cp -R zanzocam/webcam .`
-    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server/* /var/www/setup-server`
-    - Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
     - Create venv in the home: `cd ~ && python3 -m venv venv`
     - Activate venv: `source venv/bin/activate`
-    - Enter the webcam folder: `cd webcam`
-    - Install the package: `pip install -e .` (the `-e` is still important, will fix)
+    - Install Zanzocam webcam into it: `pip install -e git+https://github.com/ZanSara/zanzocam.git#egg=webcam&subdirectory=webcam`
     - Leave venv: `deactivate`
-
 
 ### Setup the autohotspot feature
 
@@ -403,15 +397,22 @@ Once the Pi can generate its own network, we make it able to receive HTTP reques
 
 Instructions [here](https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md) for Nginx and [here](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) for Flask.
 
-- Install Nginx: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
-- Start Nginx: `sudo /etc/init.d/nginx start`
-- Install venv into `/var/www/setup-server`
+- Get the setup server scripts:
+    - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
+    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server/* /var/www/setup-server`
+    - Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
+    - Delete the Zanzocam folder: `rm -r ~/zanzocam/`
+
+- Install the setup server under `/var/www/setup-server`:
     - Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
     - Activate venv: `source /var/www/setup-server/venv/bin/activate`
-- Install the dependencies: `pip install -r /var/www/setup-server/requirements.txt`
-- Leave venv: `deactivate`
-- Create a systemdunit file: `sudo nano /etc/systemd/system/setup-server.service`
-    - Content:
+    - Install the dependencies: `pip install -r /var/www/setup-server/requirements.txt`
+    - Leave venv: `deactivate`
+
+- Install Nginx:
+    - Install it: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
+    - Start it: `sudo /etc/init.d/nginx start`
+    - Create a systemdunit file: `sudo nano /etc/systemd/system/setup-server.service`. Content:
 ```
 [Unit]
 Description=uWSGI instance to serve the ZANZOCAM setup server
@@ -430,7 +431,7 @@ WantedBy=multi-user.target
 - Enable the service: `sudo systemctl enable setup-server`
 - Start the service: `sudo systemctl start setup-server`
 - Create Nginx configuration: `sudo nano /etc/nginx/sites-available/setup-server`
-    - Content:
+- Content:
 ```
 server {
     listen 80;
@@ -444,7 +445,7 @@ server {
 ```
 - Enable the new config: `sudo ln -s /etc/nginx/sites-available/setup-server /etc/nginx/sites-enabled`
 - Disable the default config: `sudo rm /etc/nginx/sites-enabled/default`
-    - Check for errors with `sudo nginx -t`
+- Check for errors with `sudo nginx -t`
 - Restart Nginx: `sudo systemctl restart nginx`
 
 
