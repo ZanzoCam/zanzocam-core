@@ -7,12 +7,15 @@ import textwrap
 from time import sleep
 from pathlib import Path
 from picamera import PiCamera
-from PIL import Image, ImageFont, ImageDraw, ImageEnhance
+from PIL import Image, ImageFont, ImageDraw, ImageStat
 
 from webcam.constants import *
 from webcam.utils import log, log_error
 from webcam.configuration import Configuration 
 
+
+MINIMUM_DAYLIGHT_LUMINANCE=60
+MAXIMUM_NIGHT_LUMINANCE=2
 
 
 class Camera:
@@ -77,37 +80,121 @@ class Camera:
             
 
     def shoot_picture(self) -> None:
-        """ 
-        Shoots the picture using PiCamera.
         """
-        # Give the camera some time to adjust
-        log("Adjusting camera...")
-        camera = PiCamera()
-        sleep(3)
-
-        if int(self.width) > camera.MAX_RESOLUTION.width:
-            log(f"WARNING! The requested image width ({self.width}) "
-                f"exceeds the maximum width resolution for this camera ({camera.MAX_RESOLUTION.width}). "
-                "Using the maximum width resolution instead.")
-            self.width = camera.MAX_RESOLUTION.width
-
-        if int(self.height) > camera.MAX_RESOLUTION.height:
-            log(f"WARNING! The requested image height ({self.height}) "
-                f"exceeds the maximum height resolution for this camera ({camera.MAX_RESOLUTION.height}). "
-                "Using the maximum height resolution instead.")
-            self.height = camera.MAX_RESOLUTION.height
-
-        camera.resolution = (int(self.width), int(self.height))
-        camera.vflip = self.ver_flip
-        camera.hflip = self.hor_flip
-        camera.rotation = int(self.rotation)
-
-        camera.meter_mode = "matrix"
+        Shoots the picture using PiCamera.
+        If the luminance is found to be too low, adjusts the shutter speed camera value and tries again.
+        """
+        self._shoot_picture()
         
-        log("Taking picture")
-        camera.capture(str(PATH / self.temp_photo_path))
-        camera.close()
+        # Test the luminance: if the picture is bright enough, return
+        photo = Image.open(str(PATH / self.photo_name))
+        luminance = self.stat_luminance(photo)
+        if luminance > MINIMUM_DAYLIGHT_LUMINANCE:
+            return
 
+        # We're now dealing with low light conditions
+        target_luminance = self.stat_target_luminance(photo)
+        log(f"Low luminance detected: {luminance} (min is {MINIMUM_DAYLIGHT_LUMINANCE}).")
+        log(f"Trying with adjusted exposure time. Target luminance: is {target_luminance}.")
+
+        shutter_speed = 30000 # maximum deafault shuteer speed
+        if luminance <= MAXIMUM_NIGHT_LUMINANCE:
+            log(f"Detected luminance is less than the night threshold ({MAXIMUM_NIGHT_LUMINANCE}): shooting with 3 second exposure time.")
+            shutter_speed = 3000000 
+            increase = 300000
+        elif 1 < luminance <= 20:
+            increase = 300000
+        elif 20 < luminance <= 40:
+            increase = 150000
+        elif 40 < luminance <= 60:
+            increase = 100000
+
+        success = False # turns True when the photo brightness is good
+    
+        i = 0
+        while i<10 and not success:
+            
+            shutter_speed += increase
+            self._shoot_picture(shutter_speed=shutter_speed)
+            
+            photo = Image.open(str(PATH / self.temp_photo_path))
+            new_luminance = self.stat_luminance(photo)
+            
+            if new_luminance > target_luminance - 1:
+                success = True
+            i += 1
+            if not success:
+                log(f"Tentative {i}: unsuccessful. Current luminance = {new_luminance}")
+            else:
+                log(f"Tentative {i}: successful. Starting luminance: {luminance}, current luminance: {new_luminance}, shutter speed: {shutter_speed}")
+
+
+    def _shoot_picture(self, shutter_speed: Optional[int] = None) -> None:
+        """ 
+        Actually shoots the picture using PiCamera.
+        shutter_speed is useful for evening and night picture, and setting it triggers the evening mode.
+        """
+        log("Adjusting camera...")
+
+        # The framerate sets a maximum to the exposure time.
+        # Night pictures must set it explicitly or it will never exceed 30000 (which is way too fast)
+        framerate = 30000
+        if shutter_speed:
+            framerate = (10**6) / (shutter_speed)
+        
+        with PiCamera(framerate = framerate) as camera:
+
+            if int(self.width) > camera.MAX_RESOLUTION.width:
+                log(f"WARNING! The requested image width ({self.width}) "
+                    f"exceeds the maximum width resolution for this camera ({camera.MAX_RESOLUTION.width}). "
+                    "Using the maximum width resolution instead.")
+                self.width = camera.MAX_RESOLUTION.width
+
+            if int(self.height) > camera.MAX_RESOLUTION.height:
+                log(f"WARNING! The requested image height ({self.height}) "
+                    f"exceeds the maximum height resolution for this camera ({camera.MAX_RESOLUTION.height}). "
+                    "Using the maximum height resolution instead.")
+                self.height = camera.MAX_RESOLUTION.height
+
+            camera.resolution = (int(self.width), int(self.height))
+            camera.vflip = self.ver_flip
+            camera.hflip = self.hor_flip
+            camera.rotation = int(self.rotation)
+
+            # Give the camera firmwaresome time to adjust
+            if shutter_speed:
+                camera.shutter_speed = shutter_speed
+                camera.iso = 800
+                sleep(4)
+                camera.exposure_mode = "off"
+                log("Taking low light picture")
+            else:
+                sleep(4)
+                log("Taking picture")
+
+            camera.capture(str(PATH / self.temp_photo_path))
+
+    @staticmethod
+    def stat_luminance(photo) -> float:
+        """
+        States the luminance of the given picture
+        """
+        stat = ImageStat.Stat(photo)
+        r,g,b = stat.mean
+        return math.sqrt(0.241*(r**2) + 0.691*(g**2) + 0.068*(b**2))
+
+    @staticmethod
+    def stat_target_luminance(photo) -> float:
+        """
+        Calculates the target luminance for the next shot
+        """
+        luminance = Camera.stat_luminance(photo)
+
+        if luminance <= 30:
+            return luminance + 30
+
+        elif 30 < luminance <= 60:
+            return luminance * (1/2) + 45
 
     def process_picture(self) -> None:
         """ 
@@ -123,9 +210,6 @@ class Camera:
                       "The photo will have no overlays applied.", e)
             return
 
-        #enhancer = ImageEnhance.Sharpness(photo)
-        #enhancer.enhance(2.0)
-        
         # Create the overlay images
         rendered_overlays = []
         for position, data in self.overlays.items():
