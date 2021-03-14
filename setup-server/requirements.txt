@@ -1,2 +1,6 @@
 uwsgi
 Flask
+sympy
+matplotlib
+pandas
+numpy
