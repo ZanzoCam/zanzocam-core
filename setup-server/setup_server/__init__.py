@@ -4,12 +4,18 @@ import json
 import subprocess
 from pathlib import Path
 from textwrap import dedent
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from sympy import Symbol, solve_poly_system
+
 from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
+
 
 app = Flask(__name__)
 
 
-HOTSPOT_FLAG = "/home/zanzocam-bot/venv/src/webcam/webcam/HOTSPOT_ALLOWED"
 CONFIG_DEST = "/home/zanzocam-bot/venv/src/webcam/webcam/configuration.json"
 
 WIFI_DATA = "/var/www/setup-server/setup_server/config/wifi_data.json"
@@ -18,8 +24,16 @@ SERVER_DATA = "/var/www/setup-server/setup_server/config/server_data.json"
 PICTURE_LOGS = "/var/www/setup-server/setup_server/config/picture_logs.txt"
 HOTSPOT_LOGS = "/var/www/setup-server/setup_server/config/hotspot_logs.txt"
 
+HOTSPOT_FLAG = "/home/zanzocam-bot/venv/src/webcam/webcam/HOTSPOT_ALLOWED"
+
 PREVIEW_IMAGE =  "/var/www/setup-server/setup_server/static/previews/zanzocam-preview.jpg"
 PREVIEW_URL =  "/static/previews/zanzocam-preview.jpg"
+
+CALIBRATION_DATASET = "/home/zanzocam-bot/venv/src/webcam/webcam/luminance_speed_table.csv"
+CALIBRATION_GRAPH_URL = "/static/previews/calibration_graph.png"
+CALIBRATION_GRAPH = "/var/www/setup-server/setup_server" + CALIBRATION_GRAPH_URL
+CALIBRATION_FLAG = "/home/zanzocam-bot/venv/src/webcam/webcam/CALIBRATION"
+CALIBRATED_PARAMS = "/home/zanzocam-bot/venv/src/webcam/webcam/CALIBRATED_PARAMS"
 
 
 
@@ -229,6 +243,126 @@ def get_logs(kind: str, name: str):
     else:
         return f"Logs type {kind} not understood", 500
     
+
+
+@app.route("/webcam-calibration", methods=['GET', 'POST'])
+def webcam_calibration():
+    """ The page where to see the calibration parameters """
+
+    # Write the data back if the request was a POST
+    if request.method == "POST":
+        new_data = request.form.get('calibration-data')
+        with open(CALIBRATION_DATASET, 'w') as calib:
+            calib.write(new_data)
+
+    # If the file does not exist, create it
+    if not os.path.exists(CALIBRATION_DATASET):
+        with open(CALIBRATION_DATASET, 'w') as calib:
+            pass
+
+    # Read the calibration flag
+    calibration_flag = list(open(CALIBRATION_FLAG, 'r').readlines())[0].strip("\n")
+
+    # Read the values as strings for editing and make sure there are enough values
+    calibration_data = list(open(CALIBRATION_DATASET, 'r').readlines())
+    calibration_data.sort()
+    calibration_data = "".join(calibration_data)
+    
+    if len(calibration_data) < 10:
+        return render_template("webcam-calibration.html",
+                            calibration_flag=calibration_flag,
+                            title="Calibrazione Webcam",
+                            figure=CALIBRATION_GRAPH_URL,
+                            calibration_data=calibration_data,
+                            feedback="Non hai raccolto abbastanza dati per effettuare la calibrazione (minimo 10 valori).")
+    
+    # Load the dataset
+    try:
+        df = pd.read_csv(CALIBRATION_DATASET, sep="\t")
+        df.columns=['in_lum','fin_lum','speed']
+        df = df.sort_values(by='in_lum') 
+
+        # Plot source values
+        df.plot(
+            x='in_lum',
+            y='speed',
+            label="Valori reali",
+            xlabel="Luminosita' iniziale",
+            ylabel="Shutter speed",
+        )
+
+        # Solve system with two points five times and average the results
+        a_value = 0
+        b_value = 0
+        for i in range(5):
+            x1 = df.iat[i, 0]
+            y1 = df.iat[i, 2]
+            x2 = df.iat[df.shape[0]-i-1, 0]
+            y2 = df.iat[df.shape[0]-i-1, 2]
+
+            a = Symbol('a')
+            b = Symbol('b')
+            values = solve_poly_system([a/x1 + b - y1, a/x2 + b - y2], a, b)
+
+            a_value += values[0][0]
+            b_value += values[0][1]
+
+        a_value = int(a_value / 5)
+        b_value = int(b_value / 5)
+
+        # Plot fitting curve
+        x = np.array(df[['in_lum']])
+        y = ((a_value/x) + b_value) 
+        plt.plot(x,y,label="Valori stimati")
+
+        plt.savefig(CALIBRATION_GRAPH)
+
+        return render_template("webcam-calibration.html", 
+                        title="Calibrazione Webcam",
+                        calibration_flag=calibration_flag,
+                        figure=CALIBRATION_GRAPH_URL,
+                        calibration_data=calibration_data,
+                        a_value=a_value,
+                        b_value=b_value)
+
+    except Exception as e:
+        return render_template("webcam-calibration.html", 
+                        title="Calibrazione Webcam",
+                        calibration_flag=calibration_flag,
+                        figure=CALIBRATION_GRAPH_URL,
+                        feedback="Qualcosa e' andato storto calcolando la curva. Verifica i dati inseriti e correggili!")
+
+
+@app.route("/calibration/<value>", methods=["POST"])
+def toggle_calibration_mode(value):
+    """ Set the calibration flag """
+    if value in ["ON", "OFF"]:
+        try:
+            with open(CALIBRATION_FLAG, "w") as f:
+                f.write(value)
+            return f"Calibration set to {value}", 200
+            
+        except Exception:
+            abort(500)
+    abort(404)
+
+
+@app.route("/calibrate", methods=["GET"])
+def set_calibrated_values():
+    """ Set the calibrated values """
+
+    a_value = request.args.get('a')
+    b_value = request.args.get('b')
+    if not a_value or not b_value:
+        return redirect(url_for('webcam_calibration'), feedback="Non puoi settare parametri non calcolati!")
+
+    try:
+        with open(CALIBRATED_PARAMS, "w") as f:
+            f.write(f"{a_value} {b_value}")
+        return redirect(url_for('webcam_calibration'))
+        
+    except Exception:
+        abort(500)
 
 
 
