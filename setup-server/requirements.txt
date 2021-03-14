@@ -1,4 +1,3 @@
-pybind11
 uwsgi
 Flask
 sympy
