@@ -1,11 +1,12 @@
 **/*.zip
 **/*.img
 **/wpa_supplicant.conf
-webcam/configuration.json
-webcam/configuration.json.bak
-webcam/failure_report.txt
-webcam/logs.txt
-webcam/overlays/*
+**/configuration.json
+**/configuration.json.bak
+**/failure_report.txt
+**/camera.log
+**/server.log
+**/overlays/*
 
 
 # Byte-compiled / optimized / DLL files

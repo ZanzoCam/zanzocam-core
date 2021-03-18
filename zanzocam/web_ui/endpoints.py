@@ -1,0 +1,131 @@
+import logging
+from pathlib import Path
+from flask import Flask, render_template, redirect, url_for, request
+
+from zanzocam import pages, api, constants
+
+
+app = Flask(__name__)
+logging.basicConfig(filename=constants.SERVER_LOG, level=logging.INFO)
+
+
+
+def main():    
+    app.run(host="0.0.0.0", port=8000, debug=False)
+
+
+#
+# Pages
+#
+
+@app.route("/", methods=["GET"])
+def home_endpoint(feedback: str, feedback_sheet_name: str, feedback_type: str):
+    return pages.home(feedback, feedback_sheet_name, feedback_type), 200 if feedback_type=="positive" else 500
+
+
+@app.route("/picture-preview", methods=["GET"])
+def picture_preview_endpoint():
+    return pages.picture_preview()
+
+
+@app.route("/webcam-calibration", methods=['GET'])
+def low_light_calibration_endpoint():
+    return pages.low_light_calibration()
+
+
+
+#
+# API for setting configuration values
+#
+
+@app.route("/configure/wifi", methods=["POST"])
+def configure_wifi_endpoint():
+    feedback = api.configure_wifi(request.form)
+    if feedback == "":
+        return redirect(url_for('setup', feedback="Wifi configurato con successo", feedback_sheet_name="wifi", feedback_type="positive")), 20
+    return redirect(url_for('setup', feedback=feedback, feedback_sheet_name="wifi", feedback_type="negative"))
+    
+
+@app.route("/configure/server", methods=["POST"])
+def configure_server_endpoint():
+    feedback = api.configure_server(request.form)
+    if feedback == "":
+        return redirect(url_for('setup', feedback="Dati server configurati con successo", feedback_sheet_name="server", feedback_type="positive"))
+    return redirect(url_for('setup', feedback=feedback, feedback_sheet_name="server", feedback_type="negative"))
+    
+
+@app.route("/configure/hotspot/<value>", methods=["GET"])
+def toggle_hotspot_endpoint(value):
+    return "", api.toggle_hotspot(value)
+
+
+@app.route("/configure/low-light-calibration/<value>", methods=["GET"])
+def toggle_calibration_endpoint(value):
+    return "", api.toggle_calibration(value)
+
+
+@app.route("/configure/low-light-calibration-data", methods=['POST'])
+def save_calibration_data_endpoint():
+    data = request.form.get('calibration-data')
+    return api.save_calibration_data(data)
+
+
+@app.route("/configure/low-light-calibrated_values", methods=['GET'])
+def apply_calibrated_values_endpoint():
+    feedback = api.apply_calibrated_values(request.args)
+    if feedback == "":
+        return redirect(url_for('low_light_calibration_endpoint', feedback="Valori impostati con successo."))
+    return redirect(url_for('low_light_calibration_endpoint', feedback=feedback))
+
+
+#
+# API to take actions
+#
+
+@app.route("/shoot-picture" , mathods=["POST"])
+def shoot_picture_endpoint():
+    return "", api.shoot_picture()
+
+
+#
+# API to fetch data
+#
+
+@app.route("/preview-picture")
+def get_preview_endpoint():
+    return api.get_preview()
+
+
+@app.route("/logs/<kind>/<name>", methods=["GET"])
+def get_logs_endpoint(kind: str, name: str):
+    return api.get_logs(kind, name)
+    
+
+#
+# Error handlers
+#
+
+@app.errorhandler(400)
+def handle_bad_request(e):
+    return render_template("error.html", title="400", message="400 - Bad Request"), 400
+
+@app.errorhandler(401)
+def handle_unauthorized(e):
+    return render_template("error.html", title="401", message="401 - Unauthorized"), 401
+
+@app.errorhandler(403)
+def handle_forbidden(e):
+    return render_template("error.html", title="403", message="403 - Forbidden"), 403
+
+@app.errorhandler(404)
+def handle_not_found(e):
+    return render_template("error.html", title="404", message="404 - Not Found"), 404
+
+@app.errorhandler(405)
+def handle_method_not_allowed(e):
+    return render_template("error.html", title="405", message="405 - Method Not Allowed"), 405
+
+@app.errorhandler(500)
+def handle_internal_error(e):
+    return render_template("error.html", title="500", message="500 - Internal Server Error"), 500
+

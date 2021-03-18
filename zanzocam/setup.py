@@ -1,12 +1,11 @@
 """
-setup.py for zanzocam-webcam.
+setup.py for zanzocam.
 For reference see
 https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 import os
 from pathlib import Path
 from setuptools import setup, find_packages
-#from setuptools_scm import get_version
 
 
 HERE = Path(__file__).parent.absolute()
@@ -15,26 +14,26 @@ with (HERE / 'README.md').open('rt') as fh:
     
     
 REQUIREMENTS: dict = {
-    'core': [
+    'webcam': [
         "picamera",
         "Pillow",
         "requests",
         "setuptools_scm",  # for versioning
         "importlib_metadata",  # py<3.8
     ],
-    'test': [
-        "pytest",
-        "pytest-cov",
-        "pytest-random-order",
-    ],
+    'web-ui': [
+        "Flask",
+        "matplotlib",
+        "pandas",
+        "numpy",
+    ]
 }
 
-
 setup(
-    name='webcam',
+    name='zanzocam',
     author='Sara Zanzottera',
     author_email='',
-    description='ZANZOCAM (Webcam module)',
+    description='ZANZOCAM - remote, asynchronous, low frequency webcam for isolated locations and long-term autonomous monitoring',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     url='https://zansara.github.io/zanzocam/',
@@ -56,7 +55,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'z-webcam=webcam.main:main',
+            'z-webcam=zanzocam.webcam.main:main',
+            'z-ui=zanzocam.web_ui.__init__:main',
         ],
     },
 
