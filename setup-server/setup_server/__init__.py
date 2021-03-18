@@ -8,7 +8,6 @@ from textwrap import dedent
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from sympy import Symbol, solve_poly_system
 
 from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
 
@@ -31,7 +30,7 @@ PREVIEW_URL =  "/static/previews/zanzocam-preview.jpg"
 
 CALIBRATION_DATASET = "/home/zanzocam-bot/venv/src/webcam/webcam/luminance_speed_table.csv"
 CALIBRATION_GRAPH_URL = "/static/previews/calibration_graph.png"
-CALIBRATION_GRAPH = "/var/www/setup-server/setup_server" + CALIBRATION_GRAPH_URL
+CALIBRATION_GRAPH = "/home/zanzocam-bot/venv/src/webcam/setup-server/setup_server" + CALIBRATION_GRAPH_URL
 CALIBRATION_FLAG = "/home/zanzocam-bot/venv/src/webcam/webcam/CALIBRATION"
 CALIBRATED_PARAMS = "/home/zanzocam-bot/venv/src/webcam/webcam/CALIBRATED_PARAMS"
 
@@ -266,7 +265,7 @@ def webcam_calibration():
     # Read the values as strings for editing and make sure there are enough values
     calibration_data = list(open(CALIBRATION_DATASET, 'r').readlines())
     calibration_data.sort()
-    calibration_data = "".join(calibration_data)
+    calibration_data = "".join([line for line in calibration_data if line.strip() != ""])
     
     if len(calibration_data) < 10:
         return render_template("webcam-calibration.html",
@@ -278,9 +277,9 @@ def webcam_calibration():
     
     # Load the dataset
     try:
-        df = pd.read_csv(CALIBRATION_DATASET, sep="\t")
-        df.columns=['in_lum','fin_lum','speed']
-        df = df.sort_values(by='in_lum') 
+        df = pd.read_csv(CALIBRATION_DATASET, header=None)
+        df.columns=['in_lum','fin_lum', 'speed']
+        df = df.sort_values(by='in_lum')
 
         # Plot source values
         df.plot(
@@ -300,12 +299,12 @@ def webcam_calibration():
             x2 = df.iat[df.shape[0]-i-1, 0]
             y2 = df.iat[df.shape[0]-i-1, 2]
 
-            a = Symbol('a')
-            b = Symbol('b')
-            values = solve_poly_system([a/x1 + b - y1, a/x2 + b - y2], a, b)
+            # Closed for of a hyperbole
+            b = -(x1*y1 - x2*y2)/(x1+x2)
+            a = x1 * (y1 - b)
 
-            a_value += values[0][0]
-            b_value += values[0][1]
+            a_value += a
+            b_value += b
 
         a_value = int(a_value / 5)
         b_value = int(b_value / 5)
@@ -326,6 +325,7 @@ def webcam_calibration():
                         b_value=b_value)
 
     except Exception as e:
+        raise e
         return render_template("webcam-calibration.html", 
                         title="Calibrazione Webcam",
                         calibration_flag=calibration_flag,
