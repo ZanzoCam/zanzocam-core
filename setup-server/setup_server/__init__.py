@@ -5,6 +5,9 @@ import subprocess
 from pathlib import Path
 from textwrap import dedent
 
+import logging
+import logging.handlers
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -13,6 +16,7 @@ from flask import Flask, render_template, request, abort, send_from_directory, r
 
 
 app = Flask(__name__)
+
 
 
 CONFIG_DEST = "/home/zanzocam-bot/venv/src/webcam/webcam/configuration.json"

@@ -1,4 +1,8 @@
 from setup_server import app
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+
+    import logging
+    logging.basicConfig(filename='error.log',level=logging.DEBUG)
+
+    app.run(host="0.0.0.0", port=8080, debug=False)
