@@ -74,7 +74,7 @@ This step installs a few libraries required for the webcam to work.
     - Add at the end: `alias ll="ls -lah"`
 
 - Update the index: `sudo apt update`
-- Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu`
+- Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu libatlas-base-dev` (libatlas is for numpy).
 - Setup cronjob to turn off HDMI at reboot:
     - `sudo nano /etc/cron.d/no-hdmi`
     - Content:
