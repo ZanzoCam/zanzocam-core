@@ -19,8 +19,10 @@
 <div id="container">
     
     <div class="center">
+      <a href="/">
         <img src="{{ url_for('static', filename='logos/logo-zanzocam.png') }}" alt="Logo ZANZOCAM" width="150px" style="margin-bottom: 2rem;">
-        <h1>{{ title }}</h1>
+      </a>
+      <h1>{{ title }}</h1>
     </div>
 
     {% block content %}

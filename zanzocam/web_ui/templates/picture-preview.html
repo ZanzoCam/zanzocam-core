@@ -98,7 +98,9 @@
         }, 1000);
         
         // Shoot the picture
-        fetch("/shoot-picture")
+        fetch("/shoot-picture", {
+            method:'POST',
+        })
         .then(response => {
             document.getElementById("zanzocam-preview-button").disabled = false;
             document.getElementById("shoot-picture").disabled = false;

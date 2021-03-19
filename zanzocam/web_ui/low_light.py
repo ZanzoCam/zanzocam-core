@@ -1,10 +1,11 @@
 from typing import Dict, Callable
 
+import logging
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from zanzocam.constants import CALIBRATION_DATASET, CALIBRATION_GRAPH
+from constants import CALIBRATION_DATASET, CALIBRATION_GRAPH
 
 
 def calculate_parameters():
@@ -39,7 +40,7 @@ def calculate_parameters():
     return a_value, b_value
 
 
-def plot_curve_fit(a_value: int, b_value: int):
+def plot_curve_fit(old_a_value: int, old_b_value: int, a_value: int, b_value: int):
     """
     Plots the hyperbole that fits the low-light
     data points given in the calibration dataset along
@@ -59,9 +60,16 @@ def plot_curve_fit(a_value: int, b_value: int):
         ylabel="Shutter speed",
     )
 
-    # Plot fitting curve
+    # Plot new fitting curve
     x = np.array(df[['in_lum']])
     y = ((a_value/x) + b_value) 
-    plt.plot(x,y,label="Valori stimati")
+    plt.plot(x,y,label="Nuova stima")
+
+    # Plot old fitting curve
+    x = np.array(df[['in_lum']])
+    y = ((old_a_value/x) + old_b_value) 
+    plt.plot(x,y,label="Stima attuale")
+
+    plt.legend(loc="upper right")
 
     plt.savefig(CALIBRATION_GRAPH)

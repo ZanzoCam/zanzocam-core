@@ -23,9 +23,9 @@ HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
 CALIBRATION_FLAG = DATA_PATH / "calibration.flag"
 
 # Image paths (they have to be served out, so they go in the statics)
-PREVIEW_PICTURE_URL =  "/static/previews/zanzocam-preview.jpg"
+PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
 PREVIEW_PICTURE = BASE_PATH / "web_ui" / PREVIEW_PICTURE_URL
 
-CALIBRATION_GRAPH_URL = "/static/previews/calibration_graph.png"
+CALIBRATION_GRAPH_URL = "static/previews/calibration_graph.png"
 CALIBRATION_GRAPH = BASE_PATH / "web_ui" / CALIBRATION_GRAPH_URL
 

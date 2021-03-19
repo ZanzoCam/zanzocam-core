@@ -1,11 +1,8 @@
 **/*.zip
 **/*.img
 **/wpa_supplicant.conf
-**/configuration.json
-**/configuration.json.bak
-**/failure_report.txt
-**/camera.log
-**/server.log
+zanzocam/data/*
+!zanzocam/data/calibration_parameters.csv
 **/overlays/*
 
 

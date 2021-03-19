@@ -6,11 +6,11 @@
     <div class="row">
         <h3>Raccolta dati di calibrazione:</h3>
         <label class="toggle">
-            <input type="radio" value="ON" name="calibration" {% if calibration_flag=="ON" %}checked{%endif%} onchange="javascript:turnCalibrationON()">
+            <input type="radio" value="ON" name="calibration" {% if calibration_flag=="ON" %}checked{%endif%} onchange="javascript:turnCalibrationON();">
             <span class="label">ON</span>
         </label>
         <label class="toggle">
-            <input type="radio" value="OFF" name="calibration" {% if not calibration_flag or calibration_flag=="OFF" %}checked{%endif%} onchange="javascript:turnCalibrationOFF()">
+            <input type="radio" value="OFF" name="calibration" {% if not calibration_flag or calibration_flag=="OFF" %}checked{%endif%} onchange="javascript:turnCalibrationOFF();">
             <span class="label">OFF</span>
         </label>
         <br>
@@ -28,7 +28,7 @@
     </p>
 
     <div class="row">
-        <form method="POST"> 
+        <form action="/configure/low-light-calibration-data" method="POST"> 
             <h3>Dati Raccolti:</h3>
             <p>
             Le colonne corrispondono a luminosita' iniziale, luminosita' target, shutter speed.<br>
@@ -36,12 +36,10 @@
             altri dati. Questi sono i valori che costituiscono la linea blu nel grafico sottostante,
             e sono usati per calcolare la linea arancione, che rappresenta l'equazione usata da
             ZANZOCAM per correggere il tempo di esposizione delle foto a bassa luminosita'.<br>
-            Ricordati che i valori devono sempre essere separati da un TAB, non da spazi o da nessun altro
+            Ricordati che i valori devono sempre essere separati da una VIRGOLA, non da spazi o da nessun altro
             carattere. Se inserisci dei dati scorretti, la curva non verra' calcolata.
             </p>
-            <textarea id="calibration-data" name="calibration-data">
-            {{ calibration_data }}
-            </textarea>
+            <textarea id="calibration-data" name="calibration-data" style="height:200px;">{{ calibration_data }}</textarea>
             <button class="button center">Salva</a>
         </form>
     </div>
@@ -55,30 +53,41 @@
     </div>
 
     <div class="row">
-        <h3>Parametri Finali:</h3>
+        <div class="column center">
+            <h3>Parametri Attuali:</h3>    
+            <p>Parametro A:  <b>{{ old_a_value }}</b></p>
+            <p>Parametro B:  <b>{{ old_b_value }}</b></p>
+        </div>
+        <div class="column center">
+            <h3>Nuovi Parametri:</h3>    
+            <p>Parametro A:  <b>{{ a_value }}</b></p>
+            <p>Parametro B:  <b>{{ b_value }}</b></p>
+        </div>
     </div>
-
-    <p class="row">Parametro A:  <b>{{ a_value }}</b></p>
-    <p class="row">Parametro B:  <b>{{ b_value }}</b></p>
 
     <p id="feedback" class="center">{{ feedback }}</p>
 
-    <a href="/calibrate?a={{ a_value }}&b={{ b_value }}" class="button center" {% if not a_value or not b_value%}disabled style="pointer-events: none;"{%endif%}>Imposta questi parametri</a>
+    <div class="center">
+        <a href="/configure/low-light-calibrated_values?a={{ a_value }}&b={{ b_value }}" class="button center" {% if not a_value or not b_value%}disabled style="pointer-events: none;"{%endif%}>Imposta i nuovi parametri</a>
+    </div>
 
     <script>
 
     function turnCalibrationOFF() {
-        if(confirmation){
-            fetch("/calibration/OFF", {
-                method:'POST',
-            })
-            .then(r => {
+        fetch("/configure/low-light-calibration/OFF", {
+            method:'POST',
+        })
+        .then(r => {
+            if (r.status !== 200){
+                alert("Qualcosa è andato storto! " +        
+                    "ZANZOCAM ha risposto con un codice "+r.status+".");
+            } else {
                 alert("Modifica completata con successo.");
-            }).catch(r => {
-                alert("Qualcosa è andato storto! " +
-                      "ZANZOCAM non è raggiungibile.");
-            })   
-        }
+            }
+        }).catch(r => {
+            alert("Qualcosa è andato storto! " +
+                    "ZANZOCAM non è raggiungibile.");
+        })   
     }
     function turnCalibrationON() {
         confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
@@ -86,11 +95,16 @@
               "allungando notevolmente i tempi di scatto e i consumi della webcam.\n\n" +
               "Sei sicuro/a di voler proseguire?");
         if(confirmation){
-            fetch("/calibration/ON", {
+            fetch("/configure/low-light-calibration/ON", {
                 method:'POST',
             })
             .then(r => {
-                alert("Modifica completata con successo.");
+                if (r.status !== 200){
+                    alert("Qualcosa è andato storto! " +        
+                      "ZANZOCAM ha risposto con un codice "+r.status+".");
+                } else {
+                    alert("Modifica completata con successo.");
+                }
             }).catch(r => {
                 alert("Qualcosa è andato storto! " +
                       "ZANZOCAM non è raggiungibile.");

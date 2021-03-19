@@ -1,7 +1,8 @@
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 
 import json
 import logging
+from pathlib import Path
 from textwrap import dedent
 from flask import send_from_directory
 
@@ -37,7 +38,7 @@ def read_setup_data_file(path: Path, catch_errors: bool=True) -> Dict:
     Returns an empty dict in case of errors, or lets the error 
     go through if catch_errors=False
     """
-    return _read_data_file(path, default={}, action=lambda d: json.load(d), catch_errors=catch_errors)
+    return _read_data_file(path, default=dict(), action=lambda d: json.load(d), catch_errors=catch_errors)
 
 
 def read_log_file(path: Path):
@@ -62,13 +63,23 @@ def read_dataset_file(path: Path, catch_errors: bool = True) -> List[str]:
     Returns an empty list in case of errors, or lets the error 
     go through if catch_errors=False
     """
-    return _read_data_file(path, default=[], action=lambda d: list(d.readlines()), catch_errors=catch_errors)
+    return _read_data_file(path, default=list(), action=lambda d: list(d.readlines()), catch_errors=catch_errors)
 
+
+class PathEncoder(json.JSONEncoder):
+    """
+    To properly encode Path instances as strings
+    """
+    def default(self, o):
+        if isinstance(o, Path):
+            return str(o.absolute())
+        raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
 
 
 def write_json_file(path: Path, content):
     with open(path, "w") as f:
-        json.dump(path, f, indent=4)
+        json.dump(content, f, indent=4, cls=PathEncoder)
 
 
 def write_text_file(path: Path, content):
@@ -93,6 +104,7 @@ def toggle_flag(flag: Path, value: str) -> int:
         except Exception:
             return 500
     return 404
+
 
 def send_from_path(path: Path):
     """

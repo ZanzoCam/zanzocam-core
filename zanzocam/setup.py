@@ -8,8 +8,7 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 
-HERE = Path(__file__).parent.absolute()
-with (HERE / 'README.md').open('rt') as fh:
+with (Path(__file__).parent.absolute() / 'README.md').open('rt') as fh:
     LONG_DESCRIPTION = fh.read().strip()
     
     
@@ -48,16 +47,15 @@ setup(
         "Operating System :: OS Independent",
     ],
 
-    install_requires=REQUIREMENTS['core'],
+    #install_requires=REQUIREMENTS['webcam']+REQUIREMENTS['web-ui'],
     extras_require={
         **REQUIREMENTS,
         'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
     },
     entry_points={
         'console_scripts': [
-            'z-webcam=zanzocam.webcam.main:main',
-            'z-ui=zanzocam.web_ui.__init__:main',
+            'z-webcam=webcam.main:main',
+            'z-ui=web_ui.endpoints:main',
         ],
     },
-
 )

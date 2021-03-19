@@ -5,8 +5,8 @@ import json
 import subprocess
 from flask import send_from_directory
 
-from zanzocam.web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
-from zanzocam.constants import *
+from web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
+from constants import *
 
 
 
@@ -89,7 +89,7 @@ def toggle_hotspot(value) -> int:
     """ 
     Allow the initial hotspot to turn on in case no known wifi network is detected.
     """
-    return toggle_flag(HOTSPOT_FLAG, value)
+    return "", toggle_flag(HOTSPOT_FLAG, value)
 
 
 def toggle_calibration(value):
@@ -97,7 +97,7 @@ def toggle_calibration(value):
     Allow ZANZOCAM to take as many pictures as needed in low-light conditions, and
     to save the data obtained in the process for a future calibration step.
     """
-    return toggle_flag(CALIBRATION_FLAG, value)
+    return "", toggle_flag(CALIBRATION_FLAG, value)
 
 
 def get_logs(kind: str, name: str):
@@ -163,8 +163,9 @@ def save_calibration_data(data: str):
     """
     Saves a modified calibration data table.
     """
+    data_lines = [line.strip()+"\n" for line in data.split("\n")]
     with open(CALIBRATION_DATASET, 'w') as c:
-        c.write(data)
+        c.writelines(data_lines)
 
 
 def apply_calibrated_values(form_data):
@@ -179,7 +180,7 @@ def apply_calibrated_values(form_data):
 
     try:
         with open(CALIBRATED_PARAMS, "w") as f:
-            f.write(f"{a_value} {b_value}")
+            f.write(f"{a_value},{b_value}")
         return ""
     except Exception as e:
         return f"Si e' verificato un errore: {e}"

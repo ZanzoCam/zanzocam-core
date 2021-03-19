@@ -15,7 +15,7 @@
     <div id="page">
 
         <div class="sheet">
-            <form id="config" method="POST" action="/configure-wifi">
+            <form id="config" method="POST" action="/configure/wifi">
                 <h3>WiFi:</h3>
                 <label for="wifi_ssid">Nome della rete (SSID):</label>
                 <input type="text" name="wifi_ssid" value="{{ wifi_data.ssid }}">
@@ -29,13 +29,13 @@
                     <button id="configure-wifi" class="button">Configura il WiFi</button> 
                 </div>
                 {% if feedback_sheet_name == "wifi" %}
-                <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{feedback }}</p>
+                <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{ feedback }}</p>
                 {% endif %}
             </form>
         </div>
 
         <div class="sheet">
-            <form id="config" method="POST" action="/configure-server">
+            <form id="config" method="POST" action="/configure/server">
                 <div class="row">
                     <h3>Server:</h3>
                     <label class="toggle">
@@ -116,7 +116,7 @@
         <div class="sheet">
             <div class="row">
                 <h3>Webcam:</h3>
-                <a href="/setup-webcam" id="setup-webcam" class="button" type="button" style="margin: auto 0;">Setup Webcam</a>
+                <a href="/webcam-setup" id="setup-webcam" class="button" type="button" style="margin: auto 0;">Setup Webcam</a>
             </div>
         </div>
 
@@ -162,7 +162,7 @@
               "assenza di WiFi.\n\n" +
               "Sei sicuro\a di voler proseguire?");
         if(confirmation){
-            fetch("/hotspot/OFF", {
+            fetch("/configure/hotspot/OFF", {
                 method:'POST',
             })
             .then(r => {
@@ -179,7 +179,7 @@
               "assenza di WiFi.\n\n" +
               "Sei sicuro\a di voler proseguire?");
         if(confirmation){
-            fetch("/hotspot/ON", {
+            fetch("/configure/hotspot/ON", {
                 method:'POST',
             })
             .then(r => {
