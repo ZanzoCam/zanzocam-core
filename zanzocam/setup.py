@@ -52,7 +52,6 @@ setup(
     install_requires=REQUIREMENTS['base'],
     extras_require={
         **REQUIREMENTS,
-        'deployment': [req for req in REQUIREMENTS[req_block] for req_block in ['base', 'web-ui', 'webcam']],
         'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
     },
     entry_points={
