@@ -1,11 +1,12 @@
 from typing import Dict, List, Tuple, Optional
 
+import os
 import json
 import shutil
 import datetime
 from pathlib import Path
 
-from webcam.constants import *
+from constants import *
 from webcam.utils import log, log_error
 
 
@@ -13,33 +14,34 @@ class Configuration:
     """
     Manages the configurations.
     """
-    def __init__(self, path: Path = CONFIGURATION_PATH):
+    def __init__(self, path: Path = CONFIGURATION_FILE):
         """
         Loads the data stored in the configuration file as object attributes
         for this instance.
         """
-        if not path:
-            log("WARNING! The path to the configuration file was set to None. "
-                f"Falling back to default: {CONFIGURATION_PATH}")
-            path = CONFIGURATION_PATH
-        self._path = path
+        path = path or CONFIGURATION_FILE
 
+        if not os.path.exists(path):
+            log_error(f"No configuration file found under {path}. "
+                       "Please configure the server data from the web interface and try again.")
+        
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow
-        with open(CONFIGURATION_PATH, 'r') as c:
+        with open(path, 'r') as c:
             configuration = json.load(c)
             configuration = self._decode_json_values(configuration)
 
-        # Populate the attributes with the data 
-        for key, value in configuration.items():
-            setattr(self, key, value)
+            # Populate the attributes with the data 
+            for key, value in configuration.items():
+                setattr(self, key, value)
 
         # Add info about the download time (last edit time)
-        self._download_time = datetime.datetime.fromtimestamp(CONFIGURATION_PATH.stat().st_mtime)
+        self._download_time = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+        self._path = path
 
 
     @staticmethod
-    def create_from_dictionary(data: Dict, path: Path = CONFIGURATION_PATH) -> 'Configuration':
+    def create_from_dictionary(data: Dict, path: Path = CONFIGURATION_FILE) -> 'Configuration':
         """
         Creates a Configuration object starting from a dictionary. Will
         save the configuration file at the specified path.
@@ -63,33 +65,27 @@ class Configuration:
         return True if inside the interval, False if outside.
         """
         time_data = getattr(self, "time", {})
-        
-        start_time_string = time_data.get("start_activity", "00:00")
-        if start_time_string.count(":") > 1:
-            ":".join(start_time_string.split(":")[:2])
-
-        end_time_string = time_data.get("stop_activity", "23:59")
-        if end_time_string.count(":") > 1:
-            ":".join(end_time_string.split(":")[:2])
-
-        current_time_string = datetime.datetime.now().strftime('%H:%M')
-
-        log(f"Checking if {current_time_string} is into active interval ({start_time_string} to {end_time_string})")
 
         try:
+            start_time_string = time_data.get("start_activity", "00:00")
+            end_time_string = time_data.get("stop_activity", "23:59")
+            current_time_string = datetime.datetime.now().strftime('%H:%M')
+            
             start_time = datetime.datetime.strptime(start_time_string, "%H:%M")
-        except Exception as e:
-            log_error(f"Could not read the activity start time as a time value.", e)
-
-        try:
             end_time = datetime.datetime.strptime(end_time_string, "%H:%M")
-        except Exception as e:
-            log_error(f"Could not read the activity end time as a time value.", e)
+            current_time = datetime.datetime.strptime(current_time_string, "%H:%M")  # Converting back from the string so the date doesn't matter
 
-        current_time = datetime.datetime.strptime(current_time_string, "%H:%M")  # Converting back from the string so the date doesn't matter
-        if current_time >= start_time and current_time <= end_time:
-            return True
-        return False
+            log(f"Checking if {current_time_string} is into active interval ({start_time_string} to {end_time_string})")
+
+            if current_time >= start_time and current_time <= end_time:
+                return True
+            return False
+
+        except ValueError as e:
+            log_error(f"Could not read the start-stop time values "
+                      f"(start: {start_time_string}, stop: {end_time_string}) as valid hours. "
+                      f"We now assume this is an active time.")
+        return True
 
 
     def backup(self):

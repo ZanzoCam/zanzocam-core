@@ -13,8 +13,8 @@ try:
 except ModuleNotFoundError as e:
     from importlib.metadata import version, PackageNotFoundError
     
-from webcam.constants import *
-from webcam.utils import log, log_error
+from constants import *
+from webcam.utils import log, log_error, log_row
 from webcam.configuration import Configuration
 
 
@@ -38,9 +38,9 @@ class System:
         self.status["version"] = self.get_version()
         self.status["last reboot"] = self.get_last_reboot_time()
         self.status["uptime"] = self.get_uptime()
-        self.status["hotspot"] = self.check_hotspot_allowed()
+        self.status["hotspot"] = self.check_hotspot_allowed() or "CHECK FAILED (see stacktrace)"
         if self.status["hotspot"] != "OFF":
-            self.status["autohotspot check"] = self.run_autohotspot()
+            self.status["autohotspot check"] = "OK" if self.run_autohotspot() else "FAILED (see stacktrace)"
         self.status['wifi ssid'] = self.get_wifi_ssid()
         self.status['internet access'] = self.check_internet_connectivity()
         self.status['disk size'] = self.get_filesystem_size()
@@ -53,7 +53,7 @@ class System:
         Returns None if an error occurs.
         """
         try:
-            return version("webcam")
+            return version("zanzocam")
         except PackageNotFoundError as e:
             log(f"Could not get version information: {e}")
         return None
@@ -95,14 +95,19 @@ class System:
         """ 
         Checks whether ZANZOCAM can turn on its hotspot at need
         """
-        try:
-            with open(Path(__file__).parent.parent / "HOTSPOT_ALLOWED", "r+") as h:
-                return h.read().strip()
-
-        except Exception as e:
-            log_error("Failed to check if the hotspot is allowed. "
-                      "Assuming yes.", e)
-            return False
+        if os.path.exists(HOTSPOT_FLAG):
+            try:
+                with open(HOTSPOT_FLAG, "r+") as h:
+                    return h.read().strip()
+            except Exception as e:
+                log_error("Failed to check if the hotspot is allowed. "
+                        "Assuming yes.", e)
+                return False
+        else:
+            log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG} with value ON.")
+            with open(HOTSPOT_FLAG, "w") as h:
+                h.write("ON")
+            return "No flag found, setting it to ON."
 
     def run_autohotspot(self) -> Optional[bool]:
         """
@@ -112,7 +117,7 @@ class System:
         None if error.
         """
         try:
-            hotspot_proc = subprocess.Popen(["/usr/bin/sudo", "/usr/bin/autohotspot"], 
+            hotspot_proc = subprocess.Popen(["/usr/bin/sudo", AUTOHOTSPOT_BINARY_PATH], 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT)
             stdout, stderr = hotspot_proc.communicate()
@@ -174,7 +179,7 @@ class System:
         None if an error occurred during the test.
         """
         try:
-            r = requests.head("http://www.google.com", timeout=REQUEST_TIMEOUT)
+            r = requests.head(CHECK_UPLINK_URL, timeout=REQUEST_TIMEOUT)
             return True
         except requests.ConnectionError as ex:
             return False
@@ -248,16 +253,26 @@ class System:
             start_time = time.get("start_activity", "00:00:00").split(":")[:2]
             stop_time = time.get("stop_activity", "23:59:00").split(":")[:2]
 
+            # Converting each value into the total value in minutes
             try:
                 frequency = int(frequency)
             except Exception as e:
                 log_error("Could not convert the frequency value to minutes! Using fallback value of 10 minutes")
                 frequency = 10
             
-            # Compute every trigger time and save a cron string
-            start_total_minutes = int(start_time[0])*60 + int(start_time[1])
-            stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
+            try:
+                start_total_minutes = int(start_time[0])*60 + int(start_time[1])
+            except ValueError as e:
+                log_error(f"Could not read start time ({start_time}) as a valid time! Setting it to midnight (00:00).")
+                start_total_minutes = 0
 
+            try:
+                stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
+            except ValueError as e:
+                log_error(f"Could not read stop time ({stop_time}) as a valid time! Setting it to midnight (23:59).")
+                stop_total_minutes = 23*60 + 59
+
+            # Compute every trigger time and save a cron string
             while(start_total_minutes < stop_total_minutes):
                 hour = math.floor(start_total_minutes/60)
                 minute = start_total_minutes - (hour*60)
@@ -275,18 +290,14 @@ class System:
             ])]
         
         # Creates a file with the right content
-        with open(".tmp-cronjob-file", 'w') as d:
+        with open(TEMP_CRONJOB, 'w') as d:
             d.writelines("# ZANZOCAM - shoot picture\n")
             for line in cron_strings:
-                d.writelines(
-                    f"{line} zanzocam-bot "
-                    f" {Path(sys.executable).parent}/z-webcam "
-                    f" >> {Path(__file__).parent.parent }/logs.txt 2>&1\n")
+                d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
                 
         # Backup the old crontab in the home
         backup_cron = subprocess.run([
-            "/usr/bin/sudo", 
-            "mv", "/etc/cron.d/zanzocam", "/home/zanzocam-bot/.crontab.bak"], 
+            "/usr/bin/sudo", "mv", CRONJOB_FILE, BACKUP_CRONJOB], 
             stdout=subprocess.PIPE)
         if not backup_cron:
             log_error("Something went wrong creating a backup for the cron file. "
@@ -294,8 +305,7 @@ class System:
             
         # Move new cron file into cron folder
         create_cron = subprocess.run([
-            "/usr/bin/sudo", 
-            "mv", ".tmp-cronjob-file", "/etc/cron.d/zanzocam"], 
+            "/usr/bin/sudo", "mv", TEMP_CRONJOB, CRONJOB_FILE], 
             stdout=subprocess.PIPE)
         if not create_cron:
             log_error("Something went wrong creating the new cron file. "
@@ -303,8 +313,7 @@ class System:
 
         # Give ownership of the new crontab file to root
         chown_cron = subprocess.run([
-            "/usr/bin/sudo", 
-            "chown", "root:root", "/etc/cron.d/zanzocam"], 
+            "/usr/bin/sudo", "chown", "root:root", CRONJOB_FILE], 
             stdout=subprocess.PIPE)
             
         log("Crontab updated successfully.")
@@ -315,15 +324,14 @@ class System:
             log_error("Something went wrong changing the owner of the crontab!")
             log("Trying to restore the crontab using the backup")
             
-            log("+++++++++++++++++++++++++++++++++++++++++++")
+            log_row("+")
             if not backup_cron:
                 log_error("The backup was not created!", 
                 fatal="the crontab might not trigger anymore. "
                       "ZANZOCAM might need manual intervention.")
             else:
                 restore_cron = subprocess.run([
-                    "/usr/bin/sudo", 
-                    "mv", "/home/zanzocam-bot/.crontab.bak", "/etc/cron.d/zanzocam"], 
+                    "/usr/bin/sudo", "mv", BACKUP_CRONJOB, CRONJOB_FILE], 
                     stdout=subprocess.PIPE)
                     
                 if not restore_cron:
@@ -333,4 +341,4 @@ class System:
                 else:
                     log("cron file restored successfully.")
                     log("Please investigate the cause of the issue!")
-            log("+++++++++++++++++++++++++++++++++++++++++++")
+            log_row("+")
