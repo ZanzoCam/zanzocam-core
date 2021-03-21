@@ -24,7 +24,7 @@ dtparam=act_led_activelow=on
 
 # Enable camera
 start_x=1             # essential
-gpu_mem=128           # at least, or maybe more if you wish
+gpu_mem=256           # at least, or maybe more if you wish
 disable_camera_led=1  # optional, if you don't want the led to glow
 ```
 - Change `/etc/wpa_supplicant/wpa_supplicant.conf` on `rootfs` with your local wifi data
