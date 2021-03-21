@@ -7,6 +7,7 @@ import textwrap
 from time import sleep
 from pathlib import Path
 from picamera import PiCamera
+from fractions import Fraction
 from PIL import Image, ImageFont, ImageDraw, ImageStat
 
 from webcam.constants import *
@@ -215,14 +216,7 @@ class Camera:
         """
         log("Adjusting camera...")
 
-        # The framerate sets a maximum to the exposure time.
-        # Night pictures must set it explicitly or it will never exceed 30000 (which is way too fast)
-        if shutter_speed:
-            framerate = (10**6) / (shutter_speed)
-        else:
-            framerate = (10**6) / 30000  # default framerate
-        
-        with PiCamera(framerate=framerate) as camera:
+        with PiCamera(framerate=(Fraction(1, 10), Fraction(5, 1))) as camera:
 
             if int(self.width) > camera.MAX_RESOLUTION.width:
                 log(f"WARNING! The requested image width ({self.width}) "
@@ -257,7 +251,7 @@ class Camera:
 
             photo = Image.open(str(PATH / self.temp_photo_path))
             luminance = LUMINANCE_FROM_PICTURE(photo)
-            log(f"Picture taken. Luminance: {luminance:.2f}.")
+            log(f"Picture taken. Luminance: {luminance:.2f}, exposure speed: {camera.exposure_speed}, shutter speed: {camera.shutter_speed}")
 
 
     def process_picture(self) -> None:

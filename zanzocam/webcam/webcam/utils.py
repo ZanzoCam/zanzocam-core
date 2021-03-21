@@ -1,12 +1,26 @@
+import sys
+import logging
 import datetime
 import traceback
+import constants
+
+
+# Setup the logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',
+    handlers=[
+        logging.FileHandler(constants.CAMERA_LOGS),
+        logging.StreamHandler(sys.stdout),
+    ]
+)
 
 
 def log(msg: str) -> None:
     """ 
     Logs the message to the console
     """
-    print(f"{datetime.datetime.now()} -> {msg}")
+    logging.info(f"{datetime.datetime.now()} -> {msg}")
 
 
 def log_error(msg: str, e: Exception=None, fatal: str=None) -> None:
