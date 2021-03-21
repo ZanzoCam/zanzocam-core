@@ -13,12 +13,14 @@ with (Path(__file__).parent.absolute() / 'README.md').open('rt') as fh:
     
     
 REQUIREMENTS: dict = {
+    'base': [
+        "setuptools_scm",  # for versioning
+        "importlib_metadata",  # py<3.8
+    ],
     'webcam': [
         "picamera",
         "Pillow",
         "requests",
-        "setuptools_scm",  # for versioning
-        "importlib_metadata",  # py<3.8
     ],
     'web-ui': [
         "Flask",
@@ -47,9 +49,10 @@ setup(
         "Operating System :: OS Independent",
     ],
 
-    #install_requires=REQUIREMENTS['webcam']+REQUIREMENTS['web-ui'],
+    install_requires=REQUIREMENTS['base'],
     extras_require={
         **REQUIREMENTS,
+        'deployment': [req for req in REQUIREMENTS[req_block] for req_block in ['base', 'web-ui', 'webcam']],
         'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
     },
     entry_points={
