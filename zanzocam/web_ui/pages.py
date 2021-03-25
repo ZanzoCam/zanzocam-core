@@ -4,7 +4,7 @@ import os
 import logging
 from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
 
-from web_ui import low_light
+#from web_ui import low_light
 from web_ui.utils import read_setup_data_file, read_flag_file, _read_data_file, read_dataset_file, clear_logs
 from constants import *
 

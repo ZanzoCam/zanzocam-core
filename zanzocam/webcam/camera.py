@@ -16,52 +16,32 @@ from webcam.overlays import Overlay
 from webcam.configuration import Configuration 
 
 
-# Default parameters for the luminance/shutterspeed interpolation curve.
-# Calculated for a Raspberry Pi Camera v1.2
-# They can be overridden by custom calibrated parameters.
-LUM_SPEED_PARAM_A = 600000
-LUM_SPEED_PARAM_B = 60000
-
-
 
 class Camera:
     """
-    Manages the pictures and graphical operations.
+    Manages the pictures taking process.
     """
     def __init__(self, configuration: Configuration):
         log("Initializing camera")
+
+        # Provide defaults for all the expected values of 'image'
+        self.defaults = CAMERA_DEFAULTS
         
         # Populate the attributes with the 'image' data 
         if "image" not in vars(configuration).keys():
             log("WARNING! No image information present in the configuration! "
                 "Please fix the error ASAP. Fallback values are being used.")
+            configuration.image = CAMERA_DEFAULTS
         
         for key, value in configuration.image.items():
             setattr(self, key, value)
 
-        # Provide defaults for all the expected values of 'image'
-        self.defaults = CAMERA_DEFAULTS
-
         # There might be no overlays
-        if "overlays" in vars(configuration).keys():
-            self.overlays = configuration.overlays
-        else:
-            self.overlays = {}
+        self.overlays = getattr(configuration, 'overlays', {})
         
         # Image name
         self.temp_photo_path = DATA_PATH / ('.temp_image.' + self.extension)
         self.processed_image_path = DATA_PATH / ('.final_image.' + self.extension)
-
-        # Check the calibration flag
-        if os.path.exists(CALIBRATION_FLAG):
-            with open(CALIBRATION_FLAG, 'r') as calib:
-                try:
-                    if "ON" in calib.read():
-                        self.defaults["calibrate"] = True
-                except Exception as e:
-                    log_error("Something happened trying to read the calibration flag for the webcam. Ignoring it.", e)
-
-        log(f"Calibration data collection is {'ON' if self.defaults['calibrate'] else 'OFF'}")
 
         # Check if the calibration parameters are overridden
         self.a_value = LUM_SPEED_PARAM_A
@@ -82,9 +62,7 @@ class Camera:
         Provide some fallback value for all the expected fields of 'image'.
         Logs the access to highlight values that are not set, but were used.
         """
-        value = self.defaults.get(name, None)
-        #log(f"WARNING: Accessing default value for {name}: {value}")
-        return value
+        return self.defaults.get(name, None)
         
 
     def take_picture(self) -> None:
@@ -101,75 +79,30 @@ class Camera:
         Shoots the picture using PiCamera.
         If the luminance is found to be too low, adjusts the shutter speed camera value and tries again.
         """
-        self._shoot_picture()
+        initial_luminance = self._shoot_picture()
         
         # Test the luminance: if the picture is bright enough, return
-        photo = Image.open(str(self.temp_photo_path))
-        luminance = self.luminance_from_picture(photo)
-        if luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
+        if initial_luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
             return
 
         # We're in low light conditions.
-        log(f"Low light detected: {luminance:.2f} (min is {MINIMUM_DAYLIGHT_LUMINANCE}).")
-
-        if not self.calibrate:
-            # Calculate new shutter speed and retry
-            shutter_speed = self.shutter_speed_from_picture(photo)
-            log(f"Shooting again with exposure time set to {shutter_speed/10**6:.2f}s. "
-                f"Expected final luminance: {self.compute_target_luminance(luminance):.2f}.")
-            self._shoot_picture(shutter_speed=shutter_speed)
-
-        else:
-            # We're in low light conditions and we're recalibrating the camera.
-            # Do a binary search over the shutter speed space, within 0.03s and 3s
-            # Might require several attempts, but is bound to max 20 (see exit conditions)
-            min_speed = MIN_SHUTTER_SPEED
-            max_speed = MAX_SHUTTER_SPEED
-            luminosity_margin = TARGET_LUMINOSITY_MARGIN
-            target_luminance = self.compute_target_luminance(luminance)
-            log(f"Entering calibration procedure. "
-                f"Parameters: min shutter speed = {MIN_SHUTTER_SPEED}, "
-                f"max shutter speed = {MAX_SHUTTER_SPEED}, "
-                f"target luminance = {target_luminance}")
-
-            i = 0
-            while True:
-                
-                # Update shutter speed and read resulting luminosity
-                i += 1
-                shutter_speed = int((min_speed + max_speed) / 2)
-                self._shoot_picture(shutter_speed=shutter_speed)
-                new_luminance = self.luminance_from_picture(Image.open(str(self.temp_photo_path)))
-                
-                if new_luminance >= target_luminance - TARGET_LUMINOSITY_MARGIN and \
-                   new_luminance <= target_luminance + TARGET_LUMINOSITY_MARGIN:
-                    log(f"Tentative {i}: successful! Initial luminance: {luminance:.2f}, final luminance: {new_luminance:.2f}, shutter speed: {shutter_speed}")
-                    
-                    with open(CALIBRATION_DATASET, 'a') as table:
-                        table.write(f"{luminance:.2f}\t{new_luminance:.2f}\t{shutter_speed}\n")
-                    break
-
-                if new_luminance < target_luminance - TARGET_LUMINOSITY_MARGIN:
-                    log(f"Tentative {i}: too dark. Luminance: {new_luminance:.2f}, speed: {shutter_speed/10**6:.2f}. Increasing!")
-                    min_speed = shutter_speed
-
-                else:
-                    log(f"Tentative {i}: too bright. Luminance: {new_luminance:.2f}, speed: {shutter_speed/10**6:.2f}. Decreasing!")
-                    max_speed = shutter_speed
-
-                # Exit condition - 20 iterations with the default max/min speeds
-                if min_speed + 5 > max_speed:
-                    log(f"Search failed! Using the last value ({shutter_speed}, resulting luminance: {new_luminance}) and exiting the calibration procedure.")
-                    break
+        # Calculate new shutter speed and retry
+        shutter_speed = self.shutter_speed_from_luminance(initial_luminance)
+        log(f"Low light detected: {initial_luminance:.2f} (min is {MINIMUM_DAYLIGHT_LUMINANCE}). "
+            f"Expected luminance: {self.compute_target_luminance(initial_luminance):.2f}.")
+        self._shoot_picture(shutter_speed=shutter_speed)
 
 
-    def _shoot_picture(self, shutter_speed: Optional[int] = None) -> None:
+    def _shoot_picture(self, shutter_speed: Optional[int] = None) -> int:
         """ 
         Actually shoots the picture using PiCamera.
         shutter_speed is useful for evening and night picture, and setting it triggers the evening mode.
+        Returns the image luminance.
         """
-        log("Adjusting camera...")
+        if shutter_speed:
+            log(f"Shooting with exposure time set to {shutter_speed/10**6:.2f}s.")
 
+        log("Adjusting camera...")
         with PiCamera(framerate=(Fraction(1, 10), Fraction(5, 1))) as camera:
 
             if int(self.width) > camera.MAX_RESOLUTION.width:
@@ -188,14 +121,13 @@ class Camera:
             camera.vflip = self.ver_flip
             camera.hflip = self.hor_flip
             camera.rotation = int(self.rotation)
-            camera.awb_mode = "sunlight"
             camera.meter_mode = "matrix"
 
             # Give the camera firmwaresome time to adjust
             if shutter_speed:
                 camera.shutter_speed = shutter_speed
                 camera.iso = 800
-                sleep(4)
+                sleep(10)  # More time allows for a better white balancing. Some suggest even 30s!
                 camera.exposure_mode = "off"
                 log("Taking low light picture")
             else:
@@ -204,55 +136,83 @@ class Camera:
 
             camera.capture(str(self.temp_photo_path))
 
-            photo = Image.open(str(self.temp_photo_path))
-            luminance = self.luminance_from_picture(photo)
+            luminance = self.luminance_from_path(self.temp_photo_path)
             log(f"Picture taken. Luminance: {luminance:.2f}, exposure speed: {camera.exposure_speed}, shutter speed: {camera.shutter_speed}")
+            return luminance
 
 
-    def shutter_speed_from_picture(self, photo):
+    def gather_calibration_data(self):
         """
-        Given a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)
+        Data gathering procedure. Each time it's called, takes a finite amount
+        of pictures and measures the luminance. Then saves the sample data into
+        the samples dataset in the format: initial_luminance,actual_luminance,speed
+        """
+        log(f"Entering data gathering procedure. Parameters: "
+            f"min shutter speed = {MIN_SHUTTER_SPEED/(10**6):.2f}s, "
+            f"max shutter speed = {MAX_SHUTTER_SPEED/(10**6):.2f}s, "
+            f"multiplication factor = {MULT_SHUTTER_SPEED}.")
+
+        # Get the initial luminance
+        log("Taking reference picture.")
+        self._shoot_picture()
+        initial_luminance = self.luminance_from_path(self.temp_photo_path)
+        log(f"Initial luminance with no shutter speed set: {initial_luminance:.2f}")
+
+        speed = MIN_SHUTTER_SPEED
+        while speed < MAX_SHUTTER_SPEED:         
+            
+            # Take a picture with this shutter speed
+            speed *= MULT_SHUTTER_SPEED
+            self._shoot_picture(shutter_speed=int(speed))
+            actual_luminance = self.luminance_from_path(self.temp_photo_path)
+            log(f"Sample speed={speed/(10**6):.2f}s: luminance={actual_luminance:.2f}")
+
+            # Save the data into the dataset
+            with open(CALIBRATION_DATASET, 'a') as table:
+                table.write(f"{initial_luminance:.2f},{actual_luminance:.2f},{int(speed)}\n")
+
+        log("Data gathering complete.")
+
+
+    def shutter_speed_from_path(self, path: Path) -> int:
+        """
+        Given a path to a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)
         returns the appropriate shutter speed to acheve a good target luminosity
         """
-        return self.shutter_speed_from_luminance(self.luminance_from_picture(photo))
+        return self.shutter_speed_from_luminance(self.luminance_from_path(path))
 
 
-    def shutter_speed_from_luminance(self, luminance):
+    def shutter_speed_from_luminance(self, luminance: int) -> int:
         """
-        Given a low luminance value, return the shutter speed required to raise the 
-        final luminance to the expected target luminance
+        Given a low luminosity value (< MINIMUM_DAYLIGHT_LUMINANCE)
+        returns the appropriate shutter speed to acheve a good target luminosity
         """
         if luminance < MINIMUM_DAYLIGHT_LUMINANCE:
             return int(((self.a_value / luminance) + self.b_value))
         return None
 
     @staticmethod
-    def luminance_from_picture(photo):
+    def luminance_from_path(path: Path) -> int:
         """
-        Given a PIL picture, returns its luminance
+        Given a path to an image, returns its luminance
         """
-        return Camera.luminance_from_rgb(*ImageStat.Stat(photo).mean)
-
-    @staticmethod
-    def luminance_from_rgb(r, g, b):
-        """
-        Given the RGB values of a picture (ImageStat.Stat(photo).mean)
-        returns its luminance
-        """
+        photo = Image.open(str(path))
+        r, g, b = ImageStat.Stat(photo).mean
         return math.sqrt(0.241*(r**2) + 0.691*(g**2) + 0.068*(b**2))
 
+
     @staticmethod
-    def compute_target_luminance(luminance):
+    def compute_target_luminance(luminance: int) -> int:
         """
         Given a luminance < MINIMUM_DAYLIGHT_LUMINANCE, 
         calculate an appropriate luminance value to raise the image to
         """
         if luminance > MINIMUM_DAYLIGHT_LUMINANCE:
             return luminance 
-        if luminance < 30:
-            return luminance+30 
+        if luminance < MINIMUM_NIGHT_LUMINANCE:
+            return luminance + (MINIMUM_NIGHT_LUMINANCE) 
         else:
-            return (luminance/2) + 45
+            return (luminance/2) + MINIMUM_NIGHT_LUMINANCE*1.5
 
 
     def process_picture(self) -> None:

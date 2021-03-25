@@ -25,7 +25,7 @@ REQUIREMENTS: dict = {
     'web-ui': [
         "Flask",
         "matplotlib",
-        "pandas",
+        #"pandas",
         "numpy",
     ]
 }
@@ -57,6 +57,7 @@ setup(
     entry_points={
         'console_scripts': [
             'z-webcam=webcam.main:main',
+            'z-calibrate=webcam.main:calibrate',
             'z-ui=web_ui.endpoints:main',
         ],
     },

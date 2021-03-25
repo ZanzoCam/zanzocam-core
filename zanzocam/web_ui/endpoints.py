@@ -38,9 +38,9 @@ def webcam_endpoint():
     return pages.webcam()
 
 
-@app.route("/webcam-calibration", methods=['GET'])
-def low_light_calibration_endpoint():
-    return pages.low_light_calibration()
+# @app.route("/webcam-calibration", methods=['GET'])
+# def low_light_calibration_endpoint():
+#     return pages.low_light_calibration()
 
 
 
@@ -69,24 +69,24 @@ def toggle_hotspot_endpoint(value):
     return api.toggle_hotspot(value)
 
 
-@app.route("/configure/low-light-calibration/<value>", methods=["POST"])
-def toggle_calibration_endpoint(value):
-    return api.toggle_calibration(value)
+# @app.route("/configure/low-light-calibration/<value>", methods=["POST"])
+# def toggle_calibration_endpoint(value):
+#     return api.toggle_calibration(value)
 
 
-@app.route("/configure/low-light-calibration-data", methods=['POST'])
-def save_calibration_data_endpoint():
-    data = request.form.get('calibration-data')
-    api.save_calibration_data(data)
-    return redirect(url_for('low_light_calibration_endpoint'))
+# @app.route("/configure/low-light-calibration-data", methods=['POST'])
+# def save_calibration_data_endpoint():
+#     data = request.form.get('calibration-data')
+#     api.save_calibration_data(data)
+#     return redirect(url_for('low_light_calibration_endpoint'))
 
 
-@app.route("/configure/low-light-calibrated_values", methods=['GET'])
-def apply_calibrated_values_endpoint():
-    feedback = api.apply_calibrated_values(request.args)
-    if feedback == "":
-        return redirect(url_for('low_light_calibration_endpoint', feedback="Valori impostati con successo."))
-    return redirect(url_for('low_light_calibration_endpoint', feedback=feedback))
+# @app.route("/configure/low-light-calibrated_values", methods=['GET'])
+# def apply_calibrated_values_endpoint():
+#     feedback = api.apply_calibrated_values(request.args)
+#     if feedback == "":
+#         return redirect(url_for('low_light_calibration_endpoint', feedback="Valori impostati con successo."))
+#     return redirect(url_for('low_light_calibration_endpoint', feedback=feedback))
 
 
 #

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import os
 import sys
@@ -230,6 +230,45 @@ class System:
         else:
             return f"{bytes} bytes"
 
+    def copy_system_file(self, original_path: Path, backup_path: Path) -> bool:
+        """
+        Copies a file to a directory using sudo.
+        Return True if the copy was successful, false otherwise
+        """
+        try:
+            copy = subprocess.run([
+                "/usr/bin/sudo", "cp", original_path, backup_path], 
+                stdout=subprocess.PIPE)
+            return True
+
+            if not copy:
+                raise ValueError("The cp process has failed. "
+                                f"Execute 'sudo cp {original_path} {backup_path}' "
+                                 "to replicate the issue.")
+        except Exception as e:
+            log_error(f"Something went wrong creating copying {original_path} into {backup_path}. "
+                        "The file hasn't been copied.", e)
+            return False 
+
+    def give_ownership_to_root(self, file: Path):
+        """
+        Give ownership of the specified file to root.
+        Return True if the chown process worked, False otherwise.
+        """
+        try:
+            chown = subprocess.run([
+                "/usr/bin/sudo", "chown", "root:root", file], 
+                stdout=subprocess.PIPE)
+            return True
+
+            if not chown:
+                raise ValueError("The chown process has failed. "
+                                f"Execute 'sudo chown 'root:root' {file}' "
+                                 "to replicate the issue.")
+        except Exception as e:
+            log_error(f"Something went wrong assigning ownership of {file} to root. "
+                       "The system ownership is likely to be unaffected.", e)
+            return False
 
     def apply_system_settings(self, configuration: Configuration) -> None:
         """
@@ -238,12 +277,11 @@ class System:
         if 'crontab' in vars(configuration).keys() or 'time' in vars(configuration).keys():
             self.update_crontab(getattr(configuration, "time", {}), getattr(configuration, "crontab", {}))
 
-
-    def update_crontab(self, time: Dict, cron: Dict) -> None:
-        """ 
-        Updates the crontab and tries to recover for potential issues.
-        Might refuse to update it in case of misconfigurations, in which case it
-        will restore the old one and log the exceptions.
+    def prepare_crontab_string(self, time: Dict, cron: Dict) -> List[str]:
+        """
+        Converts time and cron directives from the configuration file into
+        the content of the crontab itself.
+        Return a list of strings, where each is a crontab line.
         """
         cron_strings = []
 
@@ -288,41 +326,40 @@ class System:
                 cron.get('month', '*'),
                 cron.get('weekday', '*')
             ])]
+
+        return cron_strings
+
+    def update_crontab(self, time: Dict, cron: Dict) -> None:
+        """ 
+        Updates the crontab and tries to recover for potential issues.
+        Might refuse to update it in case of misconfigurations, in which case it
+        will restore the old one and log the exceptions.
+        """
+        # Get the crontab content
+        cron_strings = self.prepare_crontab_string(time, cron)   
+
+        # Backup the old file
+        backup_cron = self.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
         
         # Creates a file with the right content
         with open(TEMP_CRONJOB, 'w') as d:
             d.writelines("# ZANZOCAM - shoot picture\n")
             for line in cron_strings:
                 d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
-                
-        # Backup the old crontab in the home
-        backup_cron = subprocess.run([
-            "/usr/bin/sudo", "mv", CRONJOB_FILE, BACKUP_CRONJOB], 
-            stdout=subprocess.PIPE)
-        if not backup_cron:
-            log_error("Something went wrong creating a backup for the cron file. "
-                      "No backup is created.")
-            
-        # Move new cron file into cron folder
-        create_cron = subprocess.run([
-            "/usr/bin/sudo", "mv", TEMP_CRONJOB, CRONJOB_FILE], 
-            stdout=subprocess.PIPE)
-        if not create_cron:
-            log_error("Something went wrong creating the new cron file. "
-                      "The old cron file should be unaffected.")
 
-        # Give ownership of the new crontab file to root
-        chown_cron = subprocess.run([
-            "/usr/bin/sudo", "chown", "root:root", CRONJOB_FILE], 
-            stdout=subprocess.PIPE)
-            
+        # Move new cron file into cron folder
+        self.copy_system_file(TEMP_CRONJOB, CRONJOB_FILE)
+
+        # Assign the cron file to root:root
+        chown_cron = self.give_ownership_to_root(CRONJOB_FILE)
+        
         log("Crontab updated successfully.")
             
         # if the ownership change failes, start recovery procedure:
         # Try to write back the old crontab
         if not chown_cron:
             log_error("Something went wrong changing the owner of the crontab!")
-            log("Trying to restore the crontab using the backup")
+            log("Trying to restore the crontab using the backup.")
             
             log_row("+")
             if not backup_cron:
@@ -330,15 +367,12 @@ class System:
                 fatal="the crontab might not trigger anymore. "
                       "ZANZOCAM might need manual intervention.")
             else:
-                restore_cron = subprocess.run([
-                    "/usr/bin/sudo", "mv", BACKUP_CRONJOB, CRONJOB_FILE], 
-                    stdout=subprocess.PIPE)
-                    
+                restore_cron = self.copy_system_file(BACKUP_CRONJOB, CRONJOB_FILE)
+
                 if not restore_cron:
                     log_error("Something went wrong restoring the cron file from its backup!",
                     fatal="the crontab might not trigger anymore. "
                           "ZANZOCAM might need manual intervention.")
                 else:
-                    log("cron file restored successfully.")
-                    log("Please investigate the cause of the issue!")
+                    log("cron file restored successfully. Please investigate the cause of the issue!")
             log_row("+")

@@ -16,6 +16,7 @@ DATA_PATH = BASE_PATH / "data"
 # Log files
 SERVER_LOG = DATA_PATH / 'error.log'
 CAMERA_LOG = DATA_PATH / 'camera.log'
+CALIBRATION_LOG = DATA_PATH / 'calibration.log'
 FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 
 # Configuration file
@@ -25,7 +26,7 @@ CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 WIFI_DATA = DATA_PATH / "wifi_data.json"
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
-CALIBRATION_DATASET = DATA_PATH / "luminance_speed_table.csv"
+CALIBRATION_DATASET = DATA_PATH / "luminance_speed_dataset.csv"
 CALIBRATED_PARAMS = DATA_PATH / "calibration_parameters.csv"
 
 # Flags (single value files)
@@ -53,6 +54,8 @@ SYSTEM_USER = "zanzocam-bot"
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"
 BACKUP_CRONJOB = DATA_PATH / ".crontab.bak"
 CRONJOB_FILE = "/etc/cron.d/zanzocam"
+TEMP_CALIBRATION_CRONJOB = DATA_PATH / ".tmp-calibration-cronjob-file"
+CALIBRATION_CRONJOB_FILE = "/etc/cron.d/zanzocam-calibration"
 
 # System constants
 REQUEST_TIMEOUT = 60
@@ -68,9 +71,20 @@ AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
 # If the detected luminance goes below this value, the night mode kicks in.
 MINIMUM_DAYLIGHT_LUMINANCE = 60
 
-# luminance/shutterspeed interpolation: extremes for the shutter speed
+# Minimum luminance to try reaching in very dark conditions.
+# The actual luminance of night pictures might be a bit below this value.
+MINIMUM_NIGHT_LUMINANCE = 30
+
+# Default parameters for the luminance/shutterspeed interpolation curve.
+# Calculated for a Raspberry Pi Camera v1.2
+# They can be overridden by custom calibrated parameters.
+LUM_SPEED_PARAM_A = 600000
+LUM_SPEED_PARAM_B = 60000
+
+# luminance/shutterspeed interpolation: extremes for the shutter speed binary search
 MIN_SHUTTER_SPEED = int(0.03 * 10**6)
 MAX_SHUTTER_SPEED = int(3 * 10**6)
+MULT_SHUTTER_SPEED = 5
 
 # Used in the binary search to give some margin to the luminosity
 # Matches if luminance = target +- this margin
