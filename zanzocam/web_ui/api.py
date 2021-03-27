@@ -150,7 +150,7 @@ def shoot_picture():
     clear_logs(PICTURE_LOGS)
     try:
         with open(PICTURE_LOGS, 'w') as l:                
-            shoot_proc = subprocess.run(["/home/zanzocam-bot/venv/bin/z-webcam"], stdout=l, stderr=l)
+            shoot_proc = subprocess.run([ZANZOCAM_EXECUTABLE], stdout=l, stderr=l)
             
     except subprocess.CalledProcessError as e:
         with open(PICTURE_LOGS, 'a') as l:

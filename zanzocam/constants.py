@@ -1,9 +1,14 @@
+import sys
 from pathlib import Path
 
 
 #
 # Paths & local URLs
 #
+
+# Executables
+ZANZOCAM_EXECUTABLE = str(Path(sys.argv[0]).parent / "z-webcam")
+UI_EXECUTABLE = str(Path(sys.argv[0]).parent / "z-ui")
 
 # Base paths
 BASE_PATH = Path(__file__).parent

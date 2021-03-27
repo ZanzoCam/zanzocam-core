@@ -4,9 +4,22 @@ import os
 import logging
 from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
 
+try:
+    from importlib_metadata import version, PackageNotFoundError
+except ModuleNotFoundError as e:
+    from importlib.metadata import version, PackageNotFoundError
+
 from web_ui import low_light
 from web_ui.utils import read_setup_data_file, read_flag_file, _read_data_file, read_dataset_file, clear_logs
 from constants import *
+
+
+
+try:
+    VERSION = version("zanzocam")
+except PackageNotFoundError as e:
+    VERSION = "no_version_found"
+    logging.warning(f"Could not get version information: {e}")
 
 
 
@@ -19,6 +32,7 @@ def home(feedback: str=None, feedback_sheet_name: str=None, feedback_type: str=N
 
     return render_template("home.html", 
                                 title="Setup Iniziale", 
+                                version=VERSION,
                                 wifi_data=wifi_data, 
                                 server_data=server_data, 
                                 hotspot_value=hotspot_value,
@@ -33,6 +47,7 @@ def webcam():
     clear_logs(PICTURE_LOGS)  # To not see old logs in the textarea
     return render_template("picture-preview.html", 
                            title="Setup Webcam", 
+                           version=VERSION,
                            preview_url=PREVIEW_PICTURE_URL)
 
 
@@ -73,6 +88,7 @@ def low_light_calibration():
 
         return render_template("low-light-calibration.html", 
                         title="Calibrazione Webcam",
+                        version=VERSION,
                         calibration_flag=calibration_flag,
                         figure=CALIBRATION_GRAPH_URL,
                         calibration_data=calibration_data,
@@ -83,6 +99,7 @@ def low_light_calibration():
 
     except ValueError as e:
         return render_template("low-light-calibration.html",
+                            version=VERSION,
                             calibration_flag=calibration_flag,
                             title="Calibrazione Webcam",
                             figure=CALIBRATION_GRAPH_URL,
@@ -93,6 +110,7 @@ def low_light_calibration():
         logging.error(ee)
         return render_template("low-light-calibration.html", 
                         title="Calibrazione Webcam",
+                        version=VERSION,
                         calibration_data=calibration_data,
                         calibration_flag=calibration_flag,
                         figure=CALIBRATION_GRAPH_URL,
