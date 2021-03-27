@@ -23,7 +23,6 @@ WIFI_DATA = DATA_PATH / "wifi_data.json"
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 CALIBRATION_DATASET = DATA_PATH / "luminance_speed_dataset.csv"
-CALIBRATION_DATASET = DATA_PATH / "successful_shots.csv"
 CALIBRATED_PARAMS = DATA_PATH / "calibration_parameters.csv"
 
 # Flags (single value files)

@@ -110,7 +110,7 @@ def send_from_path(path: Path):
     """
     Same as Flask's send_from_directory(), but accepts a full path
     """
-    path_parts = path.split("/")
+    path_parts = str(path).split("/")
     dir = "/".join(path_parts[:-1])
     name = path_parts[-1]
     return send_from_directory(dir, name)  

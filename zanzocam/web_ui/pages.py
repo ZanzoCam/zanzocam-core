@@ -4,7 +4,7 @@ import os
 import logging
 from flask import Flask, render_template, request, abort, send_from_directory, redirect, url_for
 
-#from web_ui import low_light
+from web_ui import low_light
 from web_ui.utils import read_setup_data_file, read_flag_file, _read_data_file, read_dataset_file, clear_logs
 from constants import *
 
@@ -48,7 +48,11 @@ def low_light_calibration():
     calibration_flag = read_flag_file(CALIBRATION_FLAG, "OFF")
 
     # Read old a and b values
-    old_a_value, old_b_value = _read_data_file(CALIBRATED_PARAMS, default="0,0", action=lambda d: d.read().strip(), catch_errors=True).split(",")
+    old_a_value, old_b_value = None, None
+    if os.path.exists(CALIBRATED_PARAMS):
+        old_a_value, old_b_value = _read_data_file(CALIBRATED_PARAMS, default="0,0", action=lambda d: d.read().strip(), catch_errors=True).split(",")
+        old_a_value = int(old_a_value)
+        old_b_value = int(old_b_value)
 
     # Read the values as strings for editing and make sure there are enough values
     calibration_data = []
@@ -65,7 +69,7 @@ def low_light_calibration():
 
         # Compute the new values and plot the data
         a_value, b_value = low_light.calculate_parameters()
-        low_light.plot_curve_fit(a_value, b_value, int(old_a_value), int(old_b_value))
+        low_light.plot_curve_fit(a_value, b_value, old_a_value, old_b_value)
 
         return render_template("low-light-calibration.html", 
                         title="Calibrazione Webcam",

@@ -2,38 +2,14 @@
 
 {% block content %}
 
-
-    <div class="row">
-        <h3>Raccolta dati di calibrazione:</h3>
-        <label class="toggle">
-            <input type="radio" value="ON" name="calibration" {% if calibration_flag=="ON" %}checked{%endif%} onchange="javascript:turnCalibrationON();">
-            <span class="label">ON</span>
-        </label>
-        <label class="toggle">
-            <input type="radio" value="OFF" name="calibration" {% if not calibration_flag or calibration_flag=="OFF" %}checked{%endif%} onchange="javascript:turnCalibrationOFF();">
-            <span class="label">OFF</span>
-        </label>
-        <br>
-    </div>
-    <p><b>NOTA BENE:</b> La procedura di calibrazione allunga di molto il tempo necessario allo scatto
-    di una singola foto, per cui una volta in uso questo bottone deve restare su <b>OFF</b>.<br><br>
-    Se la qualita' delle foto notturne dovesse essere scadente (foto troppo chiare o troppo scure) e' possibile 
-    tentare di ricalibrare i parametri. Premere ON e la frequenza delle foto a una ogni 5 minuti attorno
-    all'alba e al tramonto. Lasciarla operare in queste condizioni per uno o due giorni.
-    Alla fine, rimettere il pulsante su OFF. ZANZOCAM avra' raccolto abbastanza dati per calcolare i nuovi
-    parametri di scatto delle foto buie, e li impostera' di default per le foto successive.<br><br>
-    Nota che le foto scattate durante questo periodo sono rappresentative della qualita' delle foto che
-    ZANZOCAM produrra' dopo la ricalibrazione. Se non sono comunque sufficienti, il passo successivo consiste
-    nel cambiare l'ottica stessa con una di qualita' piu' alta.
-    </p>
-
     <div class="row">
         <form action="/configure/low-light-calibration-data" method="POST"> 
-            <h3>Dati Raccolti:</h3>
+            <h3>Dati di calibrazione:</h3>
             <p>
-            Le colonne corrispondono a luminosita' iniziale, luminosita' target, shutter speed.<br>
-            Puoi editare a mano questi valori per rimuovere dati scorretti o insoliti, o per aggiungere
-            altri dati. Questi sono i valori che costituiscono la linea blu nel grafico sottostante,
+            Inserisci nel box sottostante i dati di calibrazione. Essi devono essere in questo formato:
+            luminosita' iniziale, luminosita' target, shutter speed. I valori devono essere separati 
+            da una virgola, senza spazi. Per esempio 5.1,30.7,20000 e' una riga valida.<br>
+            Questi valori costituiscono la linea blu nel grafico sottostante,
             e sono usati per calcolare la linea arancione, che rappresenta l'equazione usata da
             ZANZOCAM per correggere il tempo di esposizione delle foto a bassa luminosita'.<br>
             Ricordati che i valori devono sempre essere separati da una VIRGOLA, non da spazi o da nessun altro
