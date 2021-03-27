@@ -8,8 +8,8 @@ This steps gives you a SD card that can connect to your WiFi network, so that yo
 - Unzip it
 - Flash onto SD:
     - `dd if=nome-immagine.img of=/dev/sdX bs=4M status=progress oflag=sync` with `sudo`
-- Add empty `ssh` file in the `boot` partition 
-- Add `config.txt` file in the `boot` partition
+- Add empty `ssh` file in the `boot` partition
+- Add `config.txt` file in the `boot` partition (if it exists already, delete it)
     - Content:
 ```
 # Disable the rainbow splash screen
@@ -23,8 +23,8 @@ dtparam=act_led_trigger=none
 dtparam=act_led_activelow=on
 
 # Enable camera
-start_x=1             # essential
-gpu_mem=256           # at least, or maybe more if you wish
+start_x=1             # essential, although a bit misleading
+gpu_mem=256           # the memory allocated for the camera
 disable_camera_led=1  # optional, if you don't want the led to glow
 ```
 - Change `/etc/wpa_supplicant/wpa_supplicant.conf` on `rootfs` with your local wifi data
@@ -39,9 +39,10 @@ network={
     psk="PASSWORD"
 }
 ```
-- Boot the RPI with the SD card
-- Find its IP with `nmap -p 22 192.168.1.0/24` 
-- Connect to it with SSH: `ssh pi@192.168.1.xxx`
+- Boot the Pi with this SD card.
+- SSH into it. Assuming your router's IP is something like 192.168.1.0 (mind the first three numbers and change them accordingly in the commands below):
+    - Find its IP with `nmap -p 22 192.168.1.0/24`. In the list that appears, one of the devices should be your Raspberry Pi (find it by the name or by exclusion).
+    - Connect to it with SSH using the IP just discovered: `ssh pi@192.168.1.xxx` (password is 'raspberry')
 
 
 ### Basic setup (libraries and configuration)
@@ -65,8 +66,29 @@ This step installs a few libraries required for the webcam to work.
     - Uncomment the IT locale in the proper file:  `sudo perl -pi -e 's/# it_IT.UTF-8 UTF-8/it_IT.UTF-8 UTF-8/g' /etc/locale.gen`
     - Comment the default EN locale in the proper file:  `sudo perl -pi -e 's/en_GB.UTF-8 UTF-8/# en_GB.UTF-8 UTF-8/g' /etc/locale.gen`
     - Generate locales: `sudo locale-gen it_IT.UTF-8`
-    - Set locale: ` sudo localectl set-locale LANG=it_IT.UTF-8`
+    - Set locale: `sudo localectl set-locale LANG=it_IT.UTF-8`
     - Update locales: `sudo update-locale it_IT.UTF-8`
+
+Note: this procedure might raise some Perl errors, like:
+```
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+        LANGUAGE = (unset),
+        LC_ALL = (unset),
+        LC_ADDRESS = "fr_FR.UTF-8",
+        LC_NAME = "fr_FR.UTF-8",
+        LC_MONETARY = "fr_FR.UTF-8",
+        LC_PAPER = "fr_FR.UTF-8",
+        LC_IDENTIFICATION = "fr_FR.UTF-8",
+        LC_TELEPHONE = "fr_FR.UTF-8",
+        LC_MEASUREMENT = "fr_FR.UTF-8",
+        LC_NUMERIC = "fr_FR.UTF-8",
+        LANG = "en_GB.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+```
+These are due to a directive on your local machine, in `/etc/ssh/ssh_config`: `SendEnv LANG LC_*`.
+Comment it out to avoid such errors from arising on your Pi.
 
 - Set timezone: `sudo timedatectl set-timezone Europe/Rome`
     
@@ -86,12 +108,12 @@ This step installs a few libraries required for the webcam to work.
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
     - Create venv in the home: `cd ~ && python3 -m venv venv`
     - Activate venv: `source venv/bin/activate`
-    - Install Zanzocam webcam into it: `pip install -e "git+https://github.com/ZanSara/zanzocam.git#egg=webcam&subdirectory=webcam"`
+    - Install Zanzocam webcam into it: `pip install -e "git+https://github.com/ZanSara/zanzocam.git@<hash of the release commit>#egg=zanzocam[all]&subdirectory=zanzocam"`
     - Leave venv: `deactivate`
 
 ### Setup the autohotspot feature
 
-This step makes the RPI able to generate its own WiFi network 
+This step makes the Pi able to generate its own WiFi network 
 (SSID & password, see below) when no known WiFi network is detected.
 
 Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection)
@@ -102,7 +124,7 @@ Instructions found [here](https://www.raspberryconnect.com/projects/65-raspberry
     - `sudo systemctl unmask hostapd`
     - `sudo systemctl disable hostapd`
     - `sudo systemctl disable dnsmasq`
-- Edit `hostapd` configuration file to create a network called `zanzocam-setup` and password `webcamdelrifugio`:
+- Edit `hostapd` configuration file to create a network called `zanzocam-setup` and password `webcamdelrifugio` (on WiFi channel 8):
     - `sudo nano /etc/hostapd/hostapd.conf`
     - Content:
 ```
@@ -397,53 +419,46 @@ Once the Pi can generate its own network, we make it able to receive HTTP reques
 
 Instructions [here](https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md) for Nginx and [here](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) for Flask.
 
-- Get the setup server scripts:
-    - Clone the Zanzocam repo into the home: `git clone https://github.com/ZanSara/zanzocam.git`
-    - Copy the `setup-server` folder into `/var/www`: `sudo cp -r ~/zanzocam/setup-server/* /var/www/setup-server`
-    - Change ownership of the `setup-server` folder to `zanzocam-bot`: `sudo chown zanzocam-bot:zanzocam-bot /var/www/setup-server`
-    - Delete the Zanzocam folder: `rm -r ~/zanzocam/`
-
-- Install the setup server under `/var/www/setup-server`:
-    - Create venv: `sudo python3 -m venv /var/www/setup-server/venv`
-    - Activate venv: `source /var/www/setup-server/venv/bin/activate`
-    - Install the dependencies: `pip install -r /var/www/setup-server/requirements.txt`
-    - Leave venv: `deactivate`
-
 - Install Nginx:
-    - Install it: `sudo apt install -y nginx libssl-dev libffi-dev build-essential`
+    - Install it: `sudo apt install -y nginx libssl-dev libffi-dev build-essential apache2-utils`
     - Start it: `sudo /etc/init.d/nginx start`
-    - Create a systemdunit file: `sudo nano /etc/systemd/system/setup-server.service`. Content:
+    - Create a `.htpasswd` file in the home: `htpasswd -c /home/zanzocam-bot/.htpasswd zanzocam-user` (the image password here is `lampone`)
+    - Create a systemdunit file: `sudo nano /etc/systemd/system/zanzocam-web-ui.service`. Content:
 ```
 [Unit]
-Description=uWSGI instance to serve the ZANZOCAM setup server
+Description=uWSGI instance to serve the ZANZOCAM web UI
 After=network.target
 
 [Service]
 User=zanzocam-bot
 Group=www-data
-WorkingDirectory=/var/www/setup-server
-Environment="PATH=/var/www/setup-server/venv/bin"
-ExecStart=/var/www/setup-server/venv/bin/uwsgi --ini setup-server.ini
+WorkingDirectory=/home/zanzocam-bot/venv/src/zanzocam/zanzocam/web_ui
+Environment="PATH=/home/zanzocam-bot/zanzocam/venv/bin"
+ExecStart=/home/zanzocam-bot/venv/bin/uwsgi --ini web-ui.ini
 
 [Install]
 WantedBy=multi-user.target
 ```
-- Enable the service: `sudo systemctl enable setup-server`
-- Start the service: `sudo systemctl start setup-server`
-- Create Nginx configuration: `sudo nano /etc/nginx/sites-available/setup-server`
+- Enable the service: `sudo systemctl enable zanzocam-web-ui`
+- Start the service: `sudo systemctl start zanzocam-web-ui`
+- Create Nginx configuration: `sudo nano /etc/nginx/sites-available/zanzocam-web-ui`
 - Content:
 ```
 server {
     listen 80;
 
+    auth_basic "Login";
+    auth_basic_user_file /home/zanzocam-bot/.htpasswd;
+
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/var/www/setup-server/setup-server.sock;
+        uwsgi_pass unix:/home/zanzocam-bot/venv/src/zanzocam/zanzocam/web_ui/web-ui.sock;
         uwsgi_read_timeout 600;
+
     }
 }
 ```
-- Enable the new config: `sudo ln -s /etc/nginx/sites-available/setup-server /etc/nginx/sites-enabled`
+- Enable the new config: `sudo ln -s /etc/nginx/sites-available/zanzocam-web-ui /etc/nginx/sites-enabled`
 - Disable the default config: `sudo rm /etc/nginx/sites-enabled/default`
 - Check for errors with `sudo nginx -t`
 - Restart Nginx: `sudo systemctl restart nginx`

@@ -6,9 +6,9 @@ from pathlib import Path
 # Paths & local URLs
 #
 
-# Executables
-ZANZOCAM_EXECUTABLE = str(Path(sys.argv[0]).parent / "z-webcam")
-UI_EXECUTABLE = str(Path(sys.argv[0]).parent / "z-ui")
+# Executables constants
+SYSTEM_USER = "zanzocam-bot"
+ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
 
 # Base paths
 BASE_PATH = Path(__file__).parent
@@ -51,7 +51,6 @@ REMOTE_IMAGES_PATH = "configuration/overlays/"
 #
 
 # Cronjob constants
-SYSTEM_USER = "zanzocam-bot"
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"
 BACKUP_CRONJOB = DATA_PATH / ".crontab.bak"
 CRONJOB_FILE = "/etc/cron.d/zanzocam"
