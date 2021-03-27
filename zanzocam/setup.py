@@ -23,6 +23,7 @@ REQUIREMENTS: dict = {
         "requests",
     ],
     'web-ui': [
+        "uwsgi",
         "Flask",
         "matplotlib",
         "pandas",

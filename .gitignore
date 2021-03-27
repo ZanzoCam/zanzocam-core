@@ -2,6 +2,7 @@
 **/*.img
 **/wpa_supplicant.conf
 zanzocam/data/*
+zanzocam/web_ui/.htpasswd
 zanzocam/web_ui/static/previews/*
 !zanzocam/data/calibration_parameters.csv
 !zanzocam/data/luminance_speed_dataset.csv
