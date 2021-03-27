@@ -130,7 +130,7 @@ class Camera:
             if shutter_speed:
                 camera.shutter_speed = shutter_speed
                 camera.iso = 800
-                sleep(10)  # More time allows for a better white balancing. Some suggest even 30s!
+                sleep(40)  # More time allows for a better white balancing
                 camera.exposure_mode = "off"
                 log("Taking low light picture")
             else:
