@@ -144,39 +144,6 @@ class Camera:
             return luminance
 
 
-    def gather_calibration_data(self):
-        """
-        Data gathering procedure. Each time it's called, takes a finite amount
-        of pictures and measures the luminance. Then saves the sample data into
-        the samples dataset in the format: initial_luminance,actual_luminance,speed
-        """
-        log(f"Entering data gathering procedure. Parameters: "
-            f"min shutter speed = {MIN_SHUTTER_SPEED/(10**6):.2f}s, "
-            f"max shutter speed = {MAX_SHUTTER_SPEED/(10**6):.2f}s, "
-            f"multiplication factor = {MULT_SHUTTER_SPEED}.")
-
-        # Get the initial luminance
-        log("Taking reference picture.")
-        self._shoot_picture()
-        initial_luminance = self.luminance_from_path(self.temp_photo_path)
-        log(f"Initial luminance with no shutter speed set: {initial_luminance:.2f}")
-
-        speed = MIN_SHUTTER_SPEED
-        while speed < MAX_SHUTTER_SPEED:         
-            
-            # Take a picture with this shutter speed
-            speed *= MULT_SHUTTER_SPEED
-            self._shoot_picture(shutter_speed=int(speed))
-            actual_luminance = self.luminance_from_path(self.temp_photo_path)
-            log(f"Sample speed={speed/(10**6):.2f}s: luminance={actual_luminance:.2f}")
-
-            # Save the data into the dataset
-            with open(CALIBRATION_DATASET, 'a') as table:
-                table.write(f"{initial_luminance:.2f},{actual_luminance:.2f},{int(speed)}\n")
-
-        log("Data gathering complete.")
-
-
     def shutter_speed_from_path(self, path: Path) -> int:
         """
         Given a path to a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)

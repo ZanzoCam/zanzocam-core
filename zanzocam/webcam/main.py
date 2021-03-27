@@ -210,68 +210,6 @@ def main():
             log_error("Something happened uploading the logs:", e, fatal="Logs won't be uploaded.")
 
 
-def calibrate():
-    """
-    Called to perform the calibration routine, where the camera
-    shoots a series of pictures (possibly in twilight and night
-    conditions) and stores the shutter speeds used, together with
-    the resulting luminance.
-    The resulting datset will be used to estimate the correct 
-    shutter speed for any given target luminance.
-    """
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(message)s',
-        handlers=[
-            logging.FileHandler(constants.CALIBRATION_LOG),
-            logging.StreamHandler(sys.stdout),
-        ]
-    )
-
-    log_row()
-    log("Start calibration routine")
-    try:
-        configuration = Configuration()
-        camera = Camera(configuration)
-
-        # The format of the resulting data is initial_luminance,final_luminance,speed
-        camera.gather_calibration_data()
-        
-        if not os.path.exists(CALIBRATION_CRONJOB_FILE):
-        
-            log("Setting up cronjob for calibration for "
-                "the next 3 days, to gather sufficient data.")
-            now = datetime.datetime.now()
-            # Just to avoid corner cases, shall we?
-            if now.day > 27:
-                now.day = 1
-                now.month = now.month + 1
-            system = System()
-            cron_strings = system.prepare_crontab_string({}, {
-                "minute": "*/11",  # Also try to avoid colliding with the main camera process
-                "hour": "4-8,17-20",
-                "day": f"{now.day}-{now.day+1}",
-                "month": f"{now.month}",
-                "weekday": "*",
-            })
-            # Creates a file with the right content
-            with open(TEMP_CALIBRATION_CRONJOB, 'w') as d:
-                d.writelines("# ZANZOCAM - calibrate camera\n")
-                for line in cron_strings:
-                    d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
-                
-            # Move new cron file into cron folder
-            system.copy_system_file(TEMP_CALIBRATION_CRONJOB, CALIBRATION_CRONJOB_FILE)
-            system.give_ownership_to_root(CALIBRATION_CRONJOB_FILE)
-
-        log("Calibration routine completed.")
-    
-    except Exception as e:
-        log_error("An error occurred during the calibration procedure. Exiting.", e)
-    finally:
-        log_row()
-
-
 
 if "__main__" == __name__:
     main()
