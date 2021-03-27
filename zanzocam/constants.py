@@ -1,10 +1,6 @@
 from pathlib import Path
 
 
-import math
-from PIL import Image, ImageFont, ImageDraw, ImageStat
-
-
 #
 # Paths & local URLs
 #
@@ -27,6 +23,7 @@ WIFI_DATA = DATA_PATH / "wifi_data.json"
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 CALIBRATION_DATASET = DATA_PATH / "luminance_speed_dataset.csv"
+CALIBRATION_DATASET = DATA_PATH / "successful_shots.csv"
 CALIBRATED_PARAMS = DATA_PATH / "calibration_parameters.csv"
 
 # Flags (single value files)
@@ -78,13 +75,13 @@ MINIMUM_NIGHT_LUMINANCE = 30
 # Default parameters for the luminance/shutterspeed interpolation curve.
 # Calculated for a Raspberry Pi Camera v1.2
 # They can be overridden by custom calibrated parameters.
-LUM_SPEED_PARAM_A = 600000
-LUM_SPEED_PARAM_B = 60000
+LUM_SPEED_PARAM_A = 800000
+LUM_SPEED_PARAM_B = 200000
 
 # luminance/shutterspeed interpolation: extremes for the shutter speed binary search
 MIN_SHUTTER_SPEED = int(0.03 * 10**6)
 MAX_SHUTTER_SPEED = int(3 * 10**6)
-MULT_SHUTTER_SPEED = 5
+MULT_SHUTTER_SPEED = 1.5
 
 # Used in the binary search to give some margin to the luminosity
 # Matches if luminance = target +- this margin

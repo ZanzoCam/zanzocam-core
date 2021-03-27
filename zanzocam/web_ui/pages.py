@@ -65,7 +65,7 @@ def low_light_calibration():
 
         # Compute the new values and plot the data
         a_value, b_value = low_light.calculate_parameters()
-        low_light.plot_curve_fit(int(old_a_value), int(old_b_value), a_value, b_value)
+        low_light.plot_curve_fit(a_value, b_value, int(old_a_value), int(old_b_value))
 
         return render_template("low-light-calibration.html", 
                         title="Calibrazione Webcam",

@@ -40,6 +40,7 @@ class Server:
         elif self.protocol.upper() == "FTP":
             self._server = FtpServer(parameters)
 
+        self.final_image_path = None  # To avoid anyone trying to access an attribute that does not exist
 
     def update_configuration(self, old_configuration: Configuration) -> Configuration:
         """

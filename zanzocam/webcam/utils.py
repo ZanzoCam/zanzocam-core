@@ -6,17 +6,6 @@ import constants
 from webcam.errors import UnexpectedServerResponse
 
 
-# Setup the logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',
-    handlers=[
-        logging.FileHandler(constants.CAMERA_LOG),
-        logging.StreamHandler(sys.stdout),
-    ]
-)
-
-
 def log(msg: str) -> None:
     """ 
     Logs the message to the console

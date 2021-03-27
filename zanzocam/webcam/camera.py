@@ -100,10 +100,13 @@ class Camera:
         Returns the image luminance.
         """
         if shutter_speed:
-            log(f"Shooting with exposure time set to {shutter_speed/10**6:.2f}s.")
+            log(f"Shooting with exposure time set to {shutter_speed/10**6:.4f}s.")
+            framerate_range = (Fraction(1, 10), Fraction(5, 1))
+        else:
+            framerate_range = None
 
         log("Adjusting camera...")
-        with PiCamera(framerate=(Fraction(1, 10), Fraction(5, 1))) as camera:
+        with PiCamera(framerate_range=framerate_range) as camera:
 
             if int(self.width) > camera.MAX_RESOLUTION.width:
                 log(f"WARNING! The requested image width ({self.width}) "
@@ -137,7 +140,7 @@ class Camera:
             camera.capture(str(self.temp_photo_path))
 
             luminance = self.luminance_from_path(self.temp_photo_path)
-            log(f"Picture taken. Luminance: {luminance:.2f}, exposure speed: {camera.exposure_speed}, shutter speed: {camera.shutter_speed}")
+            log(f"Picture taken. Luminance: {luminance:.2f}, exposure speed: {camera.exposure_speed/10**6:.4f}, shutter speed: {camera.shutter_speed/10**6:.4f}")
             return luminance
 
 

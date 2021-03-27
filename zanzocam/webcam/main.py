@@ -2,24 +2,35 @@ import os
 import sys
 import json
 import locale
+import logging
 import datetime
 import subprocess
+from time import sleep
 
 import constants
 from constants import *
-from webcam.utils import log, log_error, log_row
 from webcam.system import System
 from webcam.configuration import Configuration
 from webcam.server import Server
 from webcam.camera import Camera
 from webcam.errors import ServerError
-
+from webcam.utils import log, log_error, log_row
 
 
 def main():
     """
     Main script coordinating all operations.
     """
+    # Setup the logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s',
+        handlers=[
+            logging.FileHandler(constants.CAMERA_LOG),
+            logging.StreamHandler(sys.stdout),
+        ]
+    )
+
     log_row()
     log("Start")
 
@@ -28,6 +39,7 @@ def main():
         start = datetime.datetime.now()
         upload_logs = True
         errors_were_raised = False
+        restore_required = False
         initial_configuration = None
 
         # Setup locale
@@ -71,6 +83,7 @@ def main():
                       "from the server.", e)
             log("Falling back to the old configuration.")
             errors_were_raised = True
+            restore_required = True
             configuration = initial_configuration
 
         log(f"Configuration in use:\n{configuration}")
@@ -84,6 +97,7 @@ def main():
 
         except Exception as e:
             errors_were_raised = True
+            restore_required = False
             log_error("Something happened while applying the system "
                 "settings from the new configuration file.", e)
             
@@ -106,8 +120,11 @@ def main():
         except Exception as e:
             # Try again using the old config file
             errors_were_raised = True
+            restore_required = False
             log_error("An error occurred while taking the picture.", e)
-            log("Trying again with the old configuration.")
+            log("Waiting one minute and then trying again with the old configuration.")
+
+            sleep(59)
 
             try:
                 log_row(char="+")
@@ -118,6 +135,7 @@ def main():
             except Exception as ee:
                 # That's the second run that failed: give up.
                 errors_were_raised = True
+                restore_required = False
                 log_error("Something happened while running with the old configuration file too!", ee,
                             fatal="Exiting.")
                 return
@@ -127,6 +145,7 @@ def main():
             server.upload_picture(camera.processed_image_path, camera.name, camera.extension)
         except Exception as e:
             errors_were_raised = True
+            restore_required = False
             log_error("Something happened uploading the picture! It was "+
                       "probably not sent", e,
                       fatal="The error was unexpected, can't fix. The picture won't be uploaded.")
@@ -135,12 +154,14 @@ def main():
     # Catch server errors: they block communication, so they are fatal anyway
     except ServerError as se:
         errors_were_raised = True
+        restore_required = False
         log_error("An error occurred communicating with the server.", 
                   se, fatal="Exiting.")
         
     # Catch unexpected fatal errors
     except Exception as e:
         errors_were_raised = True
+        restore_required = False
         log_error("Something unexpected occurred while running the main procedure.", 
                   e, fatal="Exiting.")
         
@@ -150,8 +171,10 @@ def main():
         try:
             log("Cleaning up image files")
             os.remove(camera.temp_photo_path)
-            os.remove(server.final_image_path)
+            if server.final_image_path:
+                os.remove(server.final_image_path)
             log("Cleanup complete")
+
         except Exception as e:
             errors_were_raised = True
             log_error(f"Failed to clean up image files.", e)
@@ -161,10 +184,11 @@ def main():
         # If we had trouble with the new config, restore the old from the backup
         # TODO assess the situation better! Maybe the failure is unrelated.
         errors_were_raised_str = "successfully"
-        if errors_were_raised:
-            if initial_configuration:
-                initial_configuration.restore_backup()
+        if errors_were_raised or restore_required:
             errors_were_raised_str = "with errors"
+
+        if restore_required and initial_configuration:
+                initial_configuration.restore_backup()
             
         end = datetime.datetime.now()
         log(f"Execution completed {errors_were_raised_str} in: {end - start}")
@@ -173,7 +197,7 @@ def main():
         # Upload the logs
         try:
             if upload_logs:
-                if errors_were_raised and configuration and initial_configuration and initial_server:
+                if restore_required and configuration and initial_configuration and initial_server:
                     initial_server.upload_failure_report(configuration.server, initial_configuration.server)
                 else:
                     if not configuration:
@@ -195,12 +219,22 @@ def calibrate():
     The resulting datset will be used to estimate the correct 
     shutter speed for any given target luminance.
     """
-    constants.CAMERA_LOG = CALIBRATION_LOG
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s',
+        handlers=[
+            logging.FileHandler(constants.CALIBRATION_LOG),
+            logging.StreamHandler(sys.stdout),
+        ]
+    )
+
     log_row()
     log("Start calibration routine")
     try:
         configuration = Configuration()
         camera = Camera(configuration)
+
+        # The format of the resulting data is initial_luminance,final_luminance,speed
         camera.gather_calibration_data()
         
         if not os.path.exists(CALIBRATION_CRONJOB_FILE):
@@ -214,7 +248,7 @@ def calibrate():
                 now.month = now.month + 1
             system = System()
             cron_strings = system.prepare_crontab_string({}, {
-                "minute": "*/10",
+                "minute": "*/11",  # Also try to avoid colliding with the main camera process
                 "hour": "4-8,17-20",
                 "day": f"{now.day}-{now.day+1}",
                 "month": f"{now.month}",
@@ -236,7 +270,6 @@ def calibrate():
         log_error("An error occurred during the calibration procedure. Exiting.", e)
     finally:
         log_row()
-
 
 
 
