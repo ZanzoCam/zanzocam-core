@@ -116,8 +116,9 @@ def video_feed():
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
 def get_logs_endpoint(kind: str, name: str):
-    return api.get_logs(kind, name)
-    
+    if kind in ["json", "text"] and name in ["hotspot", "picture"]:
+        return api.get_logs(kind, name)
+    abort(404)
 
 #
 # Error handlers
