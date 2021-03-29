@@ -8,6 +8,16 @@ from flask import send_from_directory
 
 
 
+def video_streaming_generator(camera):
+    """
+    Generates the stream of pictures for the camera video preview.
+    """
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
 def clear_logs(logs_path: Path):
     """
     Wipes a log file.

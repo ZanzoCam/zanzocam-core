@@ -1,10 +1,10 @@
 import sys
 import logging
 from pathlib import Path
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, Response, render_template, redirect, url_for, request
 
 import constants
-from web_ui import pages, api
+from web_ui import pages, api, utils, video_feed
 
 
 app = Flask(__name__)
@@ -105,6 +105,13 @@ def shoot_picture_endpoint():
 @app.route("/preview-picture", methods=["GET"])
 def get_preview_endpoint():
     return api.get_preview()
+
+
+@app.route('/video-feed', methods=["GET"])
+def video_feed():
+    return Response(utils.video_streaming_generator(video_feed.Camera()), 
+            mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
