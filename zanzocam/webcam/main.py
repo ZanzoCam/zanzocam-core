@@ -168,18 +168,20 @@ def main():
     # Print the completion time anyway - this block is called even after a return!
     finally:
         
-        try:
-            log("Cleaning up image files")
-            os.remove(camera.temp_photo_path)
-            if server.final_image_path:
-                os.remove(server.final_image_path)
-            log("Cleanup complete")
+        if camera:        
+            try:
+                log("Cleaning up image files")
+                if os.path.exists(camera.temp_photo_path):
+                    os.remove(camera.temp_photo_path)
+                if server.final_image_path and os.path.exists(server.final_image_path):
+                    os.remove(server.final_image_path)
+                log("Cleanup complete")
 
-        except Exception as e:
-            errors_were_raised = True
-            log_error(f"Failed to clean up image files.", e)
-            log("WARNING: The filesystem might fill up if the old pictures "
-                "are not removed, which can cause ZANZOCAM to fail.")
+            except Exception as e:
+                errors_were_raised = True
+                log_error(f"Failed to clean up image files.", e)
+                log("WARNING: The filesystem might fill up if the old pictures "
+                    "are not removed, which can cause ZANZOCAM to fail.")
 
         # If we had trouble with the new config, restore the old from the backup
         # TODO assess the situation better! Maybe the failure is unrelated.
