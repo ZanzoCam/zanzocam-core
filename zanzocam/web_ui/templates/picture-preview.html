@@ -8,12 +8,7 @@
     a sistemare l'inquadratura e la messa a fuoco.
     </p>
 
-    <!-- https://www.geeksforgeeks.org/maintain-the-aspect-ratio-of-a-div-with-css/ -->
-    <div id="zanzocam-preview" style="padding-top:56%!important; background-color:#ccc; background-size: 100%; margin:30px auto; padding: 30px; border-radius:2rem;">
-        <button id="zanzocam-preview-button" class="button" onclick="refreshPreview();">Aggiorna</button>
-    </div>    
-
-    <img src="/video-feed" style="width:min(100%, 600px);">
+    <img id="preview" src="/video-preview" style="width:min(100%, 800px); min-height: 100px; border-radius:2rem; margin-bottom:3rem; background-color:#ccc;">
     
     <p>
     Quando inquadratura e messa a fuoco ti sembrano buone, premi Scatta Foto per inviare la prima foto al server.
@@ -36,19 +31,6 @@
     </div>
     
     <script>
-
-    // Update the camera preview:
-    function refreshPreview(){
-        document.getElementById("zanzocam-preview-button").innerHTML = "Caricamento...";
-        fetch("/preview-picture")
-        .then(r => {
-            document.getElementById("zanzocam-preview-button").innerHTML = "Aggiorna";
-            document.getElementById("zanzocam-preview").style.backgroundImage = "url('{{ preview_url }}?random="+ new Date().getTime() + "')";
-        })
-        
-    }
-    refreshPreview();
-
 
     // Function to poll the server
     const poll = async ({ fn, validate, delay, interval, maxAttempts }) => {
@@ -78,11 +60,10 @@
             return logs["content"];
         });
     };
-    
+
     // Send the shoot-picture command to the server and read the logs
     const shootPicture = async () => {
         document.getElementById("feedback").innerHTML = "ZANZOCAM sta scattando (non lasciare la pagina!)";
-        document.getElementById("zanzocam-preview-button").disabled = true;
         document.getElementById("shoot-picture").disabled = true;
         document.getElementById("shoot-picture").innerHTML = 'Sto scattando...';
         document.getElementById("logs-block").style.display = "block";
@@ -98,13 +79,16 @@
             })
             .catch(err => console.error(err));
         }, 1000);
-        
+
+        // Stop the preview
+        fetch("/video-preview/stop")
+        document.getElementById("preview").src = "";
+
         // Shoot the picture
         fetch("/shoot-picture", {
             method:'POST',
         })
         .then(response => {
-            document.getElementById("zanzocam-preview-button").disabled = false;
             document.getElementById("shoot-picture").disabled = false;
             document.getElementById("shoot-picture").innerHTML = 'Scatta Foto';
             if (!response.ok) {

@@ -1,7 +1,7 @@
 import sys
 import logging
 from pathlib import Path
-from flask import Flask, Response, render_template, redirect, url_for, request
+from flask import Flask, Response, render_template, redirect, url_for, abort, request
 
 import constants
 from web_ui import pages, api, utils, video_feed
@@ -107,10 +107,18 @@ def get_preview_endpoint():
     return api.get_preview()
 
 
-@app.route('/video-feed', methods=["GET"])
-def video_feed():
-    return Response(utils.video_streaming_generator(video_feed.Camera()), 
+
+@app.route('/video-preview', methods=["GET"])
+def video_preview_endpoint():
+    camera = video_feed.Camera()
+    return Response(camera.video_streaming_generator(), 
             mimetype='multipart/x-mixed-replace; boundary=frame')
+            
+
+@app.route('/video-preview/stop') #, methods=["POST"])
+def stop_video_preview_endpoint():
+    video_feed.stop_streaming()
+    return "", 200
 
 
 

@@ -231,8 +231,6 @@ class Camera:
         return int(target_shutter_speed)
 
 
-
-
     def shutter_speed_from_path(self, path: Path) -> int:
         """
         Given a path to a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)

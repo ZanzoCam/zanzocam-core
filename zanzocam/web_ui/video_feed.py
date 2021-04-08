@@ -1,10 +1,12 @@
 # Thanks to https://github.com/miguelgrinberg/flask-video-streaming
 
-
 import io
 import time
 import picamera
 import threading
+import subprocess
+
+from constants import STREAM_FLAG
 
 try:
     from greenlet import getcurrent as get_ident
@@ -66,6 +68,7 @@ class BaseCamera(object):
     def __init__(self):
         """Start the background camera thread if it isn't running yet."""
         if BaseCamera.thread is None:
+            BaseCamera.first_access = time.time()
             BaseCamera.last_access = time.time()
 
             # start background frame thread
@@ -102,24 +105,23 @@ class BaseCamera(object):
             time.sleep(0)
 
             # if there hasn't been any clients asking for frames in
-            # the last 10 seconds then stop the thread
-            if time.time() - BaseCamera.last_access > 10:
+            # the last second then stop the thread
+            if time.time() - BaseCamera.last_access > 1 or BaseCamera.first_access - BaseCamera.last_access > 10:
                 frames_iterator.close()
-                print('Stopping camera thread due to inactivity.')
+                print('Stopping camera thread: no requests.')
                 break
         BaseCamera.thread = None
 
 
 class Camera(BaseCamera):
+
     @staticmethod
     def frames():
         with picamera.PiCamera() as camera:
-            # let camera warm up
-            time.sleep(2)
-
             stream = io.BytesIO()
-            for _ in camera.capture_continuous(stream, 'jpeg',
-                                                 use_video_port=True):
+            for _ in camera.capture_continuous(stream, 'jpeg', use_video_port=True):
+                
+                time.sleep(1/50)
                 # return current frame
                 stream.seek(0)
                 yield stream.read()
@@ -127,3 +129,23 @@ class Camera(BaseCamera):
                 # reset stream for next frame
                 stream.seek(0)
                 stream.truncate()
+
+
+    def video_streaming_generator(self):
+        """
+        Generates the stream of pictures for the camera video preview.
+        """
+        with open(STREAM_FLAG, "w") as s:
+            s.write("STREAM")
+
+        while subprocess.check_output(['/usr/bin/cat', STREAM_FLAG]) == b"STREAM":
+            frame = self.get_frame()
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+        print(f"----- STOPPED STREAMING: FLAG IS {subprocess.check_output(['/usr/bin/cat', STREAM_FLAG])}")
+
+
+def stop_streaming():
+    with open(STREAM_FLAG, "w"):
+        pass

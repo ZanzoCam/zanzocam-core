@@ -14,6 +14,8 @@ ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
 BASE_PATH = Path(__file__).parent
 DATA_PATH = BASE_PATH / "data" 
 
+STREAM_FLAG = DATA_PATH / "stream.flag"
+
 # Log files
 SERVER_LOG = DATA_PATH / 'error.log'
 CAMERA_LOG = DATA_PATH / 'camera.log'
