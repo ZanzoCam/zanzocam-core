@@ -1,5 +1,6 @@
 import sys
 import logging
+from time import sleep
 from pathlib import Path
 from flask import Flask, Response, render_template, redirect, url_for, abort, request
 
@@ -38,11 +39,6 @@ def webcam_endpoint():
     return pages.webcam()
 
 
-@app.route("/webcam-calibration", methods=['GET'])
-def low_light_calibration_endpoint():
-    return pages.low_light_calibration()
-
-
 
 #
 # API for setting configuration values
@@ -69,25 +65,6 @@ def toggle_hotspot_endpoint(value):
     return api.toggle_hotspot(value)
 
 
-@app.route("/configure/low-light-calibration/<value>", methods=["POST"])
-def toggle_calibration_endpoint(value):
-    return api.toggle_calibration(value)
-
-
-@app.route("/configure/low-light-calibration-data", methods=['POST'])
-def save_calibration_data_endpoint():
-    data = request.form.get('calibration-data')
-    api.save_calibration_data(data)
-    return redirect(url_for('low_light_calibration_endpoint'))
-
-
-@app.route("/configure/low-light-calibrated_values", methods=['GET'])
-def apply_calibrated_values_endpoint():
-    feedback = api.apply_calibrated_values(request.args)
-    if feedback == "":
-        return redirect(url_for('low_light_calibration_endpoint', feedback="Valori impostati con successo."))
-    return redirect(url_for('low_light_calibration_endpoint', feedback=feedback))
-
 
 #
 # API to take actions
@@ -95,6 +72,8 @@ def apply_calibrated_values_endpoint():
 
 @app.route("/shoot-picture", methods=["POST"])
 def shoot_picture_endpoint():
+    sleep(5)  # Time needed to close the video stream
+    utils.clear_logs(constants.PICTURE_LOGS)
     return "", api.shoot_picture()
 
 
@@ -102,24 +81,11 @@ def shoot_picture_endpoint():
 # API to fetch data
 #
 
-@app.route("/preview-picture", methods=["GET"])
-def get_preview_endpoint():
-    return api.get_preview()
-
-
-
 @app.route('/video-preview', methods=["GET"])
 def video_preview_endpoint():
     camera = video_feed.Camera()
     return Response(camera.video_streaming_generator(), 
             mimetype='multipart/x-mixed-replace; boundary=frame')
-            
-
-@app.route('/video-preview/stop') #, methods=["POST"])
-def stop_video_preview_endpoint():
-    video_feed.stop_streaming()
-    return "", 200
-
 
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
@@ -127,6 +93,7 @@ def get_logs_endpoint(kind: str, name: str):
     if kind in ["json", "text"] and name in ["hotspot", "picture"]:
         return api.get_logs(kind, name)
     abort(404)
+
 
 #
 # Error handlers

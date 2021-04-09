@@ -8,7 +8,7 @@
     a sistemare l'inquadratura e la messa a fuoco.
     </p>
 
-    <img id="preview" src="/video-preview" style="width:min(100%, 800px); min-height: 100px; border-radius:2rem; margin-bottom:3rem; background-color:#ccc;">
+    <img id="preview" src="/video-preview" style="width:min(100%, 800px); min-height: 10px; border-radius:0.5rem; margin-bottom:3rem; background-color:#ccc;">
     
     <p>
     Quando inquadratura e messa a fuoco ti sembrano buone, premi Scatta Foto per inviare la prima foto al server.
@@ -26,14 +26,10 @@
 
     <p id="feedback" class="center"></p>
 
-    <div class="center">
-        <p><a href="/webcam-calibration" class="button center">Calibrazione foto scure</a><br></p>        
-    </div>
-    
     <script>
 
     // Function to poll the server
-    const poll = async ({ fn, validate, delay, interval, maxAttempts }) => {
+    const poll = async ({ fn, validate, interval, maxAttempts }) => {
         let attempts = 0;
         const executePoll = async (resolve, reject) => {
             const result = await fn();
@@ -50,6 +46,7 @@
     
     // Ask the server for new logs
     var startingMessage = "";
+
     const askForLogs = async () => {
         return fetch("/logs/json/picture")
         .then(response => response.json())
@@ -63,26 +60,25 @@
 
     // Send the shoot-picture command to the server and read the logs
     const shootPicture = async () => {
+        document.getElementById("logs").value = "Starting...\n\n";
         document.getElementById("feedback").innerHTML = "ZANZOCAM sta scattando (non lasciare la pagina!)";
         document.getElementById("shoot-picture").disabled = true;
         document.getElementById("shoot-picture").innerHTML = 'Sto scattando...';
         document.getElementById("logs-block").style.display = "block";
-        startingMessage = "Running...\n\n";
-
+        document.getElementById("preview").src = "";
+        
         // Start to poll
         setTimeout(function(){
-            poll({
-                fn: askForLogs,
-                validate: function(result){ return (result.includes("Execution completed")); },
-                delay: 1000,
-                interval: 1000
-            })
-            .catch(err => console.error(err));
-        }, 1000);
-
-        // Stop the preview
-        fetch("/video-preview/stop")
-        document.getElementById("preview").src = "";
+            startingMessage = "Running...\n\n";
+            setTimeout(function(){
+                poll({
+                    fn: askForLogs,
+                    validate: function(result){ return (result.includes("Execution completed")); },
+                    interval: 1000,
+                })
+                .catch(err => console.error(err));
+            }, 1000);
+        }, 2000);  // Initial delay
 
         // Shoot the picture
         fetch("/shoot-picture", {

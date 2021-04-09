@@ -154,7 +154,8 @@ class Camera:
 
         final_luminance = self.luminance_from_path(str(self.temp_photo_path))
         log(f"The final luminance is {final_luminance:.2f}, with shutter speed: {shutter_speed}.")
-
+	
+        #final_luminance = -20
         # Save data
         execution_time = time() - start_time
         with open("low_light_data", 'a') as table:

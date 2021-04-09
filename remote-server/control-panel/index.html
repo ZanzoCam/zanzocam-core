@@ -544,6 +544,7 @@
                     <div class="column">
                         <label class="label-inline">Frequenza scatti:</label>
                         <select name="time__frequency">
+                          <option value=0 >Manuale</option>
                           <option value=5 >Ogni 5 minuti</option>
                           <option value=10 >Ogni 10 minuti</option>
                           <option value=15 >Ogni 15 minuti</option>
@@ -557,37 +558,34 @@
                     </div>
                 </div>
 
-                <details>
-                    <summary>Modalita' esperto (configuratione crontab diretta)</summary>
-                    
-                    <p>
-                    <br>
-                    <b>NOTA BENE:</b> se anche uno solo di questi campi contiene un valore, 
-                    la frequenza definita sopra verra' ignorata.
-                    </p>
-                    <div class="row">
-                        <div class="column">
-                            <label class="label-inline">Minuti:</label>
-                            <input type="text" placeholder="*"  name="crontab__minute">
-                        </div>
-                        <div class="column">
-                            <label class="label-inline">Ora:</label>
-                            <input type="text" placeholder="*"  name="crontab__hour">
-                        </div>
-                        <div class="column">
-                            <label class="label-inline">Giorno:</label>
-                            <input type="text" placeholder="*"  name="crontab__day">
-                        </div>
-                        <div class="column">
-                            <label class="label-inline">Mese:</label>
-                            <input type="text" placeholder="*"  name="crontab__month">
-                        </div>
-                        <div class="column">
-                            <label class="label-inline">G. settimana:</label>
-                            <input type="text" placeholder="*"  name="crontab__weekday">
-                        </div>
+                <p>Modalita' manuale (configuratione crontab diretta)
+                <br>
+                <b>NOTA BENE:</b> Questi valori vengono usati solo se selezioni 
+                "Manuale" come frequenza di scatto.
+                </p>
+                <div class="row">
+                    <div class="column">
+                        <label class="label-inline">Minuti:</label>
+                        <input type="text" placeholder="*"  name="crontab__minute">
                     </div>
-                </details>
+                    <div class="column">
+                        <label class="label-inline">Ora:</label>
+                        <input type="text" placeholder="*"  name="crontab__hour">
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">Giorno:</label>
+                        <input type="text" placeholder="*"  name="crontab__day">
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">Mese:</label>
+                        <input type="text" placeholder="*"  name="crontab__month">
+                    </div>
+                    <div class="column">
+                        <label class="label-inline">G. settimana:</label>
+                        <input type="text" placeholder="*"  name="crontab__weekday">
+                    </div>
+                </div>
+
             </div>
             
      <!-------------------------------------------------------------------------->

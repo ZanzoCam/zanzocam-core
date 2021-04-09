@@ -274,58 +274,60 @@ class System:
         """
         Modifies the system according to the new configuration.
         """
-        if 'crontab' in vars(configuration).keys() or 'time' in vars(configuration).keys():
-            self.update_crontab(getattr(configuration, "time", {}), getattr(configuration, "crontab", {}))
+        if 'time' in vars(configuration).keys():
+            self.update_crontab(getattr(configuration, "time", {}))
 
-    def prepare_crontab_string(self, time: Dict, cron: Dict) -> List[str]:
+    def prepare_crontab_string(self, time: Dict) -> List[str]:
         """
-        Converts time and cron directives from the configuration file into
+        Converts time directives from the configuration file into
         the content of the crontab itself.
         Return a list of strings, where each is a crontab line.
         """
         cron_strings = []
 
         # If a time in minutes is given, calculate the equivalent cron values
-        if time:
-            frequency = time.get("frequency", "60")
-            start_time = time.get("start_activity", "00:00:00").split(":")[:2]
-            stop_time = time.get("stop_activity", "23:59:00").split(":")[:2]
-
-            # Converting each value into the total value in minutes
-            try:
-                frequency = int(frequency)
-            except Exception as e:
-                log_error("Could not convert the frequency value to minutes! Using fallback value of 10 minutes")
-                frequency = 10
-            
-            try:
-                start_total_minutes = int(start_time[0])*60 + int(start_time[1])
-            except ValueError as e:
-                log_error(f"Could not read start time ({start_time}) as a valid time! Setting it to midnight (00:00).")
-                start_total_minutes = 0
-
-            try:
-                stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
-            except ValueError as e:
-                log_error(f"Could not read stop time ({stop_time}) as a valid time! Setting it to midnight (23:59).")
-                stop_total_minutes = 23*60 + 59
-
-            # Compute every trigger time and save a cron string
-            while(start_total_minutes < stop_total_minutes):
-                hour = math.floor(start_total_minutes/60)
-                minute = start_total_minutes - (hour*60)
-                cron_strings.append(f"{minute} {hour} * * *")
-                start_total_minutes += frequency
-
-        # If instead cron is given, only create one string with the given cron parameters
-        if cron:
+        frequency = time.get("frequency", "60")
+        
+        # Frequency might be zero, which means the crontab is set up manually
+        if not frequency:
             cron_strings = [" ".join([
-                cron.get('minute', '*'),
-                cron.get('hour', '*'),
-                cron.get('day', '*'),
-                cron.get('month', '*'),
-                cron.get('weekday', '*')
+                time.get('minute', '*'),
+                time.get('hour', '*'),
+                time.get('day', '*'),
+                time.get('month', '*'),
+                time.get('weekday', '*')
             ])]
+            return cron_strings
+
+        # If the frequency is given, calculate all the cron strings
+        start_time = time.get("start_activity", "00:00:00").split(":")[:2]
+        stop_time = time.get("stop_activity", "23:59:00").split(":")[:2]
+
+        # Converting each value into the total value in minutes
+        try:
+            frequency = int(frequency)
+        except Exception as e:
+            log_error("Could not convert the frequency value to minutes! Using fallback value of 10 minutes")
+            frequency = 10
+        
+        try:
+            start_total_minutes = int(start_time[0])*60 + int(start_time[1])
+        except ValueError as e:
+            log_error(f"Could not read start time ({start_time}) as a valid time! Setting it to midnight (00:00).")
+            start_total_minutes = 0
+
+        try:
+            stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
+        except ValueError as e:
+            log_error(f"Could not read stop time ({stop_time}) as a valid time! Setting it to midnight (23:59).")
+            stop_total_minutes = 23*60 + 59
+
+        # Compute every trigger time and save a cron string
+        while(start_total_minutes < stop_total_minutes):
+            hour = math.floor(start_total_minutes/60)
+            minute = start_total_minutes - (hour*60)
+            cron_strings.append(f"{minute} {hour} * * *")
+            start_total_minutes += frequency
 
         return cron_strings
 

@@ -106,9 +106,11 @@ class BaseCamera(object):
 
             # if there hasn't been any clients asking for frames in
             # the last second then stop the thread
-            if time.time() - BaseCamera.last_access > 1 or BaseCamera.first_access - BaseCamera.last_access > 10:
+            print(f'request: {time.time() - BaseCamera.last_access}')
+
+            if time.time() - BaseCamera.last_access > 5:
                 frames_iterator.close()
-                print('Stopping camera thread: no requests.')
+                print('Stopping camera thread: no requests for more than 5 seconds.')
                 break
         BaseCamera.thread = None
 
@@ -135,17 +137,17 @@ class Camera(BaseCamera):
         """
         Generates the stream of pictures for the camera video preview.
         """
-        with open(STREAM_FLAG, "w") as s:
-            s.write("STREAM")
+        #with open(STREAM_FLAG, "w") as s:
+        #    s.write("STREAM")
 
-        while subprocess.check_output(['/usr/bin/cat', STREAM_FLAG]) == b"STREAM":
+        while True: #subprocess.check_output(['/usr/bin/cat', STREAM_FLAG]) == b"STREAM":
             frame = self.get_frame()
             yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        print(f"----- STOPPED STREAMING: FLAG IS {subprocess.check_output(['/usr/bin/cat', STREAM_FLAG])}")
+        #print(f"----- STOPPED STREAMING: FLAG IS {subprocess.check_output(['/usr/bin/cat', STREAM_FLAG])}")
 
 
-def stop_streaming():
-    with open(STREAM_FLAG, "w"):
-        pass
+#def stop_streaming():
+#    with open(STREAM_FLAG, "w"):
+#        pass
