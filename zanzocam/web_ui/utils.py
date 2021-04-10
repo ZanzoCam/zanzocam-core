@@ -18,11 +18,11 @@ def get_version():
     Retrieves the ZANZOCAM version string
     """
     try:
-        VERSION = version("zanzocam")
+        return version("zanzocam")
     except PackageNotFoundError as e:
-        VERSION = "no_version_found"
         logging.warning(f"Could not get version information: {e}")
-
+        return "no_version_found"
+        
 
 def clear_logs(logs_path: Path):
     """
