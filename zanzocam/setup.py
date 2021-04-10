@@ -58,6 +58,7 @@ setup(
     entry_points={
         'console_scripts': [
             'z-webcam=webcam.main:main',
+            'z-webcam-from-ui=webcam.main:main_keep_ui_alive',
             'z-ui=web_ui.endpoints:main',
         ],
     },

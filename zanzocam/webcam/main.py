@@ -17,7 +17,11 @@ from webcam.errors import ServerError
 from webcam.utils import log, log_error, log_row
 
 
-def main():
+def main_keep_ui_alive():
+    main(keep_ui_alive=True)
+
+
+def main(keep_ui_alive=False):
     """
     Main script coordinating all operations.
     """
@@ -46,8 +50,8 @@ def main():
         locale.setlocale(locale.LC_ALL, 'it_IT.utf8')
 
         system = System()
-        status = system.report_general_status()  # TODO this can check if it's online and switch
-                                                 #  to offline mode if not (issue #7)
+        status = system.report_general_status(keep_ui_alive=keep_ui_alive)  
+        
         log("Status report:")
         for key, value in status.items():
             log(f" - {key}: {value}")

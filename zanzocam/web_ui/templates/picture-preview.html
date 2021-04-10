@@ -54,6 +54,7 @@
             var textarea = document.getElementById("logs")
             textarea.value = startingMessage + logs["content"]; 
             textarea.scrollTop = textarea.scrollHeight;
+            console.log(logs['content']);
             return logs["content"];
         });
     };

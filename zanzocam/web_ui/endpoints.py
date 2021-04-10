@@ -10,6 +10,16 @@ from web_ui import pages, api, utils, video_feed
 
 app = Flask(__name__)
 
+# Prevent caching: can break the logs fetching client-side
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-store"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
+
+
 # Setup the logging
 logging.basicConfig(
     level=logging.INFO,
@@ -65,15 +75,12 @@ def toggle_hotspot_endpoint(value):
     return api.toggle_hotspot(value)
 
 
-
 #
 # API to take actions
 #
 
 @app.route("/shoot-picture", methods=["POST"])
 def shoot_picture_endpoint():
-    sleep(5)  # Time needed to close the video stream
-    utils.clear_logs(constants.PICTURE_LOGS)
     return "", api.shoot_picture()
 
 
@@ -86,7 +93,6 @@ def video_preview_endpoint():
     camera = video_feed.Camera()
     return Response(camera.video_streaming_generator(), 
             mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
 def get_logs_endpoint(kind: str, name: str):

@@ -27,7 +27,7 @@ class System:
         pass
     
     
-    def report_general_status(self) -> Dict:
+    def report_general_status(self, keep_ui_alive: bool = True) -> Dict:
         """ 
         Collect general system data like version, uptime, internet connectivity. 
         In all cases, None means that the value could not be retrieved
@@ -45,7 +45,29 @@ class System:
         self.status['internet access'] = self.check_internet_connectivity()
         self.status['disk size'] = self.get_filesystem_size()
         self.status['free disk space'] = self.get_free_space_on_disk()
+        if not keep_ui_alive:
+            self.status['web ui'] = "restarted" if self.restart_ui() else "not restarted"
         return self.status
+
+
+    def restart_ui(self):
+        try:
+            start_ui = subprocess.Popen(["/usr/bin/sudo", 'systemctl', 'restart', 'zanzocam-web-ui'], 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.STDOUT)
+            stdout, stderr = start_ui.communicate()
+            stdout = stdout.decode("utf-8")
+            return True
+            
+            if start_ui.returncode != 0:
+                log_error("The UI could not be restarted! Return code: "
+                          f"{start_ui.returncode}.")
+                return False
+
+        except Exception as e:
+            log_error("The UI could not be restarted!", e)
+            return False
+               
 
     def get_version(self) -> Optional[str]:
         """ 

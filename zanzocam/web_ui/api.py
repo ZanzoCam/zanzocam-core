@@ -150,40 +150,11 @@ def shoot_picture():
     clear_logs(PICTURE_LOGS)
     try:
         with open(PICTURE_LOGS, 'w') as l:                
-            shoot_proc = subprocess.run([ZANZOCAM_EXECUTABLE], stdout=l, stderr=l)
+            shoot_proc = subprocess.run([ZANZOCAM_EXECUTABLE_KEEP_UI], stdout=l, stderr=l)
             
     except subprocess.CalledProcessError as e:
         with open(PICTURE_LOGS, 'a') as l:
             l.writelines(f"Si e' verificato un errore: {e}")
         return 500
     return 200
-
-
-def save_calibration_data(data: str):
-    """
-    Saves a modified calibration data table.
-    """
-    data_lines = [line.strip()+"\n" for line in data.split("\n")]
-    with open(CALIBRATION_DATASET, 'w') as c:
-        c.writelines(data_lines)
-
-
-def apply_calibrated_values(form_data):
-    """ 
-    Set the calibrated A and B values.
-    """
-    a_value = form_data.get('a')
-    b_value = form_data.get('b')
-
-    if not a_value or not b_value:
-        return "Non puoi settare parametri non calcolati!"
-
-    try:
-        with open(CALIBRATED_PARAMS, "w") as f:
-            f.write(f"{a_value},{b_value}")
-        return ""
-    except Exception as e:
-        return f"Si e' verificato un errore: {e}"
-
-
 

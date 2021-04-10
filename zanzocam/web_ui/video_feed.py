@@ -17,6 +17,7 @@ except ImportError:
         from _thread import get_ident
 
 
+
 class CameraEvent(object):
     """An Event-like class that signals all active clients when a new frame is
     available.
@@ -59,21 +60,22 @@ class CameraEvent(object):
         self.events[get_ident()][0].clear()
 
 
-class BaseCamera(object):
+
+class Camera(object):
     thread = None  # background thread that reads frames from camera
     frame = None  # current frame is stored here by background thread
     last_access = 0  # time of last client access to the camera
+    stop_camera = False
     event = CameraEvent()
 
     def __init__(self):
         """Start the background camera thread if it isn't running yet."""
-        if BaseCamera.thread is None:
-            BaseCamera.first_access = time.time()
-            BaseCamera.last_access = time.time()
+        if Camera.thread is None:
+            Camera.last_access = time.time()
 
             # start background frame thread
-            BaseCamera.thread = threading.Thread(target=self._thread)
-            BaseCamera.thread.start()
+            Camera.thread = threading.Thread(target=self._thread)
+            Camera.thread.start()
 
             # wait until frames are available
             while self.get_frame() is None:
@@ -81,41 +83,35 @@ class BaseCamera(object):
 
     def get_frame(self):
         """Return the current camera frame."""
-        BaseCamera.last_access = time.time()
+        Camera.last_access = time.time()
 
         # wait for a signal from the camera thread
-        BaseCamera.event.wait()
-        BaseCamera.event.clear()
+        Camera.event.wait()
+        Camera.event.clear()
 
-        return BaseCamera.frame
-
-    @staticmethod
-    def frames():
-        """"Generator that returns frames from the camera."""
-        raise RuntimeError('Must be implemented by subclasses.')
+        return Camera.frame
 
     @classmethod
     def _thread(cls):
         """Camera background thread."""
         print('Starting camera thread.')
+
         frames_iterator = cls.frames()
         for frame in frames_iterator:
-            BaseCamera.frame = frame
-            BaseCamera.event.set()  # send signal to clients
+            cls.frame = frame
+            cls.event.set()  # send signal to clients
             time.sleep(0)
 
             # if there hasn't been any clients asking for frames in
             # the last second then stop the thread
-            print(f'request: {time.time() - BaseCamera.last_access}')
-
-            if time.time() - BaseCamera.last_access > 5:
+            # FIXME this mechanism sadly doesn't work....
+            if time.time() - cls.last_access > 1 or cls.stop_camera:
                 frames_iterator.close()
-                print('Stopping camera thread: no requests for more than 5 seconds.')
+                print('No requests received for more than 5 seconds.')
                 break
-        BaseCamera.thread = None
 
-
-class Camera(BaseCamera):
+        print("Stopping camera thread.")
+        Camera.thread = None
 
     @staticmethod
     def frames():
@@ -123,7 +119,7 @@ class Camera(BaseCamera):
             stream = io.BytesIO()
             for _ in camera.capture_continuous(stream, 'jpeg', use_video_port=True):
                 
-                time.sleep(1/50)
+                time.sleep(1/30)
                 # return current frame
                 stream.seek(0)
                 yield stream.read()
@@ -132,22 +128,12 @@ class Camera(BaseCamera):
                 stream.seek(0)
                 stream.truncate()
 
-
     def video_streaming_generator(self):
         """
         Generates the stream of pictures for the camera video preview.
         """
-        #with open(STREAM_FLAG, "w") as s:
-        #    s.write("STREAM")
-
-        while True: #subprocess.check_output(['/usr/bin/cat', STREAM_FLAG]) == b"STREAM":
+        while not Camera.stop_camera:
             frame = self.get_frame()
-            yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-        #print(f"----- STOPPED STREAMING: FLAG IS {subprocess.check_output(['/usr/bin/cat', STREAM_FLAG])}")
-
-
-#def stop_streaming():
-#    with open(STREAM_FLAG, "w"):
-#        pass
+            if frame:
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')

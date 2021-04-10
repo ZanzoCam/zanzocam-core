@@ -9,6 +9,7 @@ from pathlib import Path
 # Executables constants
 SYSTEM_USER = "zanzocam-bot"
 ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
+ZANZOCAM_EXECUTABLE_KEEP_UI = "/home/zanzocam-bot/venv/bin/z-webcam-from-ui"
 
 # Base paths
 BASE_PATH = Path(__file__).parent

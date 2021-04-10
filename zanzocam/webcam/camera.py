@@ -73,7 +73,7 @@ class Camera:
         self.process_picture()
 
 
-    def _prepare_camera_object(self, expanded_framerate_range: bool = True) -> int:
+    def _prepare_camera_object(self, expanded_framerate_range: bool = False) -> int:
         """ 
         Sets up the camera object in a consistent way. Returns the PiCamera object, ready to use.
         if `expanded_framerate_range` is given, framerate_range is set to (1/10, 90).
@@ -81,9 +81,9 @@ class Camera:
         """
          # NOTE: let exceptions here escalate. Do not catch or at least rethrow!
         if expanded_framerate_range:
-            camera = PiCamera()
-        else:
             camera = PiCamera(framerate_range=(Fraction(1, 10), Fraction(90, 1)))
+        else:
+            camera = PiCamera()
 
         if int(self.width) > camera.MAX_RESOLUTION.width:
             log(f"WARNING! The requested image width ({self.width}) "
@@ -111,7 +111,7 @@ class Camera:
         log("Taking picture...")
         camera.capture(str(self.temp_photo_path))
         log(f"Picture taken (exposure speed: {camera.exposure_speed/10**6:.4f}, "
-            f"shutter speed: {camera.shutter_speed/10**6:.4f})")
+            f"shutter speed: {camera.shutter_speed/10**6:.4f}, iso: {camera.iso})")
             
 
     def shoot_picture(self) -> None:
@@ -152,7 +152,7 @@ class Camera:
         log(f"Taking one more picture with the final parameters "
             f"(shutter speed: {shutter_speed/10**6:.2f}s, ISO: {iso})")
 
-        with self._prepare_camera_object() as camera:
+        with self._prepare_camera_object(expanded_framerate_range=True) as camera:
             camera.shutter_speed = shutter_speed
             camera.iso = iso
             
@@ -181,24 +181,30 @@ class Camera:
         log(f"Low light detected: {initial_luminance:.2f} (lower bound is {MINIMUM_DAYLIGHT_LUMINANCE})")
         log(f"Trying to get a brighter image. "
             f"Target luminance: {target_luminance:.2f} (tolerance: {TARGET_LUMINOSITY_MARGIN}), "
-            f"max exposure time: {MAX_SHUTTER_SPEED}, initial ISO: {ISO}")
-        
+            f"max exposure time: {MAX_SHUTTER_SPEED/10**6:.2f}, initial ISO: {ISO}")
+
+        # When luminance is <1, the equation doesn't work very well and 
+        # gives an overestimated shutter speed value. So we'd rather
+        # attempt a random 2sec shot to get a better initial estimate
+        # of the actual ambient luminance and try again
+        if initial_luminance < 1:
+            log(f"Luminance is below {NO_LUMINANCE_THRESHOLD}: shutter speed set to {NO_LUMINANCE_SHUTTER_SPEED/10**6:.2f}s")
+            shutter_speed = NO_LUMINANCE_SHUTTER_SPEED
+        else:
+            shutter_speed = MIN_SHUTTER_SPEED
+    
         new_luminance = initial_luminance
-        shutter_speed = MIN_SHUTTER_SPEED
 
         # Note that we're looping within this block for a reason!
         # Re-initializing the camera for every picture would take a lot of
         # time and require a warm-up of at least 5 seconds every time.
-        with self._prepare_camera_object() as camera:
+        with self._prepare_camera_object(expanded_framerate_range=True) as camera:
 
             camera.iso = ISO
             log(f"Camera warm-up ({CAMERA_WARM_UP_TIME}s)...")
             sleep(CAMERA_WARM_UP_TIME)
 
             for attempt in range(1, 10):
-
-                # Compute the shutter speed
-                shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
 
                 # Take the picture & check the luminance
                 #camera.framerate = (10**6) / (shutter_speed)
@@ -236,6 +242,9 @@ class Camera:
                     log(f"# {attempt}: OK! Luminance achieved: {new_luminance:.2f}")
                     return new_luminance, shutter_speed, camera.iso, attempt
 
+                # Compute the shutter speed and loop
+                shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
+
             # Exit condition - 10 iterations      
             log_error(f"The low light algorithm failed! "
                       f"Returning the last values (shutter speed: {shutter_speed}, luminance: {new_luminance}, iso: {camera.iso})")
@@ -247,14 +256,6 @@ class Camera:
         Given a starting luminance, computes the best estimate of 
         the shutter speed needed to achieve the target luminance.
         """
-        # When luminance is <1, the equation doesn't work very well and 
-        # gives an overestimated shutter speed value. So we'd rather
-        # attempt a random 2sec shot to get a better initial estimate
-        # of the actual ambient luminance and try again
-        if initial_luminance < 1:
-            log(f"Luminance is below {NO_LUMINANCE_THRESHOLD}: shutter speed set to 2s")
-            shutter_speed = NO_LUMINANCE_SHUTTER_SPEED
-
         target_shutter_speed = (shutter_speed / initial_luminance) * target_luminance
 
         if target_shutter_speed > MAX_SHUTTER_SPEED:

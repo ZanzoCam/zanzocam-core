@@ -1,5 +1,6 @@
 from typing import Dict, Callable, List
 
+import os
 import json
 import logging
 from pathlib import Path
@@ -27,8 +28,8 @@ def clear_logs(logs_path: Path):
     """
     Wipes a log file.
     """
-    with open(logs_path, 'w') as d:
-        pass
+    if os.path.exists(logs_path):
+        os.remove(logs_path)
 
 
 def _read_data_file(path: Path, default: str, action: Callable, catch_errors: bool=True):
