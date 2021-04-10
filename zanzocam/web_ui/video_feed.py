@@ -6,8 +6,6 @@ import picamera
 import threading
 import subprocess
 
-from constants import STREAM_FLAG
-
 try:
     from greenlet import getcurrent as get_ident
 except ImportError:
