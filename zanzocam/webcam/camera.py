@@ -16,15 +16,6 @@ from webcam.overlays import Overlay
 from webcam.configuration import Configuration 
 
 
-ISO = 400  # Starting ISO level for low light pictures
-NO_LUMINANCE_THRESHOLD = 1  # When to consider the image totally black
-NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6  # What "random" shutter speed to use if the image is so black that the equation doesn't work
-MIN_SHUTTER_SPEED = int(0.03 * 10**6)  # Min shutter speed that PiCamera would use with automatic settings
-MAX_SHUTTER_SPEED = int(9.5 * 10**6)  # Max shutter speed allowed by the hardware 
-TARGET_LUMINOSITY_MARGIN = 3  # how much tolerance to give to the low light search algorithm
-CAMERA_WARM_UP_TIME = 5  # Time to allow the firmware to compute the right exposure in normal light conditions (AWB requires more)
-
-
 class Camera:
     """
     Manages the pictures taking process.
@@ -166,11 +157,6 @@ class Camera:
         final_luminance = self.luminance_from_path(str(self.temp_photo_path))
         log(f"Final luminance: {final_luminance:.2f}.")
 
-        # Save data FIXME won't be needed soon
-        with open("low_light_data", 'a') as table:
-            table.write(f"{initial_luminance:.2f}\t\t{new_luminance:.2f}\t\t{final_luminance:.2f}\t\t"
-                        f"{shutter_speed/10**6:.2f}\t\t{ISO}\t\t{attempts}\n")
-
 
     def low_light_search(self, initial_luminance: int) -> Tuple[float, int, int, int]:
         """
@@ -181,7 +167,7 @@ class Camera:
         log(f"Low light detected: {initial_luminance:.2f} (lower bound is {MINIMUM_DAYLIGHT_LUMINANCE})")
         log(f"Trying to get a brighter image. "
             f"Target luminance: {target_luminance:.2f} (tolerance: {TARGET_LUMINOSITY_MARGIN}), "
-            f"max exposure time: {MAX_SHUTTER_SPEED/10**6:.2f}, initial ISO: {ISO}")
+            f"max exposure time: {MAX_SHUTTER_SPEED/10**6:.2f}, initial ISO: {INITIAL_LOW_LIGHT_ISO}")
 
         # When luminance is <1, the equation doesn't work very well and 
         # gives an overestimated shutter speed value. So we'd rather
@@ -200,7 +186,7 @@ class Camera:
         # time and require a warm-up of at least 5 seconds every time.
         with self._prepare_camera_object(expanded_framerate_range=True) as camera:
 
-            camera.iso = ISO
+            camera.iso = INITIAL_LOW_LIGHT_ISO
             log(f"Camera warm-up ({CAMERA_WARM_UP_TIME}s)...")
             sleep(CAMERA_WARM_UP_TIME)
 

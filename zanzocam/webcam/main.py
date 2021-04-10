@@ -45,6 +45,7 @@ def main(keep_ui_alive=False):
         errors_were_raised = False
         restore_required = False
         initial_configuration = None
+        camera = None
 
         # Setup locale
         locale.setlocale(locale.LC_ALL, 'it_IT.utf8')

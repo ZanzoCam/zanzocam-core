@@ -52,7 +52,7 @@ class Server:
         try:
             # Get the new configuration from the server
             configuration_data = self._server.download_new_configuration()
-            
+
             # If the old server replied something good, it's OK to backup its data.
             old_configuration.backup()
 

@@ -46,9 +46,9 @@ class FtpServer:
         try:
             if self.tls:
                 self._ftp_client = _Patched_FTP_TLS(host=self.hostname, 
-                                            user=self.username, 
-                                            passwd=self.password, 
-                                            timeout=REQUEST_TIMEOUT*2)
+                                                    user=self.username, 
+                                                    passwd=self.password, 
+                                                    timeout=REQUEST_TIMEOUT*2)
                 self._ftp_client.prot_p()  # Set up secure data connection.
             else:
                 self._ftp_client = FTP(host=self.hostname, 
@@ -72,10 +72,10 @@ class FtpServer:
         self.configuration_string = ""
         # Callback for the incoming data
         def store_line(line):
-            self.configuration_string += line
+            self.configuration_string += line.decode(FTP_CONFIG_FILE_ENCODING)
 
         # Fetch the new config
-        response = self._ftp_client.retrlines("RETR configuration/configuration.json", store_line)
+        response = self._ftp_client.retrbinary("RETR configuration/configuration.json", store_line)
 
         # Make sure the server did not reply with an error
         if "226" in response:

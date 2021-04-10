@@ -15,8 +15,6 @@ ZANZOCAM_EXECUTABLE_KEEP_UI = "/home/zanzocam-bot/venv/bin/z-webcam-from-ui"
 BASE_PATH = Path(__file__).parent
 DATA_PATH = BASE_PATH / "data" 
 
-STREAM_FLAG = DATA_PATH / "stream.flag"
-
 # Log files
 SERVER_LOG = DATA_PATH / 'error.log'
 CAMERA_LOG = DATA_PATH / 'camera.log'
@@ -65,6 +63,9 @@ REQUEST_TIMEOUT = 60
 CHECK_UPLINK_URL = "http://www.google.com"
 AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
 
+# Server constants
+FTP_CONFIG_FILE_ENCODING = 'utf-8'
+
 
 #
 #  Camera constants
@@ -74,24 +75,30 @@ AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
 # If the detected luminance goes below this value, the night mode kicks in.
 MINIMUM_DAYLIGHT_LUMINANCE = 60
 
-# Minimum luminance to try reaching in very dark conditions.
-# The actual luminance of night pictures might be a bit below this value.
+# Minimum luminance to target for pictures in low light conditions.
 MINIMUM_NIGHT_LUMINANCE = 30
 
-# Default parameters for the luminance/shutterspeed interpolation curve.
-# Calculated for a Raspberry Pi Camera v1.2
-# They can be overridden by custom calibrated parameters.
-LUM_SPEED_PARAM_A = 800000
-LUM_SPEED_PARAM_B = 200000
+# Starting ISO level for low light pictures
+INITIAL_LOW_LIGHT_ISO = 400  
 
-# luminance/shutterspeed interpolation: extremes for the shutter speed binary search
+# When to consider the image totally black, where the low light estimation doesn't work well
+NO_LUMINANCE_THRESHOLD = 1  
+
+# What "random" shutter speed to use if the image is so black that the equation doesn't work
+NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6 
+
+# Min shutter speed for low light, the max that PiCamera would use with automatic settings
 MIN_SHUTTER_SPEED = int(0.03 * 10**6)
-MAX_SHUTTER_SPEED = int(3 * 10**6)
-MULT_SHUTTER_SPEED = 1.5
 
-# Used in the binary search to give some margin to the luminosity
-# Matches if luminance = target +- this margin
-TARGET_LUMINOSITY_MARGIN = 1
+# Max shutter speed allowed by the camera hardware 
+MAX_SHUTTER_SPEED = int(9.5 * 10**6)
+
+# How much tolerance to give to the low light search algorithm
+TARGET_LUMINOSITY_MARGIN = 3
+
+# Time to allow the firmware to compute the right exposure in normal 
+# light conditions (AWB requires more)
+CAMERA_WARM_UP_TIME = 5
 
 # Fallback values for the camera configuration
 CAMERA_DEFAULTS = {
