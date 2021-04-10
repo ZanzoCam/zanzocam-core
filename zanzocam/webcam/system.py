@@ -51,6 +51,11 @@ class System:
 
 
     def restart_ui(self):
+        """
+        Restarts the web UI, to make sure it releases any handle to the camera
+        that it might have (ugly, but it does the job).
+        NOTE: if the web UI was stopped, this method will start it.
+        """
         try:
             start_ui = subprocess.Popen(["/usr/bin/sudo", 'systemctl', 'restart', 'zanzocam-web-ui'], 
                 stdout=subprocess.PIPE, 
