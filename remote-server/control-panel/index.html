@@ -673,9 +673,20 @@
 
                 <div class="row">
                     <div class="column">
-                        <label>Angolo Rotazione:</label>
-                        <input type="text" placeholder="0"  name="image__rotation">
+                        <label>Qualita' (JPEG):</label>
+                        <input type="text" name="image__quality">
                     </div>
+                    <div class="column">
+                        <label>Rotazione:</label>
+                        <select id="image__rotation">
+                            <option value="0">0</option>
+                            <option value="90">90</option>
+                            <option value="180">180</option>
+                            <option value="270">270</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="column color-selector">
                         <label>Colore Sfondo (RGBA):</label>
                         <select id="image__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
