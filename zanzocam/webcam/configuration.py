@@ -23,7 +23,7 @@ class Configuration:
 
         if not os.path.exists(path):
             log_error(f"No configuration file found under {path}. "
-                       "Please configure the server data from the web interface and try again.")
+                       "Please configure the server data from the web interface and try again")
         
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow
@@ -84,7 +84,7 @@ class Configuration:
         except ValueError as e:
             log_error(f"Could not read the start-stop time values "
                       f"(start: {start_time_string}, stop: {end_time_string}) as valid hours. "
-                      f"We now assume this is an active time.")
+                      f"We now assume this is an active time")
         return True
 
 
@@ -95,9 +95,9 @@ class Configuration:
         try:
             shutil.copy2(self._path, str(self._path) + ".bak")
         except Exception as e:
-            log_error("Cannot backup the configuration file.", e)
+            log_error("Cannot backup the configuration file", e)
             log(f"WARNING! The current situation is very fragile, "
-                 "please fix this error before a failure occurs.")
+                 "please fix this error before a failure occurs")
 
 
     def restore_backup(self):
@@ -111,10 +111,10 @@ class Configuration:
             print(json.dumps(self.server, indent=4))
             
         except Exception as e:
-            log_error("Cannot restore the configuration file from its backup.", e)
+            log_error("Cannot restore the configuration file from its backup", e)
             log(f"WARNING! The current situation is very fragile, "
                  "please fix this error before a failure occurs "+
-                 "(if it haven't happened already).")
+                 "(if it haven't happened already)")
 
 
     def images_to_download(self) -> List[str]:

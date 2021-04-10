@@ -44,7 +44,7 @@ class Overlay:
         # Find the type of overlay
         if not data.get("type", None) or not isinstance(data.get("type"), str):
             log(f"Overlay type not specified for position "
-                f"{position}. This overlay will be skipped.")
+                f"{position}. This overlay will be skipped")
             return
         self.type = data.get("type")
 
@@ -68,8 +68,8 @@ class Overlay:
             self.rendered_image = self.create_image_overlay()
         
         else:
-            log_error(f"Overlay name '{kind}' not recognized. Valid names: "
-            "text, image. This overlay will be skipped.")
+            log_error(f"Overlay name '{self.type}' not recognized. Valid names: "
+            "text, image. This overlay will be skipped")
             return
 
 
@@ -150,7 +150,7 @@ class Overlay:
 
         except Exception as e:
             log_error("Something unexpected happened while generating text the overlay. "+
-            "This overlay will be skipped.", e)
+            "This overlay will be skipped", e)
             return
 
 
@@ -192,7 +192,7 @@ class Overlay:
             image = Image.open(overlay_image_path).convert("RGBA")
         except Exception as e:
             log_error(f"Image '{overlay_image_path}' can't be found or is "
-            "impossible to open. This overlay will be skipped.", e)
+            "impossible to open. This overlay will be skipped", e)
             return
 
         try:
@@ -220,7 +220,7 @@ class Overlay:
             
         except Exception as e:
             log_error("Something unexpected happened while generating "
-                      "the image overlay. This overlay will be skipped.", e)
+                      "the image overlay. This overlay will be skipped", e)
             return
 
 

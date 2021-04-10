@@ -23,17 +23,17 @@ class FtpServer:
         self.hostname = parameters.get("hostname")
         if not self.hostname:
             log_error("Cannot contact the server: no hostname found in "
-                      "the configuration.",
-                      fatal="Exiting.")
-            raise ValueError("No hostname is available.")
+                      "the configuration",
+                      fatal="Exiting")
+            raise ValueError("No hostname is available")
 
         # username is necessary
         self.username = parameters.get("username")
         if not self.username:
             log_error("Cannot contact the server: no username found in "
-                      "the configuration.",
-                      fatal="Exiting.")
-            raise ValueError("No username is available.")
+                      "the configuration",
+                      fatal="Exiting")
+            raise ValueError("No username is available")
 
         # password can be blank  (TODO really it can? Check)
         self.password = parameters.get("password", "")
@@ -60,7 +60,7 @@ class FtpServer:
                 
         except Exception as e:
             log_error("Failed to estabilish a connection with the FTP server", e,
-                      fatal="Exiting.")
+                      fatal="Exiting")
         
 
     def download_new_configuration(self) -> Dict[str, Any]:
@@ -79,7 +79,7 @@ class FtpServer:
 
         # Make sure the server did not reply with an error
         if "226" in response:
-            log("New configuration downloaded.")
+            log("New configuration downloaded")
             configuration_data = json.loads(self.configuration_string)
             self.configuration_string = ""
             return configuration_data
@@ -156,7 +156,7 @@ class FtpServer:
                     self._ftp_client.rename(f"pictures/{old_name}", f"pictures/{new_name}")
                 except error_perm as resp:
                     if '550' in str(resp):
-                        log(f"Encountered a 550 FTP error: {str(resp)}. probably the image didn't exist, ignore this error.")
+                        log(f"Encountered a 550 FTP error: {str(resp)}. probably the image didn't exist, ignore this error")
                         pass
                         
         # Upload the picture

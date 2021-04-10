@@ -38,7 +38,7 @@ class System:
         self.status["version"] = self.get_version()
         self.status["last reboot"] = self.get_last_reboot_time()
         self.status["uptime"] = self.get_uptime()
-        self.status["hotspot"] = self.check_hotspot_allowed() or "CHECK FAILED (see stacktrace)"
+        self.status["hotspot"] = self.check_hotspot_allowed() or "FAILED (see stacktrace)"
         if self.status["hotspot"] != "OFF":
             self.status["autohotspot check"] = "OK" if self.run_autohotspot() else "FAILED (see stacktrace)"
         self.status['wifi ssid'] = self.get_wifi_ssid()
@@ -55,7 +55,7 @@ class System:
         try:
             return version("zanzocam")
         except PackageNotFoundError as e:
-            log(f"Could not get version information: {e}")
+            log_error(f"Could not get version information", e)
         return None
 
     def get_last_reboot_time(self) -> Optional[datetime.datetime]:
@@ -73,7 +73,7 @@ class System:
             return datetime.datetime.strptime(last_reboot_string, "%Y-%m-%d %H:%M:%S")
             
         except Exception as e:
-            log_error("Could not get last reboot datetime information.", e)
+            log_error("Could not get last reboot datetime information", e)
         return None
         
         
@@ -87,7 +87,7 @@ class System:
             return datetime.datetime.now() - last_reboot
 
         except Exception as e:
-            log_error("Could not get uptime information.", e)
+            log_error("Could not get uptime information", e)
         return None
         
         
@@ -101,13 +101,13 @@ class System:
                     return h.read().strip()
             except Exception as e:
                 log_error("Failed to check if the hotspot is allowed. "
-                        "Assuming yes.", e)
+                        "Assuming yes", e)
                 return False
         else:
-            log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG} with value ON.")
+            log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG} with value ON")
             with open(HOTSPOT_FLAG, "w") as h:
                 h.write("ON")
-            return "No flag found, setting it to ON."
+            return "No flag found, setting it to ON"
 
     def run_autohotspot(self) -> Optional[bool]:
         """
@@ -145,7 +145,7 @@ class System:
                 return False
                 
         except Exception as e:
-            log_error("The hotspot script failed to run.", e)
+            log_error("The hotspot script failed to run", e)
         return None
 
 
@@ -168,7 +168,7 @@ class System:
             return stdout.decode('utf-8').strip()
 
         except Exception as e:
-            log_error("Could not retrieve WiFi information.", e)
+            log_error("Could not retrieve WiFi information", e)
         return None
 
 
@@ -197,7 +197,7 @@ class System:
             fs_size, _, _ = shutil.disk_usage(__file__)
             return self.convert_bytes_into_string(fs_size)
         except Exception as e:
-            log_error("Could not retrieve the size of the filesystem.", e)
+            log_error("Could not retrieve the size of the filesystem", e)
         return None
         
         
@@ -210,7 +210,7 @@ class System:
             _, _, free_space = shutil.disk_usage(__file__)
             return self.convert_bytes_into_string(free_space)
         except Exception as e:
-            log_error("Could not get the amount of free space on the filesystem.", e)
+            log_error("Could not get the amount of free space on the filesystem", e)
         return None
 
 
@@ -244,10 +244,10 @@ class System:
             if not copy:
                 raise ValueError("The cp process has failed. "
                                 f"Execute 'sudo cp {original_path} {backup_path}' "
-                                 "to replicate the issue.")
+                                 "to replicate the issue")
         except Exception as e:
             log_error(f"Something went wrong creating copying {original_path} into {backup_path}. "
-                        "The file hasn't been copied.", e)
+                        "The file hasn't been copied", e)
             return False 
 
     def give_ownership_to_root(self, file: Path):
@@ -264,10 +264,10 @@ class System:
             if not chown:
                 raise ValueError("The chown process has failed. "
                                 f"Execute 'sudo chown 'root:root' {file}' "
-                                 "to replicate the issue.")
+                                 "to replicate the issue")
         except Exception as e:
             log_error(f"Something went wrong assigning ownership of {file} to root. "
-                       "The system ownership is likely to be unaffected.", e)
+                       "The file ownership is probably unaffected", e)
             return False
 
     def apply_system_settings(self, configuration: Configuration) -> None:
@@ -313,13 +313,13 @@ class System:
         try:
             start_total_minutes = int(start_time[0])*60 + int(start_time[1])
         except ValueError as e:
-            log_error(f"Could not read start time ({start_time}) as a valid time! Setting it to midnight (00:00).")
+            log_error(f"Could not read start time ({start_time}) as a valid time! Setting it to midnight (00:00)")
             start_total_minutes = 0
 
         try:
             stop_total_minutes = int(stop_time[0])*60 + int(stop_time[1])
         except ValueError as e:
-            log_error(f"Could not read stop time ({stop_time}) as a valid time! Setting it to midnight (23:59).")
+            log_error(f"Could not read stop time ({stop_time}) as a valid time! Setting it to midnight (23:59)")
             stop_total_minutes = 23*60 + 59
 
         # Compute every trigger time and save a cron string
@@ -331,14 +331,14 @@ class System:
 
         return cron_strings
 
-    def update_crontab(self, time: Dict, cron: Dict) -> None:
+    def update_crontab(self, time: Dict) -> None:
         """ 
         Updates the crontab and tries to recover for potential issues.
         Might refuse to update it in case of misconfigurations, in which case it
         will restore the old one and log the exceptions.
         """
         # Get the crontab content
-        cron_strings = self.prepare_crontab_string(time, cron)   
+        cron_strings = self.prepare_crontab_string(time)   
 
         # Backup the old file
         backup_cron = self.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
@@ -355,7 +355,7 @@ class System:
         # Assign the cron file to root:root
         chown_cron = self.give_ownership_to_root(CRONJOB_FILE)
         
-        log("Crontab updated successfully.")
+        log("Crontab updated successfully")
             
         # if the ownership change failes, start recovery procedure:
         # Try to write back the old crontab

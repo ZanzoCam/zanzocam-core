@@ -65,13 +65,13 @@ def main():
         # Verify if we're into the active hours or not, if defined
         try:
             if not initial_configuration.is_active_hours():
-                log("The current time is outside working hours. Turning off.")
+                log("The current time is outside working hours. Turning off")
                 upload_logs = False
                 return
         except Exception as e:
             log_error("An error occurred trying to assess if the current time is within active hours. " +
-                      "Assuming YES.", e)
-        log("The current time is inside active hours. Proceeding.")
+                      "Assuming YES", e)
+        log("The current time is inside active hours")
 
         # Getting the new configuration from the server
         initial_server = Server(initial_configuration)
@@ -80,8 +80,7 @@ def main():
             configuration = initial_server.update_configuration(initial_configuration)
         except Exception as e:
             log_error("Something went wrong fetching the new configuration file "
-                      "from the server.", e)
-            log("Falling back to the old configuration.")
+                      "from the server. Falling back to the old configuration", e)
             errors_were_raised = True
             restore_required = True
             configuration = initial_configuration
@@ -99,17 +98,17 @@ def main():
             errors_were_raised = True
             restore_required = False
             log_error("Something happened while applying the system "
-                "settings from the new configuration file.", e)
+                      "settings from the new configuration file", e)
             
             log_row(char="+")
             try:
-                log("Re-applying the old system configuration.")
+                log("Re-applying the old system configuration")
                 system.apply_system_settings(initial_configuration)
             except Exception as e:
                 log_error("Something unexpected occurred while re-applying the "
                     "old system settings!", e,
                     fatal="the webcam might be in an inconsistent state." +
-                    "ZANZOCAM might need manual intervention at this point.")
+                          "ZANZOCAM might need manual intervention at this point")
             log_row(char="+")
 
         # Create the picture
@@ -121,8 +120,8 @@ def main():
             # Try again using the old config file
             errors_were_raised = True
             restore_required = False
-            log_error("An error occurred while taking the picture.", e)
-            log("Waiting one minute and then trying again with the old configuration.")
+            log_error("An error occurred while taking the picture", e)
+            log("Waiting one minute and then trying again with the old configuration")
 
             sleep(59)
 
@@ -137,7 +136,7 @@ def main():
                 errors_were_raised = True
                 restore_required = False
                 log_error("Something happened while running with the old configuration file too!", ee,
-                            fatal="Exiting.")
+                            fatal="Exiting")
                 return
             
         # Send the picture
@@ -148,22 +147,22 @@ def main():
             restore_required = False
             log_error("Something happened uploading the picture! It was "+
                       "probably not sent", e,
-                      fatal="The error was unexpected, can't fix. The picture won't be uploaded.")
+                      fatal="The error was unexpected, can't fix. The picture won't be uploaded")
             return
 
     # Catch server errors: they block communication, so they are fatal anyway
     except ServerError as se:
         errors_were_raised = True
         restore_required = False
-        log_error("An error occurred communicating with the server.", 
-                  se, fatal="Exiting.")
+        log_error("An error occurred communicating with the server", 
+                  se, fatal="Exiting")
         
     # Catch unexpected fatal errors
     except Exception as e:
         errors_were_raised = True
         restore_required = False
-        log_error("Something unexpected occurred while running the main procedure.", 
-                  e, fatal="Exiting.")
+        log_error("Something unexpected occurred while running the main procedure", 
+                  e, fatal="Exiting")
         
     # Print the completion time anyway - this block is called even after a return!
     finally:
@@ -179,7 +178,7 @@ def main():
 
             except Exception as e:
                 errors_were_raised = True
-                log_error(f"Failed to clean up image files.", e)
+                log_error(f"Failed to clean up image files", e)
                 log("WARNING: The filesystem might fill up if the old pictures "
                     "are not removed, which can cause ZANZOCAM to fail.")
 
@@ -209,7 +208,7 @@ def main():
                     server.upload_logs()
                 
         except Exception as e:
-            log_error("Something happened uploading the logs:", e, fatal="Logs won't be uploaded.")
+            log_error("Something happened uploading the logs:", e, fatal="Logs won't be uploaded")
 
 
 

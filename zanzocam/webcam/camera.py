@@ -16,12 +16,13 @@ from webcam.overlays import Overlay
 from webcam.configuration import Configuration 
 
 
-from time import time
-ISO = 400
-MIN_SHUTTER_SPEED = int(0.03 * 10**6)
-MAX_SHUTTER_SPEED = int(9.5 * 10**6)
-TARGET_LUMINOSITY_MARGIN = 3
-CAMERA_WARM_UP_TIME = 5
+ISO = 400  # Starting ISO level for low light pictures
+NO_LUMINANCE_THRESHOLD = 1  # When to consider the image totally black
+NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6  # What "random" shutter speed to use if the image is so black that the equation doesn't work
+MIN_SHUTTER_SPEED = int(0.03 * 10**6)  # Min shutter speed that PiCamera would use with automatic settings
+MAX_SHUTTER_SPEED = int(9.5 * 10**6)  # Max shutter speed allowed by the hardware 
+TARGET_LUMINOSITY_MARGIN = 3  # how much tolerance to give to the low light search algorithm
+CAMERA_WARM_UP_TIME = 5  # Time to allow the firmware to compute the right exposure in normal light conditions (AWB requires more)
 
 
 class Camera:
@@ -50,6 +51,10 @@ class Camera:
         self.temp_photo_path = DATA_PATH / ('.temp_image.' + self.extension)
         self.processed_image_path = DATA_PATH / ('.final_image.' + self.extension)
 
+        # TEMPORARY STUFF< HANDLE BETTER!
+        self.use_low_light_algorithm = True
+        self.let_awb_settle_in_dark = True
+
 
     def __getattr__(self, name):
         """ 
@@ -68,16 +73,17 @@ class Camera:
         self.process_picture()
 
 
-    def _prepare_camera_object(self, shutter_speed: Optional[int] = None) -> int:
+    def _prepare_camera_object(self, expanded_framerate_range: bool = True) -> int:
         """ 
-        Sets up the camera object in a consistent way. 
-        Returns the PiCamera object, ready to use
-        Use this function in with blocks only, or remember to close the camera object!
+        Sets up the camera object in a consistent way. Returns the PiCamera object, ready to use.
+        if `expanded_framerate_range` is given, framerate_range is set to (1/10, 90).
+        Use this function in `with` blocks only, or remember to close the returned `camera` object!
         """
          # NOTE: let exceptions here escalate. Do not catch or at least rethrow!
-
-        log("Setting up camera...")
-        camera = PiCamera(framerate_range=(Fraction(1, 10), Fraction(5, 1)))
+        if expanded_framerate_range:
+            camera = PiCamera()
+        else:
+            camera = PiCamera(framerate_range=(Fraction(1, 10), Fraction(90, 1)))
 
         if int(self.width) > camera.MAX_RESOLUTION.width:
             log(f"WARNING! The requested image width ({self.width}) "
@@ -96,139 +102,165 @@ class Camera:
         camera.hflip = self.hor_flip
         camera.rotation = int(self.rotation)
         return camera
+
+    def _camera_capture(self, camera):
+        """
+        Takes a picture and saves it in the temporary picture path,
+        taking care of the logging too.
+        """
+        log("Taking picture...")
+        camera.capture(str(self.temp_photo_path))
+        log(f"Picture taken (exposure speed: {camera.exposure_speed/10**6:.4f}, "
+            f"shutter speed: {camera.shutter_speed/10**6:.4f})")
             
 
     def shoot_picture(self) -> None:
         """
-        Shoots the picture using PiCamera.
-        If the luminance is found to be too low, adjusts the shutter speed camera value and tries again.
+        Shoots the picture using PiCamera. If the luminance is found  
+        to be too low, uses an iterative algorithm to adjusts the 
+        shutter speed of the camera value and tries again.
         """
          # NOTE: let exceptions here escalate. Do not catch or at least rethrow!
 
         with self._prepare_camera_object() as camera:
             log(f"Camera warm-up ({CAMERA_WARM_UP_TIME}s)...")
             sleep(CAMERA_WARM_UP_TIME)
-            log("Taking picture...")
-            camera.capture(str(self.temp_photo_path))
-            log(f"Picture taken. Exposure speed: {camera.exposure_speed/10**6:.4f}, "
-                f"shutter speed: {camera.shutter_speed/10**6:.4f}")
+            self._camera_capture(camera)
 
-        initial_luminance = self.luminance_from_path(self.temp_photo_path)
-        # Test the luminance: if the picture is bright enough, return
-        if initial_luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
-            log(f"Daylight luminance detected: {initial_luminance:.2f} "
-                f"(min is {MINIMUM_DAYLIGHT_LUMINANCE}).")
+        # If the low light algorithm is disabled, return
+        if not self.use_low_light_algorithm:
+            log(f"Luminance won't be checked, because `use_low_light_algorithm = False`")
             return
 
-        # We're in low light conditions.
-        # Calculate new shutter speed with the low light algorithm and retry
-        luminosity_margin = TARGET_LUMINOSITY_MARGIN
-        target_luminance = self.compute_target_luminance(initial_luminance)
-        
-        log(f"Low light detected: {initial_luminance:.2f} (min is {MINIMUM_DAYLIGHT_LUMINANCE}).")
-        log(f"Target luminance: {target_luminance:.2f} (tolerance: {TARGET_LUMINOSITY_MARGIN}).")
+        # Test the luminance: if the picture is bright enough, return
+        initial_luminance = self.luminance_from_path(self.temp_photo_path)
+        if initial_luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
+            log(f"Daylight luminance detected: {initial_luminance:.2f} "
+                f"(lower bound is {MINIMUM_DAYLIGHT_LUMINANCE})")
+            return
 
-        start_time = time()  # FIXME Remove later, redundant
-        log(f"Low light parameters: max shutter speed: {MAX_SHUTTER_SPEED}, initial ISO: {ISO}, "
-            f"target luminance: {target_luminance:.2f}, luminance tolerance: {TARGET_LUMINOSITY_MARGIN}")
-        
+        # We're in low light conditions and allowed to try correcting it.
+        # Calculate new shutter speed with the low light algorithm
+        new_luminance, shutter_speed, iso, attempts = self.low_light_search(initial_luminance)
 
-        new_luminance, shutter_speed, attempts = self.low_light_search(target_luminance)
-        
+        # If we're good without one final picture with the long wait for the AWB, return here
+        if not self.let_awb_settle_in_dark:
+            log(f"No more pictures will be taken, because `let_awb_settle_in_dark = False`")
+            return
 
-        # FIXME remove me before release, this is a redundant step
         # Once the correct shutter speed has been found, shoot again a picture with the correct params.
-        log("Take one more picture with the correct parameters")
+        log(f"Taking one more picture with the final parameters "
+            f"(shutter speed: {shutter_speed/10**6:.2f}s, ISO: {iso})")
+
         with self._prepare_camera_object() as camera:
             camera.shutter_speed = shutter_speed
-            camera.iso = ISO
+            camera.iso = iso
             
             timeout = (shutter_speed/10**6) * 7 + 5
             log(f"Adjusting white balance: will take {timeout:.1f} seconds...")
             sleep(timeout)
             camera.exposure_mode = "off"
-            
-            log(f"Taking picture with shutter speed set to {shutter_speed/10**6:.4f}s.")
-            camera.capture(str(self.temp_photo_path))
-            log(f"Picture taken: exposure speed: {camera.exposure_speed/10**6:.4f}, shutter speed: {camera.shutter_speed/10**6:.4f}")
+
+            self._camera_capture(camera)
 
         final_luminance = self.luminance_from_path(str(self.temp_photo_path))
-        log(f"The final luminance is {final_luminance:.2f}, with shutter speed: {shutter_speed}.")
-	
-        #final_luminance = -20
-        # Save data
-        execution_time = time() - start_time
+        log(f"Final luminance: {final_luminance:.2f}.")
+
+        # Save data FIXME won't be needed soon
         with open("low_light_data", 'a') as table:
             table.write(f"{initial_luminance:.2f}\t\t{new_luminance:.2f}\t\t{final_luminance:.2f}\t\t"
-                        f"{shutter_speed/10**6:.2f}\t\t{ISO}\t\t{execution_time:.2f}\t\t{attempts}\n")
+                        f"{shutter_speed/10**6:.2f}\t\t{ISO}\t\t{attempts}\n")
 
 
-    def low_light_search(self, target_luminance: int) -> Tuple[float, int, int]:
+    def low_light_search(self, initial_luminance: int) -> Tuple[float, int, int, int]:
         """
         Tries to find the correct shutter speed in low-light conditions.
         Returns the final luminance, the shutter speed, and the number of attempts done, in this order.
         """
-        initial_luminance = self.luminance_from_path(str(self.temp_photo_path))
-        shutter_speed = self.low_light_equation(MIN_SHUTTER_SPEED, initial_luminance, target_luminance)
+        target_luminance = self.compute_target_luminance(initial_luminance)        
+        log(f"Low light detected: {initial_luminance:.2f} (lower bound is {MINIMUM_DAYLIGHT_LUMINANCE})")
+        log(f"Trying to get a brighter image. "
+            f"Target luminance: {target_luminance:.2f} (tolerance: {TARGET_LUMINOSITY_MARGIN}), "
+            f"max exposure time: {MAX_SHUTTER_SPEED}, initial ISO: {ISO}")
+        
         new_luminance = initial_luminance
+        shutter_speed = MIN_SHUTTER_SPEED
 
+        # Note that we're looping within this block for a reason!
+        # Re-initializing the camera for every picture would take a lot of
+        # time and require a warm-up of at least 5 seconds every time.
         with self._prepare_camera_object() as camera:
+
             camera.iso = ISO
             log(f"Camera warm-up ({CAMERA_WARM_UP_TIME}s)...")
             sleep(CAMERA_WARM_UP_TIME)
 
-            for attempt in range(1, 20):
-                # When luminance is <1, the Paolo equation doesn't work very well and 
-                # gives an overestimated shutter speed value, causing time loss
-                if attempt == 1 and new_luminance < 1:
-                    log("Shutter speed set to 2s")
-                    shutter_speed  = 2 * 10**6
+            for attempt in range(1, 10):
 
-                camera.framerate = (10**6) / (shutter_speed)
+                # Compute the shutter speed
+                shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
+
+                # Take the picture & check the luminance
+                #camera.framerate = (10**6) / (shutter_speed)
                 camera.shutter_speed = shutter_speed          
-                log("Taking picture")
                 camera.exposure_mode = "off"
-                camera.capture(str(self.temp_photo_path))
-
-                # Read resulting luminosity and update shutter speed if necessary
+                self._camera_capture(camera)
                 new_luminance = self.luminance_from_path(self.temp_photo_path)
-                
-                if new_luminance >= (target_luminance - TARGET_LUMINOSITY_MARGIN) and \
-                    new_luminance <= (target_luminance + TARGET_LUMINOSITY_MARGIN):
-                    log(f"Tentative {attempt}: successful! Initial luminance: {initial_luminance:.2f}, "
-                        f"final luminance: {new_luminance:.2f}, shutter speed: {shutter_speed}")
-                    return new_luminance, shutter_speed, attempt
 
-                if new_luminance < (target_luminance - TARGET_LUMINOSITY_MARGIN):
-                    log(f"Tentative {attempt}: too dark. "
-                        f"Luminance: {new_luminance:.2f}, speed: {shutter_speed/10**6:.2f}. Increasing!")
+                # In rare cases, the camera might return pitch black images for no good reason.
+                # So if the luminance is 0, just retry.
+                if new_luminance <= 0.001:  # Should not be needed, but with floats you never know
+                    pass
+                
+                # Too bright: log and retry without further checks
+                elif new_luminance > (target_luminance + TARGET_LUMINOSITY_MARGIN):
+                    log(f"# {attempt}: bright. Luminance achieved: {new_luminance:.2f}. Down!")
+                
+                # Too dark: log and check if you can proceed, raising ISO if so required
+                elif new_luminance < (target_luminance - TARGET_LUMINOSITY_MARGIN):
+                    log(f"# {attempt}: dark. Luminance achieved: {new_luminance:.2f}. Up!")
                     
-                    # If the maximun shutter speed is already reached, break: you can't reach the target luminance
+                    # If the max shutter speed and max ISO is already reached, break: 
+                    # you can't reach the target luminance
                     if shutter_speed == MAX_SHUTTER_SPEED:
                         if camera.iso == 800:
-                            log(f"ISO is at 800 and shutter speed is at max ({MAX_SHUTTER_SPEED/10**6:.2f}). Cannot proceed.")
-                            return new_luminance, shutter_speed, attempt
+                            log_error(f"ISO is at 800 and shutter speed is at max ({MAX_SHUTTER_SPEED/10**6:.2f}). Cannot proceed")
+                            return new_luminance, shutter_speed, camera.iso, attempt
 
-                        log(f"Not allowed to go above {shutter_speed/10**6}s. Increasing ISO from {ISO} to 800 and trying again.")
-                        camera.iso = 800
-                        
-                    shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
+                        log(f"Not allowed to raise the shutter speed further. "
+                            f"Increasing ISO from {camera.iso} to {camera.iso*2} and trying again")
+                        camera.iso = camera.iso*2
 
+                # Otherwise return the match
                 else:
-                    log(f"Tentative {attempt}: too bright. Luminance: {new_luminance:.2f}, speed: {shutter_speed/10**6:.2f}. Decreasing!")
-                    shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
+                    log(f"# {attempt}: OK! Luminance achieved: {new_luminance:.2f}")
+                    return new_luminance, shutter_speed, camera.iso, attempt
 
-            # Exit condition - 20 iterations with the default max/min speeds            
-            log(f"Search failed! Using the last value ({shutter_speed}, "
-                f"resulting luminance: {new_luminance}) and exiting the binary search procedure.")
-            return new_luminance, shutter_speed, attempt
+            # Exit condition - 10 iterations      
+            log_error(f"The low light algorithm failed! "
+                      f"Returning the last values (shutter speed: {shutter_speed}, luminance: {new_luminance}, iso: {camera.iso})")
+            return new_luminance, shutter_speed, camera.iso, attempt
         
+    @staticmethod
+    def low_light_equation(shutter_speed, initial_luminance, target_luminance) -> int:
+        """
+        Given a starting luminance, computes the best estimate of 
+        the shutter speed needed to achieve the target luminance.
+        """
+        # When luminance is <1, the equation doesn't work very well and 
+        # gives an overestimated shutter speed value. So we'd rather
+        # attempt a random 2sec shot to get a better initial estimate
+        # of the actual ambient luminance and try again
+        if initial_luminance < 1:
+            log(f"Luminance is below {NO_LUMINANCE_THRESHOLD}: shutter speed set to 2s")
+            shutter_speed = NO_LUMINANCE_SHUTTER_SPEED
 
-    def low_light_equation(self, shutter_speed, initial_luminance, target_luminance) -> int:
         target_shutter_speed = (shutter_speed / initial_luminance) * target_luminance
+
         if target_shutter_speed > MAX_SHUTTER_SPEED:
-            target_shutter_speed = MAX_SHUTTER_SPEED
-            log(f"Max shutter speed {target_shutter_speed/10**6} has been reached, using {MAX_SHUTTER_SPEED/10**6}")
+            log(f"Max shutter speed has been reached, capping it to {MAX_SHUTTER_SPEED/10**6}")
+            return int(MAX_SHUTTER_SPEED)
+
         return int(target_shutter_speed)
 
 
@@ -284,7 +316,7 @@ class Camera:
             photo = Image.open(self.temp_photo_path).convert("RGBA")
         except Exception as e:
             log_error("Failed to open the image for editing. "
-                      "The photo will have no overlays applied.", e)
+                      "The photo will have no overlays applied", e)
             return
 
         # Create the overlay images
@@ -297,7 +329,7 @@ class Camera:
                     
             except Exception as e:
                 log_error(f"Something happened processing the overlay {position}. "
-                "This overlay will be skipped.", e)
+                "This overlay will be skipped", e)
         
         # Calculate final image size
         border_top = 0

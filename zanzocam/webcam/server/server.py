@@ -26,13 +26,13 @@ class Server:
         parameters = getattr(configuration, 'server', None)
 
         if not getattr(configuration, 'server'):
-            raise ServerError("No server information found in the configuration file.")
+            raise ServerError("No server information found in the configuration file")
 
         self.protocol = parameters.get("protocol")
         if not self.protocol:
             raise ServerError("The communication protocol with the server (HTTP, FTP) "+
                              "was not specified. No protocol is available to estabilish a "
-                             "connection to the server.")
+                             "connection to the server")
                              
         elif self.protocol.upper() == "HTTP":
             self._server = HttpServer(parameters)
@@ -62,11 +62,11 @@ class Server:
             # Getting new overlays associated with the configuration
             self.download_overlay_images(configuration.images_to_download())
 
-            log("Configuration updated successfully.")
+            log("Configuration updated successfully")
             return configuration
 
         except Exception as e:
-            log_error("Something went wrong fetching the new config file from the server.", e)
+            log_error("Something went wrong fetching the new config file from the server", e)
             raise e
 
 
@@ -93,7 +93,7 @@ class Server:
             except Exception as e:
                 # Replace with transparent pixel if it failed.
                 log_error(f"New overlay image failed to download: {image_name}")
-                log("Replacing it with a transparent pixel.")
+                log("Replacing it with a transparent pixel")
                 shutil.copy2(
                     IMAGE_OVERLAYS_PATH / "fallback-pixel.png", 
                     IMAGE_OVERLAYS_PATH / image_name)
@@ -109,12 +109,12 @@ class Server:
             # Clear the logs once they have been uploaded
             with open(path, "w") as l:
                 pass
-            log(f"Logs uploaded successfully to {self._server.endpoint}.")
+            log(f"Logs uploaded successfully to {self._server.endpoint}")
             
         except Exception as e:
             log_row("-")
             log_error(f"Something happened while uploading the logs file to {self._server.endpoint}. "
-                      "This error will be ignored.", e)
+                      "This error will be ignored", e)
             log_row("-")
             return
     
@@ -134,7 +134,7 @@ class Server:
                     logs = l.read()
         except Exception as e:
             log_error("Something went wrong opening the logs file."
-                      "The report will contain no logs. This error will be ignored.", e)
+                      "The report will contain no logs. This error will be ignored", e)
 
         if not logs or logs == "":
             logs = " ==> No logs found!! <== "
@@ -158,11 +158,11 @@ class Server:
         # Send the logs
         try:
             self._server.send_logs(FAILURE_REPORT_PATH)
-            log("Failure report uploaded successfully.")
+            log("Failure report uploaded successfully")
 
         except Exception as e:
             log_error("Something happened while uploading the failure report. "
-                      "This error will be ignored.", e)
+                      "This error will be ignored", e)
             return
 
 
@@ -173,22 +173,22 @@ class Server:
         # Note: Errors here MUST escalate
         
         if not os.path.exists(image_path):
-            log(f"No picture to upload: {image_path} does not exist.")
+            log(f"No picture to upload: {image_path} does not exist")
             return
 
         log(f"Uploading picture to {self._server.endpoint}")
 
         if not image_name or not image_path or not image_extension:
             log(f"Cannot upload the picture: picture name ({image_name}) " +
-                f"or location ({image_path}) or extension ({image_extension}) not given.", 
-                fatal="Picture won't be uploaded.")
+                f"or location ({image_path}) or extension ({image_extension}) not given", 
+                fatal="Picture won't be uploaded")
         
         # Make sure the file in question exists
         if not os.path.exists(image_path):
             log(f"Cannot upload the picture: {image_path} does not exist!", 
-                fatal="Picture won't be uploaded.")
+                fatal="Picture won't be uploaded")
             raise ValueError(f"Picture file {image_path} does not exist")
 
         # Upload the picture
         self.final_image_path = self._server.upload_picture(image_path, image_name, image_extension)
-        log(f"Picture {self.final_image_path.name} uploaded successfully.")
+        log(f"Picture {self.final_image_path.name} uploaded successfully")
