@@ -459,7 +459,7 @@
     
     <div class="center">
         <img src="logos/logo-zanzocam.png" alt="Logo ZANZOCAM" width="150px">
-        <div  style="margin-bottom: 2rem;"><small>v0.7.0</small></div>
+        <div  style="margin-bottom: 2rem;"><small>v0.8.0</small></div>
         <h1>Impostazioni</h1>        
     </div>
     
@@ -558,34 +558,35 @@
                     </div>
                 </div>
 
-                <p>Modalita' manuale (configuratione crontab diretta)
+                <p><b>Configurazione manuale</b>
                 <br>
-                <b>NOTA BENE:</b> Questi valori vengono usati solo se selezioni 
-                "Manuale" come frequenza di scatto.
+                <b>NOTA BENE:</b> Questi campi vengono usati solo se selezioni
+                "Manuale" come frequenza di scatto. Gli orari di inizio e fine,
+                inoltre, vengono utilizzati anche se il crontab dovesse specificare
+                diversamente.
                 </p>
                 <div class="row">
                     <div class="column">
                         <label class="label-inline">Minuti:</label>
-                        <input type="text" placeholder="*"  name="crontab__minute">
+                        <input type="text" placeholder="*"  name="time__minute">
                     </div>
                     <div class="column">
                         <label class="label-inline">Ora:</label>
-                        <input type="text" placeholder="*"  name="crontab__hour">
+                        <input type="text" placeholder="*" name="time__hour">
                     </div>
                     <div class="column">
                         <label class="label-inline">Giorno:</label>
-                        <input type="text" placeholder="*"  name="crontab__day">
+                        <input type="text" placeholder="*" name="time__day">
                     </div>
                     <div class="column">
                         <label class="label-inline">Mese:</label>
-                        <input type="text" placeholder="*"  name="crontab__month">
+                        <input type="text" placeholder="*" name="time__month">
                     </div>
                     <div class="column">
                         <label class="label-inline">G. settimana:</label>
-                        <input type="text" placeholder="*"  name="crontab__weekday">
+                        <input type="text" placeholder="*" name="time__weekday">
                     </div>
                 </div>
-
             </div>
             
      <!-------------------------------------------------------------------------->
@@ -641,16 +642,17 @@
                     <div class="column">
                         <label class="label-inline">Risoluzione:</label>
                         <select id="resolution_selector">
-                          <option data-width=4056 data-height=3040 value=3040>12 Megapixel, 4:3 (3280x2464)</option>
-                          <option data-width=3280 data-height=2464 value=2464>8 Megapixel (4K), 4:3 (3280x2464)</option>
-                          <option data-width=2592 data-height=1944 value=1944>5 Megapixel, 4:3 (2592x1944)</option>
-                          <option data-width=2688 data-height=1520 value=1520> 4 Megapixel (2K), 16:9 (2688x1520)</option>
-                          <option data-width=2048 data-height=1536 value=1536> 3 Megapixel, 4:3 (2048x1536)</option>
-                          <option data-width=1920 data-height=1080 value=1080> 2 Megapixel (1080P), 4:3 (1920x1080)</option>
-                          <option data-width=1640 data-height=922 value=922> 1.5 Megapixel, 21:9 (1640x922)</option>
-                          <option data-width=1920 data-height=780 value=780> 1.5 Megapixel, 16:9 (1920x780)</option>
-                          <option data-width=1280 data-height=720 value=720> 1 Megapixel (720), 16:9 (1280x720)</option>
-                          <option data-width=640 data-height=480 value=480> 0.3 Megapixel, 4:3 (640x480)</option>
+                          <option data-width=4056 data-height=3040 value=3040> 12 Megapixel, 4:3 (4056x3040)</option>
+                          <option data-width=4056 data-height=2281 value=2281> 10 Megapixel, 16:9 (4056x2281)</option>
+                          <option data-width=3790 data-height=2132 value=2132> 8 Megapixel (4K), 16:9 (3790x2132)</option>
+
+                          <option data-width=3280 data-height=2464 value=2464> 8 Megapixel (4K), 4:3 (3280x2464)</option>
+                          <option data-width=3280 data-height=1845 value=1845> 6 Megapixel, 16:9 (3280x1845)</option>
+                          <option data-width=2310 data-height=1732 value=1732> 4 Megapixel (2K), 4:3 (2310x1732)</option>
+                          <option data-width=2666 data-height=1500 value=1520> 4 Megapixel (2K), 16:9 (2666x1500)</option>
+                          <option data-width=1920 data-height=1080 value=1080> 2 Megapixel (FHP), 4:3 (1920x1080)</option>
+                          <option data-width=1280 data-height=720 value=720> 1 Megapixel (HD), 16:9 (1280x720)</option>
+                          <option data-width=640 data-height=480 value=480> 0.3 Megapixel (VGA), 4:3 (640x480)</option>
                         </select>
                         <div style="display:none;">
                             <input type="text" id="image__width" name="image__width">
