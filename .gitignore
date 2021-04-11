@@ -4,8 +4,6 @@
 zanzocam/web_ui/static/previews/*
 zanzocam/data/*
 !zanzocam/data/overlays/fallback-pixel.png
-!zanzocam/data/calibration_parameters.csv
-!zanzocam/data/luminance_speed_dataset.csv
 
 
 # Byte-compiled / optimized / DLL files
