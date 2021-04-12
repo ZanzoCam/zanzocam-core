@@ -34,6 +34,8 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $imageerror = $_FILES['photo']['error'];
     $imagetemp = $_FILES['photo']['tmp_name'];
 
+    // Fix Chrome quirk
+    $config = str_replace('\r\n', '\n', $config);  // The single quotes here distinguish a literal \r from a "real" \r, and we want the former
     
     // Logs are being uploaded - store them
     if ($logs){
