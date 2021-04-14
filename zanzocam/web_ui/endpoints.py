@@ -79,7 +79,12 @@ def toggle_hotspot_endpoint(value):
 # API to take actions
 #
 
-@app.route("/shoot-picture", methods=["POST"])
+@app.route("/reboot", methods=["POST"])
+def reboot_endpoint():
+    return "", api.reboot()
+
+
+@app.route("/shoot-picture", methods=["GET"])
 def shoot_picture_endpoint():
     return "", api.shoot_picture()
 
@@ -88,11 +93,10 @@ def shoot_picture_endpoint():
 # API to fetch data
 #
 
-@app.route('/video-preview', methods=["GET"])
-def video_preview_endpoint():
-    camera = video_feed.Camera()
-    return Response(camera.video_streaming_generator(), 
-            mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route("/picture-preview", methods=["GET"])
+def get_preview_endpoint():
+    return api.get_preview()
+
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
 def get_logs_endpoint(kind: str, name: str):

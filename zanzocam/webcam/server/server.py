@@ -117,6 +117,24 @@ class Server:
                       "This error will be ignored", e)
             log_row("-")
             return
+
+    def upload_diagnostics(self, path: Path = DIAGNOSTICS_LOG):
+        """ 
+        Send a diagnostic report to the server.
+        """
+        # NOTE: exceptions in here should NOT escalate. Catch everything!!
+        # FIXME for now they get sent as regular logs (they even have the same name!). Handle better later on.
+        try:
+            self._server.send_logs(path)
+            # Clear the logs once they have been uploaded
+            with open(path, "w") as l:
+                pass
+            log(f"Diagnostics log uploaded successfully to {self._server.endpoint}")
+            
+        except Exception as e:
+            log_error(f"Something happened while uploading the diagnostics log to {self._server.endpoint}. "
+                      "This error will be ignored", e)
+            return
     
     
     def upload_failure_report(self, wrong_conf: Dict[str, Any], 

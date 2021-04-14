@@ -16,18 +16,15 @@ REQUIREMENTS: dict = {
     'base': [
         "setuptools_scm",  # for versioning
         "importlib_metadata",  # py<3.8
+        "picamera",  # needed for the web-ui too (in the preview)
     ],
     'webcam': [
-        "picamera",
         "Pillow",
         "requests",
     ],
     'web-ui': [
         "uwsgi",
-        "Flask",
-        "matplotlib",
-        "pandas",
-        "numpy",
+        "Flask"
     ]
 }
 
@@ -58,7 +55,6 @@ setup(
     entry_points={
         'console_scripts': [
             'z-webcam=webcam.main:main',
-            'z-webcam-from-ui=webcam.main:main_keep_ui_alive',
             'z-ui=web_ui.endpoints:main',
         ],
     },

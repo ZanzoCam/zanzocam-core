@@ -2,6 +2,7 @@ from typing import Dict
 
 import os
 import json
+import picamera
 import subprocess
 from flask import send_from_directory
 
@@ -131,14 +132,15 @@ def get_logs(kind: str, name: str):
         return send_from_path(logs_path)
     else:
         return f"Logs type {kind} not understood", 500
-    
+
 
 def get_preview():
     """
     Makes a new preview with raspistill and returns the new image.
     """
-    take_preview_picture = subprocess.run(
-        ["/usr/bin/raspistill", "-w", "800", "-h", "550", "-o", PREVIEW_PICTURE ])
+    with picamera.PiCamera() as camera:
+        camera.resolution = (640, 480)
+        camera.capture(str(PREVIEW_PICTURE))
     return send_from_path(PREVIEW_PICTURE)
 
 
@@ -150,11 +152,22 @@ def shoot_picture():
     clear_logs(PICTURE_LOGS)
     try:
         with open(PICTURE_LOGS, 'w') as l:                
-            shoot_proc = subprocess.run([ZANZOCAM_EXECUTABLE_KEEP_UI], stdout=l, stderr=l)
+            shoot_proc = subprocess.run([ZANZOCAM_EXECUTABLE], stdout=l, stderr=l)
             
     except subprocess.CalledProcessError as e:
         with open(PICTURE_LOGS, 'a') as l:
             l.writelines(f"Si e' verificato un errore: {e}")
+        return 500
+    return 200
+
+
+def reboot():
+    """ 
+    Restarts the ZANZOCAM.
+    """
+    try:
+        reboot = subprocess.run(['/usr/bin/sudo', 'reboot'])
+    except subprocess.CalledProcessError as e:
         return 500
     return 200
 

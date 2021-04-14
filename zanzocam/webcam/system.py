@@ -8,6 +8,7 @@ import requests
 import datetime
 import subprocess
 from pathlib import Path
+from textwrap import dedent
 try:
     from importlib_metadata import version, PackageNotFoundError
 except ModuleNotFoundError as e:
@@ -27,7 +28,7 @@ class System:
         pass
     
     
-    def report_general_status(self, keep_ui_alive: bool = True) -> Dict:
+    def report_general_status(self) -> Dict:
         """ 
         Collect general system data like version, uptime, internet connectivity. 
         In all cases, None means that the value could not be retrieved
@@ -45,34 +46,8 @@ class System:
         self.status['internet access'] = self.check_internet_connectivity()
         self.status['disk size'] = self.get_filesystem_size()
         self.status['free disk space'] = self.get_free_space_on_disk()
-        if not keep_ui_alive:
-            self.status['web ui'] = "restarted" if self.restart_ui() else "not restarted"
+        self.status['RAM status'] = self.get_ram_stats()
         return self.status
-
-
-    def restart_ui(self):
-        """
-        Restarts the web UI, to make sure it releases any handle to the camera
-        that it might have (ugly, but it does the job).
-        NOTE: if the web UI was stopped, this method will start it.
-        """
-        try:
-            start_ui = subprocess.Popen(["/usr/bin/sudo", 'systemctl', 'restart', 'zanzocam-web-ui'], 
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.STDOUT)
-            stdout, stderr = start_ui.communicate()
-            stdout = stdout.decode("utf-8")
-            return True
-            
-            if start_ui.returncode != 0:
-                log_error("The UI could not be restarted! Return code: "
-                          f"{start_ui.returncode}.")
-                return False
-
-        except Exception as e:
-            log_error("The UI could not be restarted!", e)
-            return False
-               
 
     def get_version(self) -> Optional[str]:
         """ 
@@ -218,7 +193,7 @@ class System:
     def get_filesystem_size(self) -> Optional[str]:
         """
         Returns a string with the size of the filesystem where the OS is running.
-        Suffixes are KB, MB, GB, TB, Returns None if an error occurs,
+        Suffixes are KB, MB, GB, TB, Returns None if an error occurs.
         """
         try:
             fs_size, _, _ = shutil.disk_usage(__file__)
@@ -231,11 +206,41 @@ class System:
     def get_free_space_on_disk(self) -> Optional[str]:
         """
         Returns a string with the amount of free space left on the device.
-        Suffixes are KB, MB, GB, TB, Returns None if an error occurs,
+        Suffixes are KB, MB, GB, TB, Returns None if an error occurs.
         """
         try:
             _, _, free_space = shutil.disk_usage(__file__)
             return self.convert_bytes_into_string(free_space)
+        except Exception as e:
+            log_error("Could not get the amount of free space on the filesystem", e)
+        return None
+
+        
+    def get_ram_stats(self) -> Optional[str]:
+        """
+        Returns a string with some stats about the RAM and swap usage.
+        Returns None if an error occurs.
+        """
+        try:
+            mem_stats = ""
+            with open("/proc/meminfo", 'r') as meminfo:
+                for line in meminfo.readlines():
+                    if line.startswith("MemTotal:"):
+                        mem_stats += "total RAM: " + line.replace("MemTotal:", "").strip() + " | "
+
+                    elif line.startswith("MemFree:"):
+                        mem_stats += "free RAM: " + line.replace("MemFree:", "").strip() + " | "
+
+                    elif line.startswith("MemAvailable:"):
+                        mem_stats += "available RAM: " + line.replace("MemAvailable:", "").strip() + " | "
+
+                    elif line.startswith("SwapTotal:"):
+                        mem_stats += "total swap: " + line.replace("SwapTotal:", "").strip() + " | "
+
+                    elif line.startswith("SwapFree:"):
+                        mem_stats += "free swap: " + line.replace("SwapFree:", "").strip() + " | "
+            return mem_stats
+
         except Exception as e:
             log_error("Could not get the amount of free space on the filesystem", e)
         return None
@@ -405,3 +410,66 @@ class System:
                 else:
                     log("cron file restored successfully. Please investigate the cause of the issue!")
             log_row("+")
+
+
+    def generate_diagnostics(self, path = DIAGNOSTICS_LOG):
+        """
+        Generate a report with loads of system information, 
+        to be sent to the server as a diagnostic tool.
+        """
+        report = dedent(f"""\
+            ##############################
+            #                            #
+            #   ZANZOCAM - DIAGNOSTICS   #
+            #                            #
+            ##############################
+
+            Date: {datetime.datetime.now()}
+
+        """)
+        report += "# ACTIVE PROCESSES\n"
+        report += "###################\n"
+        processes = subprocess.check_output(["/usr/bin/ps", "auxf"])
+        report += processes.decode('utf-8')
+
+        report += "\n\n"
+        report += "# RAM & MEMORY STATS\n"
+        report += "#####################\n"
+        with open("/proc/meminfo", 'r') as meminfo:
+            for line in meminfo.readlines():
+                report += line
+
+        report += "\n\n"
+        report += "# PORTS\n"
+        report += "########\n"
+        ports = subprocess.check_output(["/usr/bin/netstat", "patun"])
+        report += ports.decode('utf-8')
+
+        report += "\n\n"
+        report += "# CRONTABS\n"
+        report += "############\n"
+        crontabs = subprocess.check_output(["/usr/bin/cronrab", "-l"])
+        report += crontabs.decode('utf-8')
+        report += "\n\n"
+        crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/*"])
+        report += crontabs.decode('utf-8')
+        report += "\n\n"
+        crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/.*"])
+        report += crontabs.decode('utf-8')
+
+        report += "\n\n"
+        report += "# SYSTEMD UNITS\n"
+        report += "################\n"
+        systemd = subprocess.check_output(["/usr/bin/systemctl"])
+        report += systemd.decode('utf-8')
+
+        report += "\n\n"
+        report += "# INSTALLED PACKAGES\n"
+        report += "#####################\n"
+        packages = subprocess.check_output(["/usr/bin/apt", "list"])
+        report += packages.decode('utf-8')
+
+
+        report += "\n\n"        
+        with open(path, 'w') as report_file:
+            report_file.writelines(report)

@@ -39,6 +39,8 @@ class Configuration:
         self._download_time = datetime.datetime.fromtimestamp(path.stat().st_mtime)
         self._path = path
 
+        self.send_diagnostics = True
+
 
     @staticmethod
     def create_from_dictionary(data: Dict, path: Path = CONFIGURATION_FILE) -> 'Configuration':

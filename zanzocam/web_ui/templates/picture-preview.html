@@ -5,26 +5,29 @@
     <p>
     Ricorda che altre opzioni come rotazione, inversione verticale o orizzontale, scritte, loghi etc... 
     verranno applicate piu' tardi, quando la foto verra' inviata al server. La preview serve unicamente
-    a sistemare l'inquadratura e la messa a fuoco.
+    a sistemare l'inquadratura e la messa a fuoco.<br><br>
+    <a href="/webcam-setup" >Clicca qui per aggiornare la preview</a> (o ricarica la pagina).
     </p>
 
-    <img id="preview" src="/video-preview" style="width:min(100%, 800px); min-height: 10px; border-radius:0.5rem; margin-bottom:3rem; background-color:#ccc;">
+    <img id="preview" src="/picture-preview" style="width:min(100%, 800px); min-height: 80px; border-radius:0.5rem; background: url('{{ url_for('static', filename='logos/loading.gif') }}') no-repeat center center;">
     
-    <p>
+    <p style="margin-top:3rem;">
     Quando inquadratura e messa a fuoco ti sembrano buone, premi Scatta Foto per inviare la prima foto al server.
     Se il server e' configurato correttamente, da quel momento in poi ZANZOCAM e' autonoma.
     </p>
 
     <div class="center">
-        <button id="shoot-picture" onclick="shootPicture();" class="button setup-button" style="width:50%;">Scatta Foto</button>
-    </div>
-    
-    <div id="logs-block" class="center" style="display: none;">
-        <textarea id="logs" disabled style="height:30vh;margin:3rem 0;color:#eee;background-color:#222;padding:3rem 2rem;border-radius:1rem;"></textarea>
-        <p><a href="/logs/text/picture" class="button" download="zanzocam-logs.txt">Scarica i log</a><br></p>
+        <button id="shoot-picture" onclick="shootPicture();" class="button setup-button" style="width:50%;margin-bottom:3rem;">Scatta Foto</button>
     </div>
 
     <p id="feedback" class="center"></p>
+
+    <div id="logs-block" style="display: none;">
+        <div class="center"><a href="/logs/text/picture" class="button" download="zanzocam-logs.txt">Scarica i log</a></div>
+        <p style="margin:1rem;">Logs:</p>
+        <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:3rem;border-radius:1rem;"></p>
+        <div class="center"><a href="/logs/text/picture" class="button" download="zanzocam-logs.txt">Scarica i log</a></div>
+    </div>
 
     <script>
 
@@ -51,22 +54,19 @@
         return fetch("/logs/json/picture")
         .then(response => response.json())
         .then(logs => { 
-            var textarea = document.getElementById("logs")
-            textarea.value = startingMessage + logs["content"]; 
-            textarea.scrollTop = textarea.scrollHeight;
-            console.log(logs['content']);
+            var logsContainer = document.getElementById("logs")
+            logsContainer.innerHTML = startingMessage + logs["content"]; 
             return logs["content"];
         });
     };
 
     // Send the shoot-picture command to the server and read the logs
     const shootPicture = async () => {
-        document.getElementById("logs").value = "Starting...\n\n";
+        document.getElementById("logs").innerHTML = "Starting...\n\n";
         document.getElementById("feedback").innerHTML = "ZANZOCAM sta scattando (non lasciare la pagina!)";
         document.getElementById("shoot-picture").disabled = true;
         document.getElementById("shoot-picture").innerHTML = 'Sto scattando...';
         document.getElementById("logs-block").style.display = "block";
-        document.getElementById("preview").src = "";
         
         // Start to poll
         setTimeout(function(){

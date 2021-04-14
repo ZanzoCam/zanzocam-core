@@ -17,11 +17,8 @@ from webcam.errors import ServerError
 from webcam.utils import log, log_error, log_row
 
 
-def main_keep_ui_alive():
-    main(keep_ui_alive=True)
 
-
-def main(keep_ui_alive=False):
+def main():
     """
     Main script coordinating all operations.
     """
@@ -51,7 +48,7 @@ def main(keep_ui_alive=False):
         locale.setlocale(locale.LC_ALL, 'it_IT.utf8')
 
         system = System()
-        status = system.report_general_status(keep_ui_alive=keep_ui_alive)  
+        status = system.report_general_status()  
         
         log("Status report:")
         for key, value in status.items():
@@ -126,9 +123,9 @@ def main(keep_ui_alive=False):
             errors_were_raised = True
             restore_required = False
             log_error("An error occurred while taking the picture", e)
-            log("Waiting one minute and then trying again with the old configuration")
+            log("Waiting 30 seconds and then trying again with the old configuration")
 
-            sleep(59)
+            sleep(30)
 
             try:
                 log_row(char="+")
@@ -202,6 +199,7 @@ def main(keep_ui_alive=False):
 
         # Upload the logs
         try:
+
             if upload_logs:
                 if restore_required and configuration and initial_configuration and initial_server:
                     initial_server.upload_failure_report(configuration.server, initial_configuration.server)
@@ -211,6 +209,13 @@ def main(keep_ui_alive=False):
                     if not server:
                         server = Server(configuration)            
                     server.upload_logs()
+
+            # If so required, send diagnostics to the server
+            if configuration.send_diagnostics:
+                log("Generating diagnostic report")
+                system.generate_diagnostics()
+                log("Sending diagnostic report")
+                server.upload_diagnostics()
                 
         except Exception as e:
             log_error("Something happened uploading the logs:", e, fatal="Logs won't be uploaded")

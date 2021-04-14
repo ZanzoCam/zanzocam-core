@@ -9,7 +9,6 @@ from pathlib import Path
 # Executables constants
 SYSTEM_USER = "zanzocam-bot"
 ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
-ZANZOCAM_EXECUTABLE_KEEP_UI = "/home/zanzocam-bot/venv/bin/z-webcam-from-ui"
 
 # Base paths
 BASE_PATH = Path(__file__).parent
@@ -18,7 +17,7 @@ DATA_PATH = BASE_PATH / "data"
 # Log files
 SERVER_LOG = DATA_PATH / 'error.log'
 CAMERA_LOG = DATA_PATH / 'camera.log'
-CALIBRATION_LOG = DATA_PATH / 'calibration.log'
+DIAGNOSTICS_LOG = DATA_PATH / 'diagnostics.log'
 FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 
 # Configuration file
