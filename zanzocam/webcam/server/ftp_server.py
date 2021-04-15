@@ -114,7 +114,7 @@ class FtpServer:
         # Fetch the new overlay
         with open(path ,'rb') as logs:
             response = self._ftp_client.storlines(
-                f"STOR logs/logs_{datetime.datetime.now()}.txt", logs)
+                f"STOR logs/logs_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%s')}.txt", logs)
                 
         # Make sure the server did not reply with an error
         if not "226" in response:

@@ -24,6 +24,9 @@ class Configuration:
         if not os.path.exists(path):
             log_error(f"No configuration file found under {path}. "
                        "Please configure the server data from the web interface and try again")
+
+        # Populate the attributes with the data
+        self.send_diagnostics = False  # Fallback value, this attribute has to exist
         
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow
@@ -31,15 +34,12 @@ class Configuration:
             configuration = json.load(c)
             configuration = self._decode_json_values(configuration)
 
-            # Populate the attributes with the data 
             for key, value in configuration.items():
                 setattr(self, key, value)
 
         # Add info about the download time (last edit time)
         self._download_time = datetime.datetime.fromtimestamp(path.stat().st_mtime)
         self._path = path
-
-        self.send_diagnostics = True
 
 
     @staticmethod

@@ -428,48 +428,74 @@ class System:
 
         """)
         report += "# ACTIVE PROCESSES\n"
-        report += "###################\n"
-        processes = subprocess.check_output(["/usr/bin/ps", "auxf"])
-        report += processes.decode('utf-8')
+        report += "###################\n\n"
+        try:
+            processes = subprocess.check_output(["/usr/bin/ps", "auxf"])
+            report += processes.decode('utf-8')
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
 
         report += "\n\n"
-        report += "# RAM & MEMORY STATS\n"
+        report += "# RAM & MEMORY STATS\n\n"
         report += "#####################\n"
-        with open("/proc/meminfo", 'r') as meminfo:
-            for line in meminfo.readlines():
-                report += line
+        try:
+            with open("/proc/meminfo", 'r') as meminfo:
+                for line in meminfo.readlines():
+                    report += line
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
 
         report += "\n\n"
         report += "# PORTS\n"
-        report += "########\n"
-        ports = subprocess.check_output(["/usr/bin/netstat", "patun"])
-        report += ports.decode('utf-8')
+        report += "########\n\n"
+        try:
+            ports = subprocess.check_output(["/usr/bin/netstat", "patun"])
+            report += ports.decode('utf-8')
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
 
         report += "\n\n"
         report += "# CRONTABS\n"
-        report += "############\n"
-        crontabs = subprocess.check_output(["/usr/bin/cronrab", "-l"])
-        report += crontabs.decode('utf-8')
-        report += "\n\n"
-        crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/*"])
-        report += crontabs.decode('utf-8')
-        report += "\n\n"
-        crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/.*"])
-        report += crontabs.decode('utf-8')
+        report += "############\n\n"
+        #report += "User's crontabs\n\n"
+        #crontabs = subprocess.check_output(["/usr/bin/crontab", "-l"])
+        #report += crontabs.decode('utf-8')
+        #report += "\n\n"
+
+        report += "System crontabs:\n\n"
+        #crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/*"])
+        #report += crontabs.decode('utf-8')
+        try:
+            _, _, crontabs = next(os.walk("/etc/cron.d/"))
+            for crontab in crontabs:
+                with open("/etc/cron.d/"+crontab, 'r') as c:
+                    for line in c.readlines():
+                        report += line
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
+
+        #report += "\n\n"
+        #crontabs = subprocess.check_output(["/usr/bin/grep", "-vI", "/etc/cron.d/.*"])
+        #report += crontabs.decode('utf-8')
 
         report += "\n\n"
-        report += "# SYSTEMD UNITS\n"
+        report += "# SYSTEMD UNITS\n\n"
         report += "################\n"
-        systemd = subprocess.check_output(["/usr/bin/systemctl"])
-        report += systemd.decode('utf-8')
+        try:
+            systemd = subprocess.check_output(["/usr/bin/systemctl"])
+            report += systemd.decode('utf-8')
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
 
         report += "\n\n"
         report += "# INSTALLED PACKAGES\n"
-        report += "#####################\n"
-        packages = subprocess.check_output(["/usr/bin/apt", "list"])
-        report += packages.decode('utf-8')
+        report += "#####################\n\n"
+        try:
+            packages = subprocess.check_output(["/usr/bin/apt", "list"])
+            report += packages.decode('utf-8')
+        except Exception as e:
+            report += "Nothing to show, exception occurred: {e}"
 
-
-        report += "\n\n"        
+        report += "\n\n"
         with open(path, 'w') as report_file:
             report_file.writelines(report)

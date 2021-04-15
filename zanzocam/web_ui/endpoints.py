@@ -79,12 +79,12 @@ def toggle_hotspot_endpoint(value):
 # API to take actions
 #
 
-@app.route("/reboot", methods=["POST"])
+@app.route("/reboot", methods=["GET"])
 def reboot_endpoint():
     return "", api.reboot()
 
 
-@app.route("/shoot-picture", methods=["GET"])
+@app.route("/shoot-picture", methods=["POST"])
 def shoot_picture_endpoint():
     return "", api.shoot_picture()
 
