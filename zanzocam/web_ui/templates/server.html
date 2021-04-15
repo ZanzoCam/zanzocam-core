@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>
+    Nota: questi dati potranno essere cambiati in seguito utilizzando il file di 
+    configurazione salvato sul server. La webcam scarichera' il file aggiornato
+    appena prima di scattare una nuova foto.
+    </p>
+
+    <div id="page">
+
+            <form id="config" method="POST" action="/configure/server">
+                <div class="row">
+                    <p style="margin-top: 1rem; margin-bottom: 1rem; margin-right:3rem;">Protocollo:</p>
+                    <label class="toggle">
+                        <input type="radio" value="HTTP" name="server_protocol" {% if server_data.protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')" style="display:none;">
+                        <span class="label">HTTP</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="radio" value="FTP" name="server_protocol" {% if server_data.protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')"  style="display:none;">
+                        <span class="label">FTP</span>
+                    </label>
+                </div>            
+                <div id="ftp-vars" style="display: none; flex-direction:column!important;">
+                    <div class="row">
+                        <div class="column">
+                            <label>Hostname:</label>
+                            <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname" value="{{ server_data.hostname }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="column">
+                            <label class="label-inline">Sottocartella (se necessaria):</label>
+                            <input type="text" name="server_subfolder" value="{{ server_data.subfolder }}">
+                        </div>
+                        <div class="column">
+                            <label class="label-inline">Avanzate:</label>
+                            <div style="padding: 10px;">
+                                <input type="checkbox" name="server_tls" {% if server_data.tls %}checked{%endif%}>
+                                <label class="label-inline">Usa TLS</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="http-vars" style="display: none;">
+                    <label for="server_url">URL del server:</label>
+                    <input type="text" name="server_url" value="{{ server_data.url }}">
+                </div>
+                
+                <label for="server_username">Username del server (se necessario):</label>
+                <input type="text" placeholder="username"  name="server_username" value="{{ server_data.username }}">
+                
+                <label for="server_password">Password del server (se necessaria):</label>
+                <div class="row">
+                    <input type="password" name="server_password" value="{{ server_data.password }}"> 
+                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
+                </div>
+            
+                <div class="center">
+                    <button id="configure-server" class="button setup-button">Configura Dati Server</button> 
+                </div>
+            </form>        
+
+    </div>
+    
+    
+    <script>
+    function toggle_password(button) {
+        if( button.innerHTML == 'Mostra' ) {
+            button.innerHTML = 'Nascondi'
+            button.previousElementSibling.type="text";
+        } else {
+            button.innerHTML = 'Mostra'
+            button.previousElementSibling.type="password";
+        }
+    }
+
+    function toggle_server_protocol(value){
+        // Toggle http or ftp in the server section
+        var http_block = document.getElementById("http-vars");
+        var ftp_block = document.getElementById("ftp-vars");
+        http_block.style.display = value==="HTTP" ? "block" : "none";
+        ftp_block.style.display = value==="FTP" ? "block" : "none";
+    }
+    toggle_server_protocol("{{ server_data.protocol }}");
+
+    </script>
+    
+{% endblock %}

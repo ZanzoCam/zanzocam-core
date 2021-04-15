@@ -212,7 +212,6 @@ def main():
 
             # If so required, send diagnostics to the server
             if configuration.send_diagnostics:
-                log("Generating diagnostic report")
                 system.generate_diagnostics()
                 log("Sending diagnostic report")
                 server.upload_diagnostics()

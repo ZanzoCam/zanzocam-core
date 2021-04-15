@@ -40,11 +40,20 @@ def home_endpoint(feedback: str=None, feedback_sheet_name: str=None, feedback_ty
         return_code = 200
     else:
         return_code = 200
-    return pages.home(feedback=feedback, 
-                      feedback_sheet_name=feedback_sheet_name, 
-                      feedback_type=feedback_type), return_code
+    return pages.home(), return_code
 
-@app.route("/webcam-setup", methods=["GET"])
+
+@app.route("/wifi", methods=["GET"])
+def wifi_endpoint():
+    return pages.wifi()
+
+
+@app.route("/server", methods=["GET"])
+def server_endpoint():
+    return pages.server()
+
+
+@app.route("/webcam", methods=["GET"])
 def webcam_endpoint():
     return pages.webcam()
 

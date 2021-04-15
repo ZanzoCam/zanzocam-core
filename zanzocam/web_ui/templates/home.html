@@ -15,83 +15,38 @@
     <div id="page">
 
         <div class="sheet">
-            <form id="config" method="POST" action="/configure/wifi">
+            <div class="row">
                 <h3>WiFi:</h3>
-                <label for="wifi_ssid">Nome della rete (SSID):</label>
-                <input type="text" name="wifi_ssid" value="{{ wifi_data.ssid }}">
-                
-                <label for="wifi_password">Password:</label>
-                <div class="row">
-                    <input type="password" name="wifi_password" value="{{ wifi_data.password }}" required> 
-                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
-                </div>
-                <div class="center">
-                    <button id="configure-wifi" class="button">Configura il WiFi</button> 
-                </div>
-                {% if feedback_sheet_name == "wifi" %}
-                <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{ feedback }}</p>
-                {% endif %}
-            </form>
+                <a href="/wifi" id="configure-wifi" class="button" style="margin: auto 0;">Configura il WiFi</a> 
+            </div>
+            <p>
+                Nome della rete (SSID): <b>{{ wifi_data.ssid }}</b><br>
+                Password: <b id="wifi_pwd"></b><a id="wifi_pwd_button" onclick="toggle_wifi_password()" style="margin-left:1rem;">Mostra</a>
+            </p>
         </div>
 
         <div class="sheet">
-            <form id="config" method="POST" action="/configure/server">
-                <div class="row">
-                    <h3>Server:</h3>
-                    <label class="toggle">
-                        <input type="radio" value="HTTP" name="server_protocol" {% if server_data.protocol=="HTTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('HTTP')" style="display:none;">
-                        <span class="label">HTTP</span>
-                    </label>
-                    <label class="toggle">
-                        <input type="radio" value="FTP" name="server_protocol" {% if server_data.protocol=="FTP" %}checked{%endif%} onclick="javascript:toggle_server_protocol('FTP')"  style="display:none;">
-                        <span class="label">FTP</span>
-                    </label>
-                </div>            
-                <div id="ftp-vars" style="display: none; flex-direction:column!important;">
-                    <div class="row">
-                        <div class="column">
-                            <label>Hostname:</label>
-                            <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname" value="{{ server_data.hostname }}">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="column">
-                            <label class="label-inline">Sottocartella (se necessaria):</label>
-                            <input type="text" name="server_subfolder" value="{{ server_data.subfolder }}">
-                        </div>
-                        <div class="column">
-                            <label class="label-inline">Avanzate:</label>
-                            <div style="padding: 10px;">
-                                <input type="checkbox" name="server_tls" {% if server_data.tls %}checked{%endif%}>
-                                <label class="label-inline">Usa TLS</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="row">
+                <h3>Server:</h3>
+                <a href="/server" id="configure-server" class="button" style="margin: auto 0;">Configura Dati Server</a> 
+            </div>
+            <p>
+                Protocollo: <b>{{ server_data.protocol }}</b><br>
                 
-                <div id="http-vars" style="display: none;">
-                    <label for="server_url">URL del server:</label>
-                    <input type="text" name="server_url" value="{{ server_data.url }}">
-                </div>
-                
-                <label for="server_username">Username del server (se necessario):</label>
-                <input type="text" placeholder="username"  name="server_username" value="{{ server_data.username }}">
-                
-                <label for="server_password">Password del server (se necessaria):</label>
-                <div class="row">
-                    <input type="password" name="server_password" value="{{ server_data.password }}"> 
-                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
-                </div>
-            
-                <div class="center">
-                    <button id="configure-server" class="button">Configura Dati Server</button> 
-                </div>
+                {% if server_data.protocol=="HTTP" %}
+                URL: <b>{{ server_data.url }}</b><br>
 
-            </form>
-            {% if feedback_sheet_name == "server" %}
-            <p {% if feedback_type == "positive" %}style="color:green;"{% else %}style="color:red;"{% endif %}>{{feedback }}</p>
-            {% endif %}
+                {% elif server_data.protocol=="FTP" %}
+                Hostname: <b>{{ server_data.hostname }}</b><br>
+                Sottocartella: <b>{{ server_data.subfolder }}</b><br>
+                Usa TLS: <b>{%if server_data.tls %}Si'{% else %}No{% endif %}</b><br>
+                {% endif %}
+                
+                Username: <b>{{ server_data.username }}</b><br>
+                Password: <b id="server_pwd"></b><a id="server_pwd_button" onclick="toggle_server_password()" style="margin-left:1rem;">Mostra</a>
+            </p>
         </div>
+
 
         <div class="sheet">
             <div class="row">
@@ -112,11 +67,12 @@
             Si consiglia di selezionare ON durante il setup della webcam, e di selezionare OFF una volta che il sistema e'
             completamente funzionante.</p>
         </div>
-        
+
+
         <div class="sheet">
             <div class="row">
                 <h3>Webcam:</h3>
-                <a href="/webcam-setup" id="setup-webcam" class="button" type="button" style="margin: auto 0;">Setup Webcam</a>
+                <a href="/webcam" id="setup-webcam" class="button" type="button" style="margin: auto 0;">Setup Webcam</a>
             </div>
         </div>
 
@@ -130,40 +86,31 @@
                 potrebbe riconnettersi a un altro indirizzo IP.
             </p>
         </div>
-
-        
-
     </div>
     
     
     <script>
-    function toggle_password(button) {
-        if( button.innerHTML == 'Mostra' ) {
-            button.innerHTML = 'Nascondi'
-            button.previousElementSibling.type="text";
+    function toggle_wifi_password() {
+        const field_wifi = document.getElementById("wifi_pwd");
+        const button_wifi = document.getElementById("wifi_pwd_button");
+        if( button_wifi.innerHTML == 'Mostra' ) {
+            button_wifi.innerHTML = 'Nascondi';
+            field_wifi.innerHTML="{{ wifi_data.password }}";
         } else {
-            button.innerHTML = 'Mostra'
-            button.previousElementSibling.type="password";
+            button_wifi.innerHTML = 'Mostra';
+            field_wifi.innerHTML="";
         }
     }
 
-    function toggle_server_protocol(value){
-        // Toggle http or ftp in the server section
-        var http_block = document.getElementById("http-vars");
-        var ftp_block = document.getElementById("ftp-vars");
-        http_block.style.display = value==="HTTP" ? "block" : "none";
-        ftp_block.style.display = value==="FTP" ? "block" : "none";
-    }
-    toggle_server_protocol("{{ server_data.protocol }}");
-    
-    
-    function disableOnHotspot() {
-        if(window.location.href.includes("10.0.0.5")){
-            button = document.getElementById("setup-webcam");
-            button.disabled = true;
-            feedback = document.getElementById("feedback");
-            feedback.innerHTML = "Per scattare la foto di prova, riavvia il Raspberry "+
-			"e connettiti ad esso tramite il WiFi, invece che usare l'hotspot.";
+    function toggle_server_password() {
+        const field = document.getElementById("server_pwd");
+        const button = document.getElementById("server_pwd_button");
+        if( button.innerHTML == 'Mostra' ) {
+            button.innerHTML = 'Nascondi';
+            field.innerHTML="{{ server_data.password }}";
+        } else {
+            button.innerHTML = 'Mostra';
+            field.innerHTML="";
         }
     }
     

@@ -11,29 +11,38 @@ from constants import *
 
 
 
-def home(feedback: str=None, feedback_sheet_name: str=None, feedback_type: str=None):
-    """ The initial page with the forms """
-
+def home():
+    """ The initial page with the summary """
+    hotspot_value = read_flag_file(HOTSPOT_FLAG, "ON")
     wifi_data = read_setup_data_file(WIFI_DATA)
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
-    hotspot_value = read_flag_file(HOTSPOT_FLAG, "ON")
-
     return render_template("home.html", 
-                                title="Setup Iniziale", 
-                                version=get_version(),
-                                wifi_data=wifi_data, 
-                                server_data=server_data, 
+                                title="Setup", 
+                                version=get_version(), 
                                 hotspot_value=hotspot_value,
-                                feedback=feedback, 
-                                feedback_sheet_name=feedback_sheet_name, 
-                                feedback_type=feedback_type)
+                                wifi_data=wifi_data,
+                                server_data=server_data)
 
+def wifi():
+    """ The page with the wifi forms """
+    wifi_data = read_setup_data_file(WIFI_DATA)
+    return render_template("wifi.html", 
+                                title="Setup WiFi", 
+                                version=get_version(),
+                                wifi_data=wifi_data)
+
+def server():
+    """ The page with the server data forms """
+    server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
+    return render_template("server.html", 
+                                title="Setup Server", 
+                                version=get_version(),
+                                server_data=server_data)
 
 def webcam():
     """ The page where a picture can be shoot """
-
     clear_logs(PICTURE_LOGS)  # To not see old logs in the textarea
-    return render_template("picture-preview.html", 
+    return render_template("webcam.html", 
                            title="Setup Webcam", 
                            version=get_version(),
                            preview_url=PREVIEW_PICTURE_URL)
