@@ -21,6 +21,7 @@ REQUIREMENTS: dict = {
     'webcam': [
         "Pillow",
         "requests",
+        "piexif",
     ],
     'web-ui': [
         "uwsgi",

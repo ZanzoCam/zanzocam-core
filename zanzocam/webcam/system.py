@@ -27,29 +27,31 @@ class System:
     def __init__(self):
         pass
     
-    
-    def report_general_status(self) -> Dict:
+    @staticmethod
+    def report_general_status() -> Dict:
         """ 
         Collect general system data like version, uptime, internet connectivity. 
         In all cases, None means that the value could not be retrieved
         (i.e. an error occurred). Errors will be logged in the console with
         their stacktraces for further debug.
         """
-        self.status = {}
-        self.status["version"] = self.get_version()
-        self.status["last reboot"] = self.get_last_reboot_time()
-        self.status["uptime"] = self.get_uptime()
-        self.status["hotspot"] = self.check_hotspot_allowed() or "FAILED (see stacktrace)"
-        if self.status["hotspot"] != "OFF":
-            self.status["autohotspot check"] = "OK" if self.run_autohotspot() else "FAILED (see stacktrace)"
-        self.status['wifi ssid'] = self.get_wifi_ssid()
-        self.status['internet access'] = self.check_internet_connectivity()
-        self.status['disk size'] = self.get_filesystem_size()
-        self.status['free disk space'] = self.get_free_space_on_disk()
-        self.status['RAM status'] = self.get_ram_stats()
-        return self.status
+        status = {}
+        status["version"] = System.get_version()
+        status["last reboot"] = System.get_last_reboot_time()
+        status["uptime"] = System.get_uptime()
+        status["hotspot"] = System.check_hotspot_allowed() or "FAILED (see stacktrace)"
+        if status["hotspot"] != "OFF":
+            status["autohotspot check"] = "OK" if System.run_autohotspot() else "FAILED (see stacktrace)"
+        status['wifi ssid'] = System.get_wifi_ssid()
+        status['internet access'] = System.check_internet_connectivity()
+        status['disk size'] = System.get_filesystem_size()
+        status['free disk space'] = System.get_free_space_on_disk()
+        status['RAM status'] = System.get_ram_stats()
+        return status
 
-    def get_version(self) -> Optional[str]:
+
+    @staticmethod
+    def get_version() -> Optional[str]:
         """ 
         Read the ZANZOCAM version file 
         Returns None if an error occurs.
@@ -60,7 +62,9 @@ class System:
             log_error(f"Could not get version information", e)
         return None
 
-    def get_last_reboot_time(self) -> Optional[datetime.datetime]:
+
+    @staticmethod
+    def get_last_reboot_time() -> Optional[datetime.datetime]:
         """ 
         Read the last reboot time of ZANZOCAM as a datetime object.
         Returns None if an error occurs.
@@ -77,23 +81,25 @@ class System:
         except Exception as e:
             log_error("Could not get last reboot datetime information", e)
         return None
-        
-        
-    def get_uptime(self) -> Optional[datetime.timedelta]:
+
+
+    @staticmethod
+    def get_uptime() -> Optional[datetime.timedelta]:
         """ 
         Read the uptime of ZANZOCAM as a timedelta object.
         Returns None if an error occurs.
         """
         try:
-            last_reboot = self.get_last_reboot_time()
+            last_reboot = System.get_last_reboot_time()
             return datetime.datetime.now() - last_reboot
 
         except Exception as e:
             log_error("Could not get uptime information", e)
         return None
         
-        
-    def check_hotspot_allowed(self) -> Optional[str]:
+
+    @staticmethod
+    def check_hotspot_allowed() -> Optional[str]:
         """ 
         Checks whether ZANZOCAM can turn on its hotspot at need
         """
@@ -111,7 +117,9 @@ class System:
                 h.write("ON")
             return "No flag found, setting it to ON"
 
-    def run_autohotspot(self) -> Optional[bool]:
+
+    @staticmethod
+    def run_autohotspot() -> Optional[bool]:
         """
         Executes the autohotspot script to make sure to connect 
         to a new WiFi if so required.
@@ -151,7 +159,8 @@ class System:
         return None
 
 
-    def get_wifi_ssid(self) -> Optional[str]:
+    @staticmethod
+    def get_wifi_ssid() -> Optional[str]:
         """
         Get the SSID of the WiFi it is connected to.
         Returns None if an error occurs and "" if the device is not connected
@@ -174,7 +183,8 @@ class System:
         return None
 
 
-    def check_internet_connectivity(self) -> Optional[bool]:
+    @staticmethod
+    def check_internet_connectivity() -> Optional[bool]:
         """
         Verifies that there is Internet connection to the outside.
         Returns True if there is Internet connection, False if there isn't, 
@@ -190,33 +200,36 @@ class System:
         return None
         
         
-    def get_filesystem_size(self) -> Optional[str]:
+    @staticmethod
+    def get_filesystem_size() -> Optional[str]:
         """
         Returns a string with the size of the filesystem where the OS is running.
         Suffixes are KB, MB, GB, TB, Returns None if an error occurs.
         """
         try:
             fs_size, _, _ = shutil.disk_usage(__file__)
-            return self.convert_bytes_into_string(fs_size)
+            return System.convert_bytes_into_string(fs_size)
         except Exception as e:
             log_error("Could not retrieve the size of the filesystem", e)
         return None
         
         
-    def get_free_space_on_disk(self) -> Optional[str]:
+    @staticmethod
+    def get_free_space_on_disk() -> Optional[str]:
         """
         Returns a string with the amount of free space left on the device.
         Suffixes are KB, MB, GB, TB, Returns None if an error occurs.
         """
         try:
             _, _, free_space = shutil.disk_usage(__file__)
-            return self.convert_bytes_into_string(free_space)
+            return System.convert_bytes_into_string(free_space)
         except Exception as e:
             log_error("Could not get the amount of free space on the filesystem", e)
         return None
 
         
-    def get_ram_stats(self) -> Optional[str]:
+    @staticmethod
+    def get_ram_stats() -> Optional[str]:
         """
         Returns a string with some stats about the RAM and swap usage.
         Returns None if an error occurs.
@@ -226,13 +239,13 @@ class System:
             with open("/proc/meminfo", 'r') as meminfo:
                 for line in meminfo.readlines():
                     if line.startswith("MemTotal:"):
-                        mem_stats += "total RAM: " + line.replace("MemTotal:", "").strip() + " | "
+                        mem_stats += "total: " + line.replace("MemTotal:", "").strip() + " | "
 
                     elif line.startswith("MemFree:"):
-                        mem_stats += "free RAM: " + line.replace("MemFree:", "").strip() + " | "
+                        mem_stats += "free: " + line.replace("MemFree:", "").strip() + " | "
 
                     elif line.startswith("MemAvailable:"):
-                        mem_stats += "available RAM: " + line.replace("MemAvailable:", "").strip() + " | "
+                        mem_stats += "available: " + line.replace("MemAvailable:", "").strip() + " | "
 
                     elif line.startswith("SwapTotal:"):
                         mem_stats += "total swap: " + line.replace("SwapTotal:", "").strip() + " | "
@@ -262,7 +275,9 @@ class System:
         else:
             return f"{bytes} bytes"
 
-    def copy_system_file(self, original_path: Path, backup_path: Path) -> bool:
+    
+    @staticmethod
+    def copy_system_file(original_path: Path, backup_path: Path) -> bool:
         """
         Copies a file to a directory using sudo.
         Return True if the copy was successful, false otherwise
@@ -282,7 +297,9 @@ class System:
                         "The file hasn't been copied", e)
             return False 
 
-    def give_ownership_to_root(self, file: Path):
+    
+    @staticmethod
+    def give_ownership_to_root(file: Path):
         """
         Give ownership of the specified file to root.
         Return True if the chown process worked, False otherwise.
@@ -302,14 +319,18 @@ class System:
                        "The file ownership is probably unaffected", e)
             return False
 
-    def apply_system_settings(self, configuration: Configuration) -> None:
+
+    @staticmethod
+    def apply_system_settings(configuration: Configuration) -> None:
         """
         Modifies the system according to the new configuration.
         """
         if 'time' in vars(configuration).keys():
-            self.update_crontab(getattr(configuration, "time", {}))
+            System.update_crontab(getattr(configuration, "time", {}))
 
-    def prepare_crontab_string(self, time: Dict) -> List[str]:
+
+    @staticmethod
+    def prepare_crontab_string(time: Dict) -> List[str]:
         """
         Converts time directives from the configuration file into
         the content of the crontab itself.
@@ -363,17 +384,19 @@ class System:
 
         return cron_strings
 
-    def update_crontab(self, time: Dict) -> None:
+    
+    @staticmethod
+    def update_crontab(time: Dict) -> None:
         """ 
         Updates the crontab and tries to recover for potential issues.
         Might refuse to update it in case of misconfigurations, in which case it
         will restore the old one and log the exceptions.
         """
         # Get the crontab content
-        cron_strings = self.prepare_crontab_string(time)   
+        cron_strings = System.prepare_crontab_string(time)   
 
         # Backup the old file
-        backup_cron = self.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
+        backup_cron = System.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
         
         # Creates a file with the right content
         with open(TEMP_CRONJOB, 'w') as d:
@@ -382,10 +405,10 @@ class System:
                 d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
 
         # Move new cron file into cron folder
-        self.copy_system_file(TEMP_CRONJOB, CRONJOB_FILE)
+        System.copy_system_file(TEMP_CRONJOB, CRONJOB_FILE)
 
         # Assign the cron file to root:root
-        chown_cron = self.give_ownership_to_root(CRONJOB_FILE)
+        chown_cron = System.give_ownership_to_root(CRONJOB_FILE)
         
         log("Crontab updated successfully")
             
@@ -401,7 +424,7 @@ class System:
                 fatal="the crontab might not trigger anymore. "
                       "ZANZOCAM might need manual intervention.")
             else:
-                restore_cron = self.copy_system_file(BACKUP_CRONJOB, CRONJOB_FILE)
+                restore_cron = System.copy_system_file(BACKUP_CRONJOB, CRONJOB_FILE)
 
                 if not restore_cron:
                     log_error("Something went wrong restoring the cron file from its backup!",
@@ -412,7 +435,8 @@ class System:
             log_row("+")
 
 
-    def generate_diagnostics(self, path = DIAGNOSTICS_LOG):
+    @staticmethod
+    def generate_diagnostics(path = DIAGNOSTICS_LOG):
         """
         Generate a report with loads of system information, 
         to be sent to the server as a diagnostic tool.

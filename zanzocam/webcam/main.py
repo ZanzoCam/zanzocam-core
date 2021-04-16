@@ -172,11 +172,11 @@ def main():
         if camera:        
             try:
                 log("Cleaning up image files")
-                if os.path.exists(camera.temp_photo_path):
-                    os.remove(camera.temp_photo_path)
-                if server.final_image_path and os.path.exists(server.final_image_path):
-                    os.remove(server.final_image_path)
-                log("Cleanup complete")
+                # if os.path.exists(camera.temp_photo_path):
+                #     os.remove(camera.temp_photo_path)
+                # if server.final_image_path and os.path.exists(server.final_image_path):
+                #     os.remove(server.final_image_path)
+                # log("Cleanup complete")
 
             except Exception as e:
                 errors_were_raised = True

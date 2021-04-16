@@ -2,6 +2,7 @@ from typing import Any, Dict, Tuple, Optional
 
 import os
 import math
+import piexif
 import datetime
 import textwrap
 from time import sleep
@@ -12,6 +13,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageStat
 
 from constants import *
 from webcam.utils import log, log_error
+from webcam.system import System
 from webcam.overlays import Overlay
 from webcam.configuration import Configuration 
 
@@ -345,10 +347,19 @@ class Camera:
                 x, y = overlay.compute_position(image.width, image.height, border_top, border_bottom)
                 image.paste(overlay.rendered_image, (x, y), mask=overlay.rendered_image)  # mask is to allow for transparent images
         
+        # Recover the EXIF data
+        exif_dict = piexif.load(photo.info["exif"])
+        version = System.get_version()
+        exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {version}"
+        exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {version}"
+        exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {version}"
+        exif_bytes = piexif.dump(exif_dict)
+
         # Save the image appropriately
         if self.extension.lower() in ["jpg", "jpeg"]:
             image = image.convert('RGB')
             image.save(DATA_PATH / self.processed_image_path, format='JPEG', 
-                subsampling=self.jpeg_subsampling, quality=self.jpeg_quality)
+                subsampling=self.jpeg_subsampling, quality=self.jpeg_quality,
+                exif=exif_bytes)
         else:
-            image.save(DATA_PATH / self.processed_image_path)
+            image.save(DATA_PATH / self.processed_image_path, exif=exif_bytes)
