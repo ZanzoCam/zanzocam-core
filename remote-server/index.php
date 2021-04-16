@@ -33,9 +33,6 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
     $imagetype = $_FILES['photo']['type'];
     $imageerror = $_FILES['photo']['error'];
     $imagetemp = $_FILES['photo']['tmp_name'];
-
-    // Fix Chrome quirk
-    $config = str_replace('\r\n', '\n', $config);  // The single quotes here distinguish a literal \r from a "real" \r, and we want the former
     
     // Logs are being uploaded - store them
     if ($logs){
@@ -45,7 +42,6 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             $response["logs"] = "Failed to save the logs on the server.";
         }
     }
-
 
     // A photo is being uploaded - store it and if needed delete/rename the others
     if ($imagename){
@@ -62,7 +58,7 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
                 // If a maximum number of photos ia allowed, add a prefix to the current photo
                 if($maxPhotos > 1){
                     $split_name = explode(".", $imagename);
-                    $imagename = $split_name[0]."__1.".$split_name[1];
+                    $imagename = $split_name[0]."__0.".$split_name[1];
             
                     // Delete the oldest pictures if there are more than maxPhotos pictures
                     $pictures = glob($image_path."*.{jpg,png,gif}", GLOB_BRACE);
@@ -131,4 +127,3 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
     echo json_encode($response)."\n";
 }
 ?>
-
