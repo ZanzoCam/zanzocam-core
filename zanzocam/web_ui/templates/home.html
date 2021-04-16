@@ -20,7 +20,7 @@
                 <a href="/wifi" id="configure-wifi" class="button" style="margin: auto 0;">Configura il WiFi</a> 
             </div>
             <p>
-                Nome della rete (SSID): <b>{{ wifi_data.ssid }}</b><br>
+                Nome della rete (SSID): <b>{{ wifi_data.ssid or "[non configurato]"}}</b><br>
                 Password: <b id="wifi_pwd"></b><a id="wifi_pwd_button" onclick="toggle_wifi_password()" style="margin-left:1rem;">Mostra</a>
             </p>
         </div>
@@ -31,18 +31,18 @@
                 <a href="/server" id="configure-server" class="button" style="margin: auto 0;">Configura Dati Server</a> 
             </div>
             <p>
-                Protocollo: <b>{{ server_data.protocol }}</b><br>
+                Protocollo: <b>{{ server_data.protocol  or "[non configurato]"}}</b><br>
                 
                 {% if server_data.protocol=="HTTP" %}
-                URL: <b>{{ server_data.url }}</b><br>
+                URL: <b>{{ server_data.url  or "[non configurato]"}}</b><br>
 
                 {% elif server_data.protocol=="FTP" %}
-                Hostname: <b>{{ server_data.hostname }}</b><br>
-                Sottocartella: <b>{{ server_data.subfolder }}</b><br>
+                Hostname: <b>{{ server_data.hostname  or "[non configurato]"}}</b><br>
+                Sottocartella: <b>{{ server_data.subfolder  or "[non configurato]"}}</b><br>
                 Usa TLS: <b>{%if server_data.tls %}Si'{% else %}No{% endif %}</b><br>
                 {% endif %}
                 
-                Username: <b>{{ server_data.username }}</b><br>
+                Username: <b>{{ server_data.username or "[non configurato]" }}</b><br>
                 Password: <b id="server_pwd"></b><a id="server_pwd_button" onclick="toggle_server_password()" style="margin-left:1rem;">Mostra</a>
             </p>
         </div>
@@ -95,7 +95,7 @@
         const button_wifi = document.getElementById("wifi_pwd_button");
         if( button_wifi.innerHTML == 'Mostra' ) {
             button_wifi.innerHTML = 'Nascondi';
-            field_wifi.innerHTML="{{ wifi_data.password }}";
+            field_wifi.innerHTML="{{ wifi_data.password  or '[non configurato]' }}";
         } else {
             button_wifi.innerHTML = 'Mostra';
             field_wifi.innerHTML="";
@@ -107,7 +107,7 @@
         const button = document.getElementById("server_pwd_button");
         if( button.innerHTML == 'Mostra' ) {
             button.innerHTML = 'Nascondi';
-            field.innerHTML="{{ server_data.password }}";
+            field.innerHTML="{{ server_data.password  or '[non configurato]'}}";
         } else {
             button.innerHTML = 'Mostra';
             field.innerHTML="";

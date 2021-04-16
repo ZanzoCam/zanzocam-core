@@ -140,6 +140,10 @@ class Overlay:
             text_width, text_height = self.process_text(font, photo_width)
             text_size = (text_width + padding*2, text_height + padding*2)
 
+            # Some very popular browsers use \r\n to save newlines from 
+            # textareas: normalize
+            self.text = self.text.replace("\r\n", "\n")
+
             # Creates the image
             label = Image.new("RGBA", text_size, color=self.background_color)
             draw = ImageDraw.Draw(label)

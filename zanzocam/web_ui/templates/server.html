@@ -23,17 +23,17 @@
                 </div>            
                 <div id="ftp-vars" style="display: none; flex-direction:column!important;">
                     <div class="row">
-                        <div class="column">
+                        <div class="column" style="padding:0;">
                             <label>Hostname:</label>
                             <input type="text" placeholder="example.com" id="server-hostname" name="server_hostname" value="{{ server_data.hostname }}">
                         </div>
                     </div>
                     <div class="row">
-                        <div class="column">
+                        <div class="column" style="padding:0;">
                             <label class="label-inline">Sottocartella (se necessaria):</label>
                             <input type="text" name="server_subfolder" value="{{ server_data.subfolder }}">
                         </div>
-                        <div class="column">
+                        <div class="column" style="padding:0;">
                             <label class="label-inline">Avanzate:</label>
                             <div style="padding: 10px;">
                                 <input type="checkbox" name="server_tls" {% if server_data.tls %}checked{%endif%}>

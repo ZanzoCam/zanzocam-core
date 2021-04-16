@@ -6,7 +6,7 @@
     Ricorda che altre opzioni come rotazione, inversione verticale o orizzontale, scritte, loghi etc... 
     verranno applicate piu' tardi, quando la foto verra' inviata al server. La preview serve unicamente
     a sistemare l'inquadratura e la messa a fuoco.<br><br>
-    <a href="/webcam-setup" >Clicca qui per aggiornare la preview</a> (o ricarica la pagina).
+    <a href="/webcam" >Clicca qui per aggiornare la preview</a> (o ricarica la pagina).
     </p>
 
     <img id="preview" src="/picture-preview" style="width:min(100%, 800px); min-height: 80px; border-radius:0.5rem; background: url('{{ url_for('static', filename='logos/loading.gif') }}') no-repeat center center;">
@@ -23,7 +23,6 @@
     <p id="feedback" class="center"></p>
 
     <div id="logs-block" style="display: none;">
-        <div class="center"><a href="/logs/text/picture" class="button" download="zanzocam-logs.txt">Scarica i log</a></div>
         <p style="margin:1rem;">Logs:</p>
         <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:3rem;border-radius:1rem;"></p>
         <div class="center"><a href="/logs/text/picture" class="button" download="zanzocam-logs.txt">Scarica i log</a></div>

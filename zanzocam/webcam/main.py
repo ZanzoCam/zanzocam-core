@@ -104,7 +104,7 @@ def main():
             
             log_row(char="+")
             try:
-                log("Re-applying the old system configuration")
+                log(f"Re-applying the old system configuration:\n {initial_configuration}")
                 system.apply_system_settings(initial_configuration)
             except Exception as e:
                 log_error("Something unexpected occurred while re-applying the "
@@ -123,7 +123,7 @@ def main():
             errors_were_raised = True
             restore_required = False
             log_error("An error occurred while taking the picture", e)
-            log("Waiting 30 seconds and then trying again with the old configuration")
+            log(f"Waiting 30 seconds and then trying again with the old configuration: {initial_configuration}")
 
             sleep(30)
 
