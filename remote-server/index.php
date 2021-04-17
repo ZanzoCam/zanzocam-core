@@ -62,6 +62,7 @@ if (empty($_POST) == 1 && empty($_FILES) == 1) {
             
                     // Delete the oldest pictures if there are more than maxPhotos pictures
                     $pictures = glob($image_path."*.{jpg,png,gif}", GLOB_BRACE);
+                    natsort($pictures);    // To ensure correct ordering of numbered names
                     $pictures = array_reverse($pictures);  // To allow the rename to work properly!
                     
                     // Rename the other pictures
