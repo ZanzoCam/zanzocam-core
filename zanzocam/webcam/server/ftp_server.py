@@ -144,19 +144,22 @@ class FtpServer:
         # NOTE that in the HTTP version this is done by the PHP script
         if self.max_photos > 1:
 
-            # -1 because extremes are excluded! The second -1 is the step
+            # Renaming images in reverse order, not to overwreite each other.
+            # The first -1 is because extremes are excluded
+            # The second -1 is the step
             # This procedure will also overwrite the oldest picture
+            log("Renaming pictures of the server...")
             for position in range(self.max_photos, -1, -1):
                 
                 old_name = f"{image_name}__{position}.{image_extension}"
                 new_name = f"{image_name}__{position+1}.{image_extension}"
                 
-                log(f"Renaming '{old_name}' to '{new_name}'")
+                #log(f"Renaming '{old_name}' to '{new_name}'")
                 try:
                     self._ftp_client.rename(f"pictures/{old_name}", f"pictures/{new_name}")
                 except error_perm as resp:
                     if '550' in str(resp):
-                        log(f"Encountered a 550 FTP error: {str(resp)}. probably the image didn't exist, ignore this error")
+                        log(f"Error: {str(resp)}. probably the image didn't exist. Ignoring.")
                         pass
                         
         # Upload the picture
