@@ -93,14 +93,6 @@ def toggle_hotspot(value) -> int:
     return "", toggle_flag(HOTSPOT_FLAG, value)
 
 
-def toggle_calibration(value):
-    """ 
-    Allow ZANZOCAM to take as many pictures as needed in low-light conditions, and
-    to save the data obtained in the process for a future calibration step.
-    """
-    return "", toggle_flag(CALIBRATION_FLAG, value)
-
-
 def get_logs(kind: str, name: str):
     """ 
     Endpoint for fetching the latest logs 

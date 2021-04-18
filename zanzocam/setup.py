@@ -19,7 +19,7 @@ REQUIREMENTS: dict = {
     'webcam': [
         "Pillow",
         "requests",
-        "piexif",
+        "piexif",  # Carry over and edit EXIF information
     ],
     'web-ui': [
         "uwsgi",
@@ -27,6 +27,8 @@ REQUIREMENTS: dict = {
     ],
     'test': [
         'pytest',
+        'pytest-subprocess',
+        'freezegun',  # Mock datetime objects
     ]
 
 }

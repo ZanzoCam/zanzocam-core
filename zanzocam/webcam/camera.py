@@ -349,10 +349,9 @@ class Camera:
         
         # Recover and edit the EXIF data
         exif_dict = piexif.load(photo.info["exif"])
-        version = System.get_version()
-        exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {version} (https://zansara.github.io/zanzocam/)"
-        exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {version} (https://zansara.github.io/zanzocam/)"
-        exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {version} (https://zansara.github.io/zanzocam/)"
+        exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+        exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+        exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
         exif_bytes = piexif.dump(exif_dict)
 
         # Save the image appropriately

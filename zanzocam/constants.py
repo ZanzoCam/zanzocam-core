@@ -30,19 +30,13 @@ CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 WIFI_DATA = DATA_PATH / "wifi_data.json"
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
-CALIBRATION_DATASET = DATA_PATH / "luminance_speed_dataset.csv"
-CALIBRATED_PARAMS = DATA_PATH / "calibration_parameters.csv"
 
 # Flags (single value files)
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
-CALIBRATION_FLAG = DATA_PATH / "calibration.flag"
 
 # Image paths (they have to be served out, so they go in the statics)
 PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
 PREVIEW_PICTURE = BASE_PATH / "web_ui" / PREVIEW_PICTURE_URL
-
-CALIBRATION_GRAPH_URL = "static/previews/calibration_graph.png"
-CALIBRATION_GRAPH = BASE_PATH / "web_ui" / CALIBRATION_GRAPH_URL
 
 # Camera overlays
 IMAGE_OVERLAYS_PATH = DATA_PATH / "overlays"
@@ -59,8 +53,6 @@ LOCALE = 'it_IT.utf8'
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"
 BACKUP_CRONJOB = DATA_PATH / ".crontab.bak"
 CRONJOB_FILE = "/etc/cron.d/zanzocam"
-TEMP_CALIBRATION_CRONJOB = DATA_PATH / ".tmp-calibration-cronjob-file"
-CALIBRATION_CRONJOB_FILE = "/etc/cron.d/zanzocam-calibration"
 
 # System constants
 REQUEST_TIMEOUT = 60

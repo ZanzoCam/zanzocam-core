@@ -35,14 +35,30 @@ class System:
         status["version"] = VERSION
         status["last reboot"] = System.get_last_reboot_time()
         status["uptime"] = System.get_uptime()
-        status["hotspot"] = System.check_hotspot_allowed() or "FAILED (see stacktrace)"
-        if status["hotspot"] != "OFF":
-            status["autohotspot check"] = "OK" if System.run_autohotspot() else "FAILED (see stacktrace)"
+
+        hotspot_allowed = System.check_hotspot_allowed()
+        if hotspot_allowed:
+            status["hotspot allowed"] = "YES"
+        else:        
+            status["hotspot allowed"] = "NO"
+
+        if status["hotspot allowed"] != "NO":
+            autohotspot_status = System.run_autohotspot()
+            if autohotspot_status is None:
+                status["hotspot status"] = "FAILED (see stacktrace)"
+            else:
+                if autohotspot_status:
+                    status["hotspot status"] = "OFF (connected to WiFi)"
+                else: 
+                    status["hotspot status"] = "ON (no known WiFi in range)"
+
         status['wifi ssid'] = System.get_wifi_ssid()
         status['internet access'] = System.check_internet_connectivity()
+
         status['disk size'] = System.get_filesystem_size()
         status['free disk space'] = System.get_free_space_on_disk()
         status['RAM status'] = System.get_ram_stats()
+        
         return status
 
 
@@ -58,11 +74,18 @@ class System:
                 stderr=subprocess.STDOUT)
             stdout, stderr = uptime_proc.communicate()
             
+            if uptime_proc.returncode > 0:
+                raise Exception(f"Process failed with return code "
+                                f"{uptime_proc.returncode}. "
+                                f"Stdout: {stdout}"
+                                f"Stderr: {stderr}")
+
             last_reboot_string = stdout.decode('utf-8').strip()
-            return datetime.datetime.strptime(last_reboot_string, "%Y-%m-%d %H:%M:%S")
-            
+            return datetime.datetime.strptime(last_reboot_string, 
+                                              "%Y-%m-%d %H:%M:%S")
+
         except Exception as e:
-            log_error("Could not get last reboot datetime information", e)
+            log_error("Could not get last reboot time information", e)
         return None
 
 
@@ -84,21 +107,35 @@ class System:
     @staticmethod
     def check_hotspot_allowed() -> Optional[str]:
         """ 
-        Checks whether ZANZOCAM can turn on its hotspot at need
+        Checks whether ZANZOCAM can turn on its hotspot at need.
+        True if it can, False otherwise. 
+        If the file was not found, it creates it with a value YES.
+        In case of exceptions, defaults to True.
         """
         if os.path.exists(HOTSPOT_FLAG):
             try:
                 with open(HOTSPOT_FLAG, "r+") as h:
-                    return h.read().strip()
+                    content = h.read().strip()
+                    if content.upper() == "YES":
+                        return True
+                    elif content.upper() == "NO":
+                        return False
+                    else:
+                        log("The hostpot flag contains neither YES nor NO "
+                            f"(it contains '{content}'). Please fix. "
+                            "Assuming YES.")
+                        return True
+
             except Exception as e:
                 log_error("Failed to check if the hotspot is allowed. "
-                        "Assuming yes", e)
-                return False
-        else:
-            log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG} with value ON")
-            with open(HOTSPOT_FLAG, "w") as h:
-                h.write("ON")
-            return "No flag found, setting it to ON"
+                        "Assuming YES", e)
+                return True
+        
+        log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG}"
+            f" with value YES")
+        with open(HOTSPOT_FLAG, "w") as h:
+            h.write("YES")
+        return True
 
 
     @staticmethod
@@ -110,16 +147,16 @@ class System:
         None if error.
         """
         try:
-            hotspot_proc = subprocess.Popen(["/usr/bin/sudo", AUTOHOTSPOT_BINARY_PATH], 
+            hotspot_proc = subprocess.Popen([
+                "/usr/bin/sudo", AUTOHOTSPOT_BINARY_PATH], 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT)
             stdout, stderr = hotspot_proc.communicate()
             stdout = stdout.decode("utf-8")
             
             if hotspot_proc.returncode != 0:
-                log_error("The hotspot script returned with exit code "
-                          f"{hotspot_proc.returncode}.")
-                return None
+                raise RuntimeError("The hotspot script returned with "
+                                  f"exit code {hotspot_proc.returncode}.")
                
             wifi_is_active = [
                 "Wifi already connected to a network",
@@ -155,10 +192,12 @@ class System:
                 stderr=subprocess.STDOUT)
             stdout, stderr = wifi_proc.communicate()
 
+            if wifi_proc.returncode > 0:
+                raise RuntimeError("iwgetid failed with code "
+                                   f"{wifi_proc.returncode}")
             # If the device is offline, iwgetid will return nothing.
             if not stdout:
                 return ""
-                            
             return stdout.decode('utf-8').strip()
 
         except Exception as e:
@@ -238,7 +277,7 @@ class System:
             return mem_stats
 
         except Exception as e:
-            log_error("Could not get the amount of free space on the filesystem", e)
+            log_error("Could not get RAM data", e)
         return None
 
 
@@ -260,46 +299,53 @@ class System:
 
     
     @staticmethod
-    def copy_system_file(original_path: Path, backup_path: Path) -> bool:
+    def copy_system_file(source: Path, dest: Path) -> bool:
         """
         Copies a file to a directory using sudo.
-        Return True if the copy was successful, false otherwise
+        Return True if the copy was successful, False otherwise
         """
         try:
-            copy = subprocess.run([
-                "/usr/bin/sudo", "cp", original_path, backup_path], 
+            copy = subprocess.run(
+                ["/usr/bin/sudo", "cp", str(source), str(dest)], 
                 stdout=subprocess.PIPE)
+
+            if not copy or copy.returncode > 0:
+                raise ValueError(f"The copy has failed. "
+                                 f"stdout: {copy.stdout if copy else ''} "
+                                 f"stderr: {copy.stderr if copy else ''} "
+                                 f"Execute 'sudo cp {source} {dest}' "
+                                 f"to replicate the issue")
             return True
 
-            if not copy:
-                raise ValueError("The cp process has failed. "
-                                f"Execute 'sudo cp {original_path} {backup_path}' "
-                                 "to replicate the issue")
         except Exception as e:
-            log_error(f"Something went wrong creating copying {original_path} into {backup_path}. "
-                        "The file hasn't been copied", e)
+            log_error(f"Something went wrong copying {source} "
+                      f"to {dest}. The file hasn't been copied", e)
             return False 
 
     
     @staticmethod
-    def give_ownership_to_root(file: Path):
+    def give_ownership_to_root(path: Path):
         """
         Give ownership of the specified file to root.
         Return True if the chown process worked, False otherwise.
         """
         try:
             chown = subprocess.run([
-                "/usr/bin/sudo", "chown", "root:root", file], 
+                "/usr/bin/sudo", "chown", "root:root", str(path)], 
                 stdout=subprocess.PIPE)
+
+            if not chown or chown.returncode > 0:
+                raise ValueError("The chown process has failed. "
+                                f"stdout: {chown.stdout if chown else ''} "
+                                f"stderr: {chown.stderr if chown else ''} "
+                                f"Execute 'sudo chown 'root:root' {path}' "
+                                f"to replicate the issue")
             return True
 
-            if not chown:
-                raise ValueError("The chown process has failed. "
-                                f"Execute 'sudo chown 'root:root' {file}' "
-                                 "to replicate the issue")
         except Exception as e:
-            log_error(f"Something went wrong assigning ownership of {file} to root. "
-                       "The file ownership is probably unaffected", e)
+            log_error(f"Something went wrong assigning ownership of "
+                      f"{path} to root. "
+                      f"The file ownership is probably unaffected", e)
             return False
 
 
@@ -322,8 +368,15 @@ class System:
         cron_strings = []
 
         # If a time in minutes is given, calculate the equivalent cron values
-        frequency = time.get("frequency", "60")
-        
+        try:
+            frequency = time.get("frequency", "60")
+            frequency = int(frequency)
+        except ValueError:
+            # the given frequency is not a number, warn and default
+            log_error(f"frequency cannot be converted into int: {frequency}. "
+                      f"Defaulting to 10 (one picture every 10 minutes)")
+            frequency = 10
+
         # Frequency might be zero, which means the crontab is set up manually
         if not frequency:
             cron_strings = [" ".join([
@@ -340,12 +393,6 @@ class System:
         stop_time = time.get("stop_activity", "23:59:00").split(":")[:2]
 
         # Converting each value into the total value in minutes
-        try:
-            frequency = int(frequency)
-        except Exception as e:
-            log_error("Could not convert the frequency value to minutes! Using fallback value of 10 minutes")
-            frequency = 10
-        
         try:
             start_total_minutes = int(start_time[0])*60 + int(start_time[1])
         except ValueError as e:
