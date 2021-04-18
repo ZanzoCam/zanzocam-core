@@ -1,47 +1,36 @@
 {
-  "server": {
-    "protocol": "HTTP",
-    "url": "http://46.101.245.13/uploads/",
-    "max_photos": "3"
-  },
-  "crontab": {
-    "minute": "*/5",
-    "hour": "*",
-    "day": "*",
-    "month": "*",
-    "weekday": "*"
-  },
-  "image": {
-    "name": "image",
-    "extension": "jpg",
-    "add_date_to_name": false,
-    "add_time_to_name": false,
-    "width": "2592",
-    "height": "1944",
-    "hor_flip": false,
-    "ver_flip": false,
-    "rotation": "0",
-    "background_color": "yellow",
-    "jpeg_quality": "90",
-    "jpeg_subsampling": "0"
-  },
-  "overlays": {
-    "top_left": {
-      "type": "text",
-      "text": "%%TIME del %%DATE",
-      "font_color": "white",
-      "background_color": "#000000aa",
-      "font_size": "30",
-      "over_the_picture": false,
-      "date_format": "%d %B %Y",
+    "server": {
+      "protocol": "HTTP",
+      "max_photos": "3"
+    },
+    "time": {
+      "frequency": "10",
+    },
+    "image": {
+      "name": "image",
+      "extension": "jpg",
+      "width": "3280",
+      "height": "2464",
+      "hor_flip": false,
+      "ver_flip": true,
+      "quality": "10",
+      "background_color": "#FFFF00",
+      "date_format": "%A, %d %B %Y",
       "time_format": "%H:%M"
     },
-    "bottom_center": {
-      "type": "image",
-      "over_the_picture": true,
-      "path": "logo-cai-trasparente.png",
-      "width": "500",
-      "padding_ratio": "0"
+    "overlays": {
+      "top_left": {
+        "type": "text",
+        "text": "%%DATE %%TIME",
+        "font_size": "30",
+        "over_the_picture": true,
+        "font_color": "#FFFFFF",
+        "background_color": "#00000088"
+      },
+      "bottom_center": {
+        "type": "image",
+        "path": "logo-zanzocam.png",
+        "over_the_picture": true
+      }
     }
-  }
 }

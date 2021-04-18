@@ -14,8 +14,6 @@ with (Path(__file__).parent.absolute() / 'README.md').open('rt') as fh:
     
 REQUIREMENTS: dict = {
     'base': [
-        "setuptools_scm",  # for versioning
-        "importlib_metadata",  # py<3.8
         "picamera",  # needed for the web-ui too (in the preview)
     ],
     'webcam': [
@@ -26,7 +24,11 @@ REQUIREMENTS: dict = {
     'web-ui': [
         "uwsgi",
         "Flask"
+    ],
+    'test': [
+        'pytest',
     ]
+
 }
 
 setup(

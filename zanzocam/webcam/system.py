@@ -9,11 +9,7 @@ import datetime
 import subprocess
 from pathlib import Path
 from textwrap import dedent
-try:
-    from importlib_metadata import version, PackageNotFoundError
-except ModuleNotFoundError as e:
-    from importlib.metadata import version, PackageNotFoundError
-    
+
 from constants import *
 from webcam.utils import log, log_error, log_row
 from webcam.configuration import Configuration
@@ -36,7 +32,7 @@ class System:
         their stacktraces for further debug.
         """
         status = {}
-        status["version"] = System.get_version()
+        status["version"] = VERSION
         status["last reboot"] = System.get_last_reboot_time()
         status["uptime"] = System.get_uptime()
         status["hotspot"] = System.check_hotspot_allowed() or "FAILED (see stacktrace)"
@@ -48,19 +44,6 @@ class System:
         status['free disk space'] = System.get_free_space_on_disk()
         status['RAM status'] = System.get_ram_stats()
         return status
-
-
-    @staticmethod
-    def get_version() -> Optional[str]:
-        """ 
-        Read the ZANZOCAM version file 
-        Returns None if an error occurs.
-        """
-        try:
-            return version("zanzocam")
-        except PackageNotFoundError as e:
-            log_error(f"Could not get version information", e)
-        return None
 
 
     @staticmethod

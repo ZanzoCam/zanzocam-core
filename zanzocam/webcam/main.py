@@ -41,24 +41,28 @@ def main():
         upload_logs = True
         errors_were_raised = False
         restore_required = False
+        configuration = None
         initial_configuration = None
         camera = None
 
-        # Setup locale
-        locale.setlocale(locale.LC_ALL, 'it_IT.utf8')
-
-        system = System()
-        status = system.report_general_status()  
-        
+        # Check the system status
         log("Status report:")
+        system = System()
+        status = system.report_general_status() 
         for key, value in status.items():
             log(f" - {key}: {value}")
+
+        # Setup locale
+        try:
+            locale.setlocale(locale.LC_ALL, LOCALE)
+        except Exception as e:
+            log_error("Could not set locale. Proceeding without it.", e)
 
         # Load current configuration
         try:
             initial_configuration = Configuration()
         except Exception as e:
-            upload_logs = False
+            upload_logs = False  # Cannot do it without any server data
             errors_were_raised = True
             log_error(f"Failed to load the initial configuration from {CONFIGURATION_FILE}", 
                       e, fatal="cannot proceed without any data. Exiting.")
@@ -67,14 +71,14 @@ def main():
         # Verify if we're into the active hours or not, if defined
         try:
             if not initial_configuration.is_active_hours():
-                log("The current time is outside working hours. Turning off")
                 upload_logs = False
+                log("The current time is outside working hours. Turning off")
                 return
+            log("The current time is inside active hours")
         except Exception as e:
             log_error("An error occurred trying to assess if the current time is within active hours. " +
                       "Assuming YES", e)
-        log("The current time is inside active hours")
-
+        
         # Getting the new configuration from the server
         initial_server = Server(initial_configuration)
 
@@ -172,11 +176,11 @@ def main():
         if camera:        
             try:
                 log("Cleaning up image files")
-                # if os.path.exists(camera.temp_photo_path):
-                #     os.remove(camera.temp_photo_path)
-                # if server.final_image_path and os.path.exists(server.final_image_path):
-                #     os.remove(server.final_image_path)
-                # log("Cleanup complete")
+                if os.path.exists(camera.temp_photo_path):
+                    os.remove(camera.temp_photo_path)
+                if server.final_image_path and os.path.exists(server.final_image_path):
+                    os.remove(server.final_image_path)
+                log("Cleanup complete")
 
             except Exception as e:
                 errors_were_raised = True
@@ -191,7 +195,7 @@ def main():
             errors_were_raised_str = "with errors"
 
         if restore_required and initial_configuration:
-                initial_configuration.restore_backup()
+            initial_configuration.restore_backup()
             
         end = datetime.datetime.now()
         log(f"Execution completed {errors_were_raised_str} in: {end - start}")
@@ -211,6 +215,8 @@ def main():
                     server.upload_logs()
 
             # If so required, send diagnostics to the server
+            if not configuration:
+                configuration = initial_configuration
             if configuration.send_diagnostics:
                 system.generate_diagnostics()
                 log("Sending diagnostic report")

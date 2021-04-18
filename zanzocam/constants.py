@@ -2,6 +2,9 @@ import sys
 from pathlib import Path
 
 
+VERSION = "0.10.0"
+
+
 #
 # Paths & local URLs
 #
@@ -49,6 +52,8 @@ REMOTE_IMAGES_PATH = "configuration/overlays/"
 #
 # Constants & defaults
 #
+
+LOCALE = 'it_IT.utf8'
 
 # Cronjob constants
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"

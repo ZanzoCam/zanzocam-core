@@ -6,23 +6,7 @@ import logging
 from pathlib import Path
 from textwrap import dedent
 from flask import send_from_directory
-try:
-    from importlib_metadata import version, PackageNotFoundError
-except ModuleNotFoundError as e:
-    from importlib.metadata import version, PackageNotFoundError
 
-
-
-def get_version():
-    """
-    Retrieves the ZANZOCAM version string
-    """
-    try:
-        return version("zanzocam")
-    except PackageNotFoundError as e:
-        logging.warning(f"Could not get version information: {e}")
-        return "no_version_found"
-        
 
 def clear_logs(logs_path: Path):
     """
