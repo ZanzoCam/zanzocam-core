@@ -94,10 +94,10 @@ def write_flag(path: Path, content):
 
 def toggle_flag(flag: Path, value: str) -> int:
     """ 
-    Toggle the given flag on either ON or OFF.
+    Toggle the given flag on either YES or NO.
     Returns the statuscode to return to the sender
     """
-    if value in ["ON", "OFF"]:
+    if value in ["YES", "NO"]:
         try:
             write_flag(flag, value)
             return 200

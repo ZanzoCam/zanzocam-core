@@ -13,7 +13,7 @@ from constants import *
 
 def home():
     """ The initial page with the summary """
-    hotspot_value = read_flag_file(HOTSPOT_FLAG, "ON")
+    hotspot_value = read_flag_file(HOTSPOT_FLAG, "YES")
     wifi_data = read_setup_data_file(WIFI_DATA)
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 

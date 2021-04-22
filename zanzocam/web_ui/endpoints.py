@@ -26,7 +26,9 @@ logging.basicConfig(
     handlers=[
         logging.FileHandler(constants.SERVER_LOG),
         logging.StreamHandler(sys.stdout),
-    ]
+    ],
+    format='%(asctime)s,%(msecs)-4d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S'
 )
 
 

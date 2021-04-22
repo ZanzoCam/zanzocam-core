@@ -684,3 +684,6 @@ def test_update_crontab_success(tmpdir, logs):
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
             for hour in range(24)]
+
+def test_update_crontab_chown_fail(tmpdir, logs):
+    assert False

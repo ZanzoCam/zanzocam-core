@@ -58,11 +58,11 @@
             <div class="row">
                 <h3>Hotspot:</h3>
                 <label class="toggle">
-                    <input type="radio" value="YES" name="hotspot_allowed" {% if not hotspot_value or hotspot_value=="YES" %}checked{%endif%} onchange="javascript:hotspotYES()">
+                    <input type="radio" value="YES" name="hotspot_value" {% if not hotspot_value or hotspot_value=="YES" %}checked{%endif%} onchange="javascript:hotspotYES();">
                     <span class="label">SI</span>
                 </label>
                 <label class="toggle">
-                    <input type="radio" value="NO" name="hotspot_allowed" {% if hotspot_value=="NO" %}checked{%endif%} onchange="javascript:hotspotNO()">
+                    <input type="radio" value="NO" name="hotspot_value" {% if hotspot_value=="NO" %}checked{%endif%} onchange="javascript:hotspotNO();">
                     <span class="label">NO</span>
                 </label>
                 <br>
@@ -122,7 +122,12 @@
                 method:'POST',
             })
             .then(r => {
-                alert("Modifica completata con successo.");
+                if (r.status === 200){
+                    alert("Modifica completata con successo.");
+                } else {
+                    alert("Qualcosa è andato storto! " +
+                      "ZANZOCAM ha risposto con un codice "+ r.status +".");
+                }
             }).catch(r => {
                 alert("Qualcosa è andato storto! " +
                       "ZANZOCAM non è raggiungibile.");
@@ -139,7 +144,12 @@
                 method:'POST',
             })
             .then(r => {
-                alert("Modifica completata con successo.");
+                if (r.status === 200){
+                    alert("Modifica completata con successo.");
+                } else {
+                    alert("Qualcosa è andato storto! " +
+                      "ZANZOCAM ha risposto con un codice "+ r.status +".");
+                }
             }).catch(r => {
                 alert("Qualcosa è andato storto! " +
                       "ZANZOCAM non è raggiungibile.");

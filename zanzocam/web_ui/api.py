@@ -4,7 +4,7 @@ import os
 import json
 import picamera
 import subprocess
-from flask import send_from_directory
+from flask import send_from_directory, abort
 
 from web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
 from constants import *
@@ -86,11 +86,14 @@ def configure_server(form_data: Dict[str, str]):
     return ""
 
 
-def toggle_hotspot(value) -> int:
+def toggle_hotspot(value: str) -> int:
     """ 
     Allow the initial hotspot to turn on in case no known wifi network is detected.
     """
-    return "", toggle_flag(HOTSPOT_FLAG, value)
+    value = value.upper().strip()
+    if value == "YES" or value == "NO":
+        return "", toggle_flag(HOTSPOT_FLAG, value)
+    abort(404)
 
 
 def get_logs(kind: str, name: str):
