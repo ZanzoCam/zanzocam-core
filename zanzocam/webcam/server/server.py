@@ -60,7 +60,7 @@ class Server:
             configuration = Configuration.create_from_dictionary(configuration_data)
 
             # Getting new overlays associated with the configuration
-            self.download_overlay_images(configuration.images_to_download())
+            self.download_overlay_images(configuration.overlays_to_download())
 
             log("Configuration updated successfully")
             return configuration

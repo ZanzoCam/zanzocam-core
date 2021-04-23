@@ -68,7 +68,6 @@ def meminfo():
         CmaFree:           58580 kB
     """)
 
-
 def test_get_last_reboot_time_success(fake_process, logs):
     """
         Get the last reboot time, test normal behavior
@@ -427,6 +426,29 @@ def test_get_ram_stats_exception(monkeypatch, meminfo, logs):
     assert System.get_ram_stats() is None
     assert len(logs) == 1
     assert "Could not get RAM data" in logs[0]['msg']
+
+
+def test_report_general_status(monkeypatch):
+    """
+        Stub test that the status is reported.
+    """
+    original_System = webcam.system.System
+
+    class Empty():
+        def __getattr__(self, attr):
+            return lambda *a, **k: None 
+
+    monkeypatch.setattr(webcam.system, "System", Empty())
+    status = original_System.report_general_status()
+    assert "version" in status.keys()
+    assert "last reboot" in status.keys()
+    assert "uptime" in status.keys()
+    assert "hotspot allowed" in status.keys()
+    assert "wifi ssid" in status.keys()
+    assert "internet access" in status.keys()
+    assert "disk size" in status.keys()
+    assert "free disk space" in status.keys()
+    assert "RAM status" in status.keys()
 
 
 def test_copy_system_file_success(tmpdir, logs):
@@ -814,6 +836,27 @@ def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
            "Aborting crontab update." in logs[0]['msg']
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
         "crontab content"
+
+def test_apply_system_settings_success(logs):
+    """
+        Check that apply_system_settings updates the crontab.
+    """
+    class Config:
+        def __init__(self):
+            self.time = {}
+
+    with open(webcam.system.CRONJOB_FILE, 'w'):
+        pass
+
+    System.apply_system_settings(Config())
+    assert len(logs) == 1
+    assert "Crontab updated successfully" in logs[0]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
+        ["# ZANZOCAM - shoot picture\n"] + \
+        [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
+            for hour in range(24)]
+    
+
 
 def test_generate_diagnostics(monkeypatch):
     """

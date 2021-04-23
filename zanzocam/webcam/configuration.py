@@ -119,9 +119,9 @@ class Configuration:
                  "(if it haven't happened already)")
 
 
-    def images_to_download(self) -> List[str]:
+    def overlays_to_download(self) -> List[str]:
         """
-        List all the images that should be downloaded from the server
+        List all the overlay images that should be downloaded from the server
         """
         to_download = []
         for position, data in getattr(self, "overlays", {}).items():
@@ -155,6 +155,3 @@ class Configuration:
                         pass
             json[key] = value
         return json
-
-
-
