@@ -74,9 +74,9 @@ class Camera:
         """
          # NOTE: let exceptions here escalate. Do not catch or at least rethrow!
         if expanded_framerate_range:
-            camera = PiCamera(framerate_range=(Fraction(1, 10), Fraction(90, 1)))
+            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(1, 10), Fraction(90, 1)))
         else:
-            camera = PiCamera()
+            camera = PiCamera(sensor_mode=3)  # sensor_mode 1 has a blue halo on v2!
 
         if int(self.width) > camera.MAX_RESOLUTION.width:
             log(f"WARNING! The requested image width ({self.width}) "

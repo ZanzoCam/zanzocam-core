@@ -304,49 +304,36 @@ class System:
         Copies a file to a directory using sudo.
         Return True if the copy was successful, False otherwise
         """
-        try:
-            copy = subprocess.run(
-                ["/usr/bin/sudo", "cp", str(source), str(dest)], 
-                stdout=subprocess.PIPE)
+        # NOTE: Let errors here escalate!
+        copy = subprocess.run(
+            ["/usr/bin/sudo", "cp", str(source), str(dest)], 
+            stdout=subprocess.PIPE)
 
-            if not copy or copy.returncode > 0:
-                raise ValueError(f"The copy has failed. "
-                                 f"stdout: {copy.stdout if copy else ''} "
-                                 f"stderr: {copy.stderr if copy else ''} "
-                                 f"Execute 'sudo cp {source} {dest}' "
-                                 f"to replicate the issue")
-            return True
-
-        except Exception as e:
-            log_error(f"Something went wrong copying {source} "
-                      f"to {dest}. The file hasn't been copied", e)
-            return False 
-
+        if not copy or copy.returncode > 0:
+            raise RuntimeError(f"The copy has failed. "
+                               f"Stdout: {copy.stdout if copy else ''} "
+                               f"Stderr: {copy.stderr if copy else ''} "
+                               f"Execute 'sudo cp {source} {dest}' "
+                               f"to replicate the issue")
     
+
     @staticmethod
     def give_ownership_to_root(path: Path):
         """
         Give ownership of the specified file to root.
         Return True if the chown process worked, False otherwise.
         """
-        try:
-            chown = subprocess.run([
-                "/usr/bin/sudo", "chown", "root:root", str(path)], 
-                stdout=subprocess.PIPE)
+        # NOTE: Let errors here escalate!
+        chown = subprocess.run([
+            "/usr/bin/sudo", "chown", "root:root", str(path)], 
+            stdout=subprocess.PIPE)
 
-            if not chown or chown.returncode > 0:
-                raise ValueError("The chown process has failed. "
-                                f"stdout: {chown.stdout if chown else ''} "
-                                f"stderr: {chown.stderr if chown else ''} "
-                                f"Execute 'sudo chown 'root:root' {path}' "
-                                f"to replicate the issue")
-            return True
-
-        except Exception as e:
-            log_error(f"Something went wrong assigning ownership of "
-                      f"{path} to root. "
-                      f"The file ownership is probably unaffected", e)
-            return False
+        if not chown or chown.returncode > 0:
+            raise RuntimeError("The chown process has failed. "
+                              f"Stdout: {chown.stdout if chown else ''} "
+                              f"Stderr: {chown.stderr if chown else ''} "
+                              f"Execute 'sudo chown 'root:root' {path}' "
+                              f"to replicate the issue")
 
 
     @staticmethod
@@ -423,46 +410,50 @@ class System:
         will restore the old one and log the exceptions.
         """
         # Get the crontab content
-        cron_strings = System.prepare_crontab_string(time)   
+        try:
+            cron_strings = System.prepare_crontab_string(time)   
+        except Exception as e:
+            log_error("Something happened assembling the crontab. "
+                      "Aborting crontab update.", e)
+            return
 
         # Backup the old file
-        backup_cron = System.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
-        
-        # Creates a file with the right content
-        with open(TEMP_CRONJOB, 'w') as d:
-            d.writelines("# ZANZOCAM - shoot picture\n")
-            for line in cron_strings:
-                d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
+        try:
+            System.copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
+        except Exception as e:
+            log_error("Failed to backup the previous crontab! "
+                      "In case of further errors it will be impossible to "
+                      "restore it.", e)
+            # Do not add a return here, this issue is secondary
 
-        # Move new cron file into cron folder
-        System.copy_system_file(TEMP_CRONJOB, CRONJOB_FILE)
+        # Creates a file with the right content
+        try:
+            with open(TEMP_CRONJOB, 'w') as d:
+                d.writelines("# ZANZOCAM - shoot picture\n")
+                for line in cron_strings:
+                    d.writelines(f"{line} {SYSTEM_USER} {sys.argv[0]}\n")
+        except Exception as e:
+            log_error("Failed to generate the new crontab. "
+                      "Aborting crontab update.", e)
+            return
 
         # Assign the cron file to root:root
-        chown_cron = System.give_ownership_to_root(CRONJOB_FILE)
-        
-        log("Crontab updated successfully")
-            
-        # if the ownership change failes, start recovery procedure:
-        # Try to write back the old crontab
-        if not chown_cron:
-            log_error("Something went wrong changing the owner of the crontab!")
-            log("Trying to restore the crontab using the backup.")
-            
-            log_row("+")
-            if not backup_cron:
-                log_error("The backup was not created!", 
-                fatal="the crontab might not trigger anymore. "
-                      "ZANZOCAM might need manual intervention.")
-            else:
-                restore_cron = System.copy_system_file(BACKUP_CRONJOB, CRONJOB_FILE)
+        try:
+            System.give_ownership_to_root(TEMP_CRONJOB)
+        except Exception as e:
+            log_error("Failed to assign the correct rights to the "
+                      "new crontab file. Aborting crontab update.", e)
+            return
 
-                if not restore_cron:
-                    log_error("Something went wrong restoring the cron file from its backup!",
-                    fatal="the crontab might not trigger anymore. "
-                          "ZANZOCAM might need manual intervention.")
-                else:
-                    log("cron file restored successfully. Please investigate the cause of the issue!")
-            log_row("+")
+        # Move new cron file into cron folder
+        try:
+            System.copy_system_file(TEMP_CRONJOB, CRONJOB_FILE)
+        except Exception as e:
+            log_error("Failed to replace the old crontab with a new one. "
+                      "Aborting crontab update.", e)
+            return
+
+        log("Crontab updated successfully")
 
 
     @staticmethod

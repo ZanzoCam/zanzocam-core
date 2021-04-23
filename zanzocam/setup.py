@@ -27,6 +27,7 @@ REQUIREMENTS: dict = {
     ],
     'test': [
         'pytest',
+        'pytest-coverage',
         'pytest-subprocess',
         'freezegun',  # Mock datetime objects
     ]

@@ -28,6 +28,7 @@ def point_const_to_tmpdir(module, monkeypatch, tmpdir):
             new_value = value.replace(base_path, test_path)
             monkeypatch.setattr(constants, const, new_value)
             monkeypatch.setattr(module, const, new_value)
+            # print(f"{const}: {new_value}")
             
 
 @pytest.fixture

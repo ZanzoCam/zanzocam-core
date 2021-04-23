@@ -1,5 +1,6 @@
 import os
 import sys
+import stat
 import math
 import pytest
 import requests
@@ -436,24 +437,22 @@ def test_copy_system_file_success(tmpdir, logs):
     pathto = tmpdir / "to"
     with open(pathfrom, 'w'):
         pass
-    assert System.copy_system_file(pathfrom, pathto)
+    System.copy_system_file(pathfrom, pathto)
+    assert os.path.exists(pathfrom)
+    assert os.path.exists(pathto)
     assert len(logs) == 0
 
 
-def test_copy_system_file_exception(fake_process, tmpdir, logs):
+def test_copy_system_file_exception(tmpdir, logs):
     """
         Copy a system file, behavior under exception
     """
     pathfrom = tmpdir / "from"
     pathto = tmpdir / "to"
-    fake_process.register_subprocess(
-        ["/usr/bin/sudo", "cp", str(pathfrom), str(pathto)], returncode=2
-    )
-    result = System.copy_system_file(pathfrom, pathto)
-    assert result is not None
-    assert not result
-    assert len(logs) == 1
-    assert "Something went wrong copying" in logs[0]['msg']
+    with pytest.raises(RuntimeError):
+        System.copy_system_file(pathfrom, pathto)
+    assert not os.path.exists(pathto)
+    assert len(logs) == 0
 
 
 def test_give_ownership_to_root_success(tmpdir, logs):
@@ -463,24 +462,19 @@ def test_give_ownership_to_root_success(tmpdir, logs):
     path = tmpdir / "file"
     with open(path, 'w'):
         pass
-    assert System.give_ownership_to_root(path)
+    System.give_ownership_to_root(path)
     assert len(logs) == 0
 
 
-def test_give_ownership_to_root_exception(fake_process, tmpdir, logs):
+def test_give_ownership_to_root_exception(tmpdir, logs):
     """
         Chown a file to root, behavior under exception
     """
     path = tmpdir / "file"
-    fake_process.register_subprocess(
-        ["/usr/bin/sudo", "chown", "root:root", str(path)], returncode=2
-    )
-    result = System.give_ownership_to_root(path)
-    assert result is not None
-    assert not result
-    assert len(logs) == 1
-    assert "Something went wrong assigning ownership" in logs[0]['msg']
-
+    with pytest.raises(RuntimeError):
+        System.give_ownership_to_root(path)
+    assert len(logs) == 0
+    
 
 def test_prepare_crontab_string_no_frequency_no_cron(logs):
     """
@@ -670,6 +664,36 @@ def test_prepare_crontab_string_unreadable_stop_time(logs):
     assert "Could not read stop time" in logs[0]['msg']
 
 
+def test_prepare_crontab_string_can_fail_1():
+    """
+        Test that prepare_crontab_string do fail if the data
+        is so wrong it's not meant to be written in the
+        crontab.
+    """
+    with pytest.raises(Exception):
+        crontab = System.prepare_crontab_string(None)
+    
+
+def test_prepare_crontab_string_can_fail_2():
+    """
+        Test that prepare_crontab_string do fail if the data
+        is so wrong it's not meant to be written in the
+        crontab.
+    """
+    with pytest.raises(Exception):
+        crontab = System.prepare_crontab_string("wrong!")
+
+
+def test_prepare_crontab_string_can_fail_3():
+    """
+        Test that prepare_crontab_string do fail if the data
+        is so wrong it's not meant to be written in the
+        crontab.
+    """
+    with pytest.raises(Exception):
+        crontab = System.prepare_crontab_string(10)
+
+
 def test_update_crontab_success(tmpdir, logs):
     """
         Test if the crontab can be updated under normal conditions
@@ -685,5 +709,117 @@ def test_update_crontab_success(tmpdir, logs):
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
             for hour in range(24)]
 
-def test_update_crontab_chown_fail(tmpdir, logs):
-    assert False
+
+def test_update_crontab_prepare_strings_fails(monkeypatch, tmpdir, logs):
+    """
+        Test that the crontab is unchanged if there is trouble
+        decoding the new crontab information 
+    """
+    assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
+    with open(webcam.system.CRONJOB_FILE, 'w') as c:
+        c.write("crontab content")
+
+    System.update_crontab(None)  # Will make prepare_crontab_string fail
+    assert len(logs) == 1
+    assert "Something happened assembling the crontab. " \
+           "Aborting crontab update." in logs[0]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').read() == "crontab content"
+
+
+def test_update_crontab_backup_fail(tmpdir, logs):
+    """
+        Test if the crontab can be updated if the backup fails
+    """
+    assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
+    # Backup will fail because there is no file at this path
+    System.update_crontab({})  
+    assert len(logs) == 2
+    # Failed backup  
+    assert "Failed to backup the previous crontab!" in logs[0]['msg']
+    # Actual crontab replacement
+    assert "Crontab updated successfully" in logs[1]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
+        ["# ZANZOCAM - shoot picture\n"] + \
+        [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
+            for hour in range(24)]
+
+
+def test_update_crontab_write_temp_file_fails(monkeypatch, tmpdir, logs):
+    """
+        Test that the crontab is unchanged if there is trouble
+        writing the temp file. 
+    """
+    assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
+    with open(webcam.system.CRONJOB_FILE, 'w') as c:
+        c.write("crontab content")
+    # Temp file exists and is read-only
+    with open(webcam.system.TEMP_CRONJOB, 'w') as c:
+        c.write("i'm unwritable")
+    os.chmod(webcam.system.TEMP_CRONJOB, 
+             stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+    
+    System.update_crontab({})
+    assert len(logs) == 1
+    assert "Failed to generate the new crontab. " \
+           "Aborting crontab update." in logs[0]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
+        "crontab content"
+
+
+def test_update_crontab_chown_fail(monkeypatch, tmpdir, logs):
+    """
+        Test that the crontab is unchanged if there is trouble
+        overwriting the crontab in /etc/cron.d 
+    """
+    assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
+    with open(webcam.system.CRONJOB_FILE, 'w') as c:
+        c.write("crontab content")
+    
+    def fail(*a, **k):
+        raise PermissionError()
+    monkeypatch.setattr(webcam.system.System, "give_ownership_to_root", fail)
+
+    System.update_crontab({})
+    assert len(logs) == 1
+    assert "Failed to assign the correct rights to the " \
+           "new crontab file. Aborting crontab update." in logs[0]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
+        "crontab content"
+
+
+def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
+    """
+        Test that the crontab is unchanged if there is trouble
+        overwriting the crontab in /etc/cron.d 
+    """
+    assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
+    with open(webcam.system.CRONJOB_FILE, 'w') as c:
+        c.write("crontab content")
+    
+    actually_copy_the_file = webcam.system.System.copy_system_file
+
+    def fail(*a, **k):
+        print(a)
+        if a[0] == webcam.system.TEMP_CRONJOB and \
+           a[1] == webcam.system.CRONJOB_FILE:
+            raise PermissionError()
+        else:
+            actually_copy_the_file(*a, *k)
+
+    monkeypatch.setattr(webcam.system.System, "copy_system_file", fail)
+
+    System.update_crontab({})
+    assert len(logs) == 1
+    assert "Failed to replace the old crontab with a new one. " \
+           "Aborting crontab update." in logs[0]['msg']
+    assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
+        "crontab content"
+
+def test_generate_diagnostics(monkeypatch):
+    """
+        Stub test of the diagnostic log generator
+    """
+    monkeypatch.setattr(subprocess, "check_output", lambda *a, **k: "")
+    System.generate_diagnostics(webcam.system.DIAGNOSTICS_LOG)
+    assert os.path.exists(webcam.system.DIAGNOSTICS_LOG)
+    assert open(webcam.system.DIAGNOSTICS_LOG).read() != b""
