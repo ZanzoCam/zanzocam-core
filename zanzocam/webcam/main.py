@@ -70,10 +70,16 @@ def main():
 
         # Verify if we're into the active hours or not, if defined
         try:
-            if not initial_configuration.is_active_hours():
+            log(f"Checking if {datetime.datetime.now().strftime('%H:%M')} "
+                f"is into active interval "
+                f"({configuration.get_start_time()} to "
+                f"{configuration.get_stop_time()})")
+
+            if not initial_configuration.within_active_hours():
                 upload_logs = False
                 log("The current time is outside working hours. Turning off")
                 return
+
             log("The current time is inside active hours")
         except Exception as e:
             log_error("An error occurred trying to assess if the current time is within active hours. " +
@@ -195,7 +201,10 @@ def main():
             errors_were_raised_str = "with errors"
 
         if restore_required and initial_configuration:
+            log("Restoring the old configuration file.")
             initial_configuration.restore_backup()
+            log("The next run will use the following server configuration:")
+            print(json.dumps(initial_configuration.server, indent=4))
             
         end = datetime.datetime.now()
         log(f"Execution completed {errors_were_raised_str} in: {end - start}")

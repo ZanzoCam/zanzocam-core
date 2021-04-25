@@ -20,9 +20,6 @@ class System:
     Monitor and manages the operating system.
     """
     
-    def __init__(self):
-        pass
-    
     @staticmethod
     def report_general_status() -> Dict:
         """ 
