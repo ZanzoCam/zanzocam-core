@@ -37,7 +37,6 @@ class FtpServer:
 
         # password can be blank  (TODO really it can? Check)
         self.password = parameters.get("password", "")
-        self.endpoint = f"ftp://{self.username}@{self.hostname}"
         self.tls = parameters.get("tls", True)
         self.subfolder = parameters.get("subfolder")
         self.max_photos = parameters.get("max_photos", 0)
@@ -79,7 +78,6 @@ class FtpServer:
 
         # Make sure the server did not reply with an error
         if "226" in response:
-            log("New configuration downloaded")
             configuration_data = json.loads(self.configuration_string)
             self.configuration_string = ""
             return configuration_data

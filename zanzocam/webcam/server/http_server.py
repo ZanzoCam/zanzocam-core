@@ -9,7 +9,7 @@ from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
 from constants import *
-from webcam.utils import log, log_error, log_row
+from webcam.utils import log, log_error, AllStringEncoder
 from webcam.configuration import Configuration
 from webcam.errors import UnexpectedServerResponse
 
@@ -22,12 +22,9 @@ class HttpServer:
         # URL is necessary
         self.url = parameters.get("url")
         if not self.url:
-            log_error("Cannot contact the server: no server URL found in "
-                      "the configuration",
-                      fatal="Exiting")
-            raise ValueError("No server URL is available")
+            raise ValueError("Cannot contact the server: "
+                "no server URL found in the configuration.")
 
-        self.endpoint = f"{self.url}"
         self.max_photos = parameters.get("max_photos", 0)
 
         self.credentials = None
@@ -42,9 +39,9 @@ class HttpServer:
         Useful for a tidier logging of responses in case of exceptions
         """
         try:
-            return vars(response)
-        except Exception:
-            return response
+            return json.dumps(vars(response), indent=4, cls=AllStringEncoder)
+        except Exception as e:
+            return str(response)
 
     def download_new_configuration(self) -> Dict[str, Any]:
         """
@@ -60,20 +57,24 @@ class HttpServer:
 
             if "configuration" not in response:
                 raise UnexpectedServerResponse(
-                        f"The server did not reply with the "
-                        f"expected data. It replied:\n\n{vars(raw_response)}\n")
+                    f"The server did not reply with a configuration file. "
+                    f"Full server response:\n\n"
+                    f"{self._try_print_response_content(raw_response)}")
 
-            log("New configuration downloaded.")
             return response["configuration"]
 
         except json.decoder.JSONDecodeError as e:
-            raise UnexpectedServerResponse(f"The server did not reply valid JSON. "
-                                           f"It replied:\n\n{self._try_print_response_content(raw_response)}\n")
+            e.args = (f"The server did not reply valid JSON. "
+                      f"JSON exception: {str(e.args[0])}\n"
+                      f"Full server response:\n\n"
+                      f"{self._try_print_response_content(raw_response)}", )
+            raise e.with_traceback(e.__traceback__)
 
         except Exception as e:
-            log_error("Something went wrong downloading the new configuration "+
-                      f"file from the server. It replied:\n\n{self._try_print_response_content(raw_response)}\n", e)
-            raise e
+            raise RuntimeError(
+                      f"Something went wrong downloading the new configuration "+
+                      f"file from the server. The server replied:\n\n"
+                      f"{self._try_print_response_content(raw_response)}") from e
 
 
     def download_overlay_image(self, image_name: str) -> None:
@@ -88,17 +89,17 @@ class HttpServer:
                             auth=self.credentials,
                             timeout=REQUEST_TIMEOUT)
         # Save image to file
-        if r.status_code == 200:
+        if r.status_code < 400:
             r.raw.decode_content = True
+
             with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as f:
                 shutil.copyfileobj(r.raw, f)
             log(f"New overlay image downloaded: {image_name}")
 
         # Report every other status code as a failed download
         else:
-            log_error(f"New overlay image failed to download: {image_name}")
-            log(f"Response status code: {r.status_code}")
-            raise ValueError(f"Overlay image failed to download: {image_name}")
+            raise ValueError(f"Overlay image failed to download: {image_name} "
+                             f"Response status code: {r.status_code}")
 
 
     def send_logs(self, path: Path):
@@ -113,10 +114,10 @@ class HttpServer:
                 with open(path, "r") as l:
                     logs = l.readlines()
                     logs = "".join(logs)
+
         except Exception as e:
-            log_error("Something went wrong opening the logs file."
-                      "No logs can be sent. This error will be ignored", e)
-            raise e
+            raise OSError("Something went wrong opening the logs file."
+                          "No logs can be sent.") from e
             
         # Prevent the server from returning 'No logs detected' when the file is empty
         if logs == "":
@@ -129,20 +130,30 @@ class HttpServer:
                                      auth=self.credentials, 
                                      timeout=REQUEST_TIMEOUT)
 
+        if raw_response.status_code >= 400:
+            raise UnexpectedServerResponse(
+                f"The server replied with status code {raw_response.status_code}. "
+                f"Check your server configuration for errors. "
+                f"Full server response:\n\n"
+                f"{self._try_print_response_content(raw_response)}")
         try:
             response = raw_response.json()
         except json.decoder.JSONDecodeError as e:
-            raise UnexpectedServerResponse(f"The server did not reply valid JSON. "
-                                           f"It replied:\n\n{self._try_print_response_content(raw_response)}\n")
+            e.args = (f"The server did not reply valid JSON. "
+                      f"JSON exception: {str(e.args[0])}\n"
+                      f"Full server response:\n\n"
+                      f"{self._try_print_response_content(raw_response)}", )
+            raise e.with_traceback(e.__traceback__)
 
         # Make sure the server did not return an error
         reply = response.get("logs", "No field named 'logs' in the response")
 
         if reply != "" and reply != "Logs not detected":
-            log_error("The server replied with an error")
-            log(f"The server replied:\n\n{self._try_print_response_content(raw_response)}\n")  
-            log(f"The error is {str(reply)}")
-            raise ValueError(str(reply))
+            raise UnexpectedServerResponse(
+                f"The server reply was unexpected. "
+                f"The reply message is: {str(reply)}\n" 
+                f"Full server response:\n\n"
+                f"{self._try_print_response_content(raw_response)}")
 
 
     def upload_picture(self, image_path: Path, image_name: str, image_extension: str) -> None:
@@ -161,20 +172,29 @@ class HttpServer:
                                      files=files, 
                                      auth=self.credentials,
                                      timeout=REQUEST_TIMEOUT)
+
+        if raw_response.status_code >= 400:
+            raise UnexpectedServerResponse(
+                f"The server replied with status code {raw_response.status_code}. "
+                f"Check your server configuration for errors. "
+                f"Full server response:\n\n"
+                f"{self._try_print_response_content(raw_response)}")
         try:
             response = raw_response.json()
-        except JSONDecodeError as e:
-            log_error("An error occurred decoding the JSON: something is probably "+
-                      f"wrong with the server's code. The reply is:\n\n{self._try_print_response_content(raw_response)}\n")
-            raise UnexpectedServerResponse(e)  # Remember, errors must escalate here
-
+        except json.decoder.JSONDecodeError as e:
+            e.args = (f"The server did not reply valid JSON. "
+                      f"JSON exception: {str(e.args[0])}\n"
+                      f"Full server response:\n\n"
+                      f"{self._try_print_response_content(raw_response)}", )
+            raise e.with_traceback(e.__traceback__)
+                    
         # Make sure the server did not return an error
         reply = response.get("photo", "< no field named 'photo' in the response >")
         if reply != "":
-            log_error("The server replied with an error")
-            log(f"The server replied:\n\n{self._try_print_response_content(raw_response)}\n")
-            log(f"The error is: {str(reply)}")
-            log("WARNING: the image was probably not sent!")
-            raise UnexpectedServerResponse(str(reply))  # Remember, errors must escalate here
+            raise UnexpectedServerResponse(
+                f"The server reply was unexpected: the image was probably not sent. "
+                f"The reply is: {str(reply)}\n" 
+                f"Full server response:\n\n" 
+                f"{self._try_print_response_content(raw_response)}")
 
         return final_image_path

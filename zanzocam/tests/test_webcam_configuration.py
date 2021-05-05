@@ -1,13 +1,6 @@
 import os
-import sys
-import stat
-import math
 import pytest
-import requests
-import builtins
-import subprocess
 from pathlib import Path
-from unittest import mock
 from textwrap import dedent
 from freezegun import freeze_time
 from datetime import datetime, timedelta
@@ -21,7 +14,7 @@ from tests.conftest import point_const_to_tmpdir
 
 @pytest.fixture(autouse=True)
 def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir(webcam.configuration, monkeypatch, tmpdir)
+    point_const_to_tmpdir([webcam.configuration], monkeypatch, tmpdir)
 
 
 def test_decode_json_values():
@@ -333,11 +326,15 @@ def test_backup_success(tmpdir, logs):
     """
     config = Configuration.create_from_dictionary({},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
-    config.backup()
-    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE)
     assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE)
-    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE + ".bak")
-    assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE + ".bak")
+    assert not os.path.exists(
+        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    config.backup()
+    assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE)
+    assert os.path.isfile(
+        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    assert open(webcam.configuration.CONFIGURATION_FILE).read() == \
+        open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak").read()
     assert len(logs) == 0
 
 
@@ -347,11 +344,17 @@ def test_backup_fail(tmpdir, logs):
     """
     config = Configuration.create_from_dictionary({},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
-    os.remove(webcam.configuration.CONFIGURATION_FILE)
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
+    
+    with open(webcam.configuration.CONFIGURATION_FILE + ".bak", 'w'):
+        pass
+    os.chmod(webcam.configuration.CONFIGURATION_FILE + ".bak", 0o444)
+
     config.backup()
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE + ".bak")
+    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE)
+    assert os.path.exists(
+        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    assert open(webcam.configuration.CONFIGURATION_FILE).read() != \
+        open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak").read()
     assert len(logs) == 1
     assert "Cannot backup the configuration file" in logs[0]['msg']
 
@@ -364,13 +367,14 @@ def test_restore_backup_success(tmpdir):
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
     os.remove(webcam.configuration.CONFIGURATION_FILE)
     assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    with open(webcam.configuration.CONFIGURATION_FILE + ".bak", 'w'):
+    with open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak", 'w'):
         pass
     config.restore_backup()
-    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE)
     assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE)
-    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE + ".bak")
-    assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE + ".bak")
+    assert os.path.isfile(
+        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    assert open(webcam.configuration.CONFIGURATION_FILE).read() == \
+        open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak").read()
 
 
 def test_restore_backup_fail(tmpdir, logs):
@@ -380,11 +384,15 @@ def test_restore_backup_fail(tmpdir, logs):
     config = Configuration.create_from_dictionary({},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
     os.remove(webcam.configuration.CONFIGURATION_FILE)
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE + ".bak")
+
+    with open(webcam.configuration.CONFIGURATION_FILE + ".bak", 'w'):
+        pass
+    os.chmod(webcam.configuration.CONFIGURATION_FILE + ".bak", 0o222)
+
     config.restore_backup()
     assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE + ".bak")
+    assert os.path.exists(
+        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
     assert len(logs) == 1
     assert "Cannot restore the configuration file from its backup"
 
@@ -440,7 +448,7 @@ def test_overlays_to_download_one_overlay_with_path_and_other_attrs(logs):
                     'top_right': {
                         'path': "image.jpg",
                         "path2": "wrong.jpg",
-                        "text": "shoudln't be here"
+                        "text": "shouldn't be here"
                     }
                 }},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
@@ -488,7 +496,8 @@ def test_overlays_to_download_one_overlay_without_path(logs):
     """
     config = Configuration.create_from_dictionary({'overlays': {
                     'bottom_center': {
-                        "text": "hello!"
+                        "text": "hello!",
+                        "peth": "wrong.gif"
                     }
                 }},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
@@ -505,7 +514,7 @@ def test_overlays_to_download_two_overlays_without_path(logs):
                         "text": "hello!"
                     },
                     'top_right': {
-                        "text": "image.png"
+                        "path2": "image.png"
                     }
                 }},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))

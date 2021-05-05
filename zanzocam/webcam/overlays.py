@@ -17,7 +17,7 @@ class Overlay:
     Represents one overlay to add to the picture.
     """
     def __init__(self, position: str, data: Dict, photo_width: int, photo_height: int, date_format: Optional[str], time_format: Optional[str]):
-        log(f"Creating overlay {position}")
+        log(f"Creating overlay {position}.")
         
         # Populate the attributes with the overlay data 
         for key, value in data.items():
@@ -38,13 +38,13 @@ class Overlay:
             log("The position of this overlay ({position}) is malformed. "
                 "It must be one of the following: top_left, top_center, "
                 "top_right, bottom_left, bottom_center, bottom_right."
-                "This overlay will be skipped", e)
+                "This overlay will be skipped.", e)
             return
             
         # Find the type of overlay
         if not data.get("type", None) or not isinstance(data.get("type"), str):
             log(f"Overlay type not specified for position "
-                f"{position}. This overlay will be skipped")
+                f"{position}. This overlay will be skipped.")
             return
         self.type = data.get("type")
 
@@ -69,7 +69,7 @@ class Overlay:
         
         else:
             log_error(f"Overlay name '{self.type}' not recognized. Valid names: "
-            "text, image. This overlay will be skipped")
+            "text, image. This overlay will be skipped.")
             return
 
 
@@ -81,8 +81,8 @@ class Overlay:
         value = self.defaults.get(name, None)
         #log(f"WARNING: Accessing default value for {name}: {value}")
         return value
-        
-    
+
+
     def compute_position(self, image_width: int, image_height: int, 
                 border_top: int, border_bottom: int) -> Tuple[int, int]:
         """
@@ -123,7 +123,7 @@ class Overlay:
         try:
             # Creates the font and calculate the line height
             font_size = self.font_size
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+            font = ImageFont.truetype(FONT_PATH, font_size)
             line_height = font.getsize("a")[1] * 1.5
 
             # Calculate the padding as a percentage of the line height

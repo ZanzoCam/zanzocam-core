@@ -1,9 +1,18 @@
 import sys
+import json
 import logging
 import datetime
 import traceback
 import constants
 from webcam.errors import UnexpectedServerResponse
+
+
+class AllStringEncoder(json.JSONEncoder):
+    """
+    To transform every value into a string
+    """
+    def default(self, o):
+        return str(o)
 
 
 def log(msg: str) -> None:
@@ -13,7 +22,7 @@ def log(msg: str) -> None:
     logging.info(f"{datetime.datetime.now()} -> {msg}")
 
 
-def log_error(msg: str, e: Exception=None, fatal: str=None, print_server_errors: bool = False) -> None:
+def log_error(msg: str, e: Exception=None, fatal: str=None) -> None:
     """
     Logs an error to the console
     """
@@ -22,8 +31,8 @@ def log_error(msg: str, e: Exception=None, fatal: str=None, print_server_errors:
         fatal_msg = f"THIS ERROR IS FATAL: {fatal}"
 
     stacktrace = ""
-    if e is not None and (not isinstance(e, UnexpectedServerResponse) or print_server_errors):
-        stacktrace = f"The exception is: {str(e)}\n\n{traceback.format_exc()}\n"
+    if e is not None:
+        stacktrace += f"The exception is:\n\n{traceback.format_exc()}\n"
 
     log(f"ERROR! {msg} {fatal_msg} {stacktrace}")
     

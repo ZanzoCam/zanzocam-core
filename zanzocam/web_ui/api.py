@@ -81,6 +81,10 @@ def configure_server(form_data: Dict[str, str]):
     # Save the initial configuration file
     try:
         write_json_file(path=CONFIGURATION_FILE, content=webcam_minimal_conf)
+        
+        if not os.path.exists(CONFIGURATION_FILE + ".bak"):
+            write_json_file(path=CONFIGURATION_FILE + ".bak",
+                            content=webcam_minimal_conf)
     except Exception as e:
         return f"Si e' verificato un errore nel salvare i dati del server: {e}"
     return ""

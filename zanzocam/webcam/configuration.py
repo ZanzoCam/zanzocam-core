@@ -7,26 +7,26 @@ from datetime import datetime
 from pathlib import Path
 
 from constants import *
-from webcam.utils import log, log_error
+from webcam.utils import log, log_error, AllStringEncoder
 
 
 class Configuration:
     """
     Manages the configurations.
     """
-    def __init__(self, path: Path = CONFIGURATION_FILE):
+    def __init__(self, path: Path = None):
         """
         Loads the data stored in the configuration file as object attributes
         for this instance.
         """
+        if not path:
+            path = CONFIGURATION_FILE
+
         if not os.path.exists(path) or not os.path.isfile(path):
             raise ValueError(f"No configuration file found under {path}. "
                               "Please configure the server data from the web "
                               "interface and try again")
 
-        # Populate the attributes with the data
-        self.send_diagnostics = False  # Fallback value, this attribute has to exist
-        
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow
         with open(path, 'r') as c:
@@ -42,7 +42,7 @@ class Configuration:
 
 
     @staticmethod
-    def create_from_dictionary(data: Dict, path: Path = CONFIGURATION_FILE) -> 'Configuration':
+    def create_from_dictionary(data: Dict, path: Path = None) -> 'Configuration':
         """
         Creates a Configuration object starting from a dictionary. Will
         save the configuration file at the specified path.
@@ -76,6 +76,26 @@ class Configuration:
         return time_data.get("stop_activity", "23:59")
 
 
+    def get_server_settings(self):
+        """
+        Return all the information relative to the settings 
+        used to connect to the server.
+        """
+        server_data = getattr(self, "server", {})
+        return server_data
+
+
+    def get_system_settings(self):
+        """
+        Return all the information relative to the settings 
+        that should be applied to the system.
+        """
+        system_data = {
+            'time': getattr(self, "time", {})
+        }
+        return system_data
+
+
     def within_active_hours(self):
         """
         Compares the current time with the start-stop times and 
@@ -106,9 +126,20 @@ class Configuration:
     def backup(self):
         """
         Creates a backup copy of the configuration file.
+
+        NOTE: we backup from memory and not simply copy the file
+        because the file might have been overwritten by a server
+        (server.update_configuration()) in the meantime.
         """
         try:
-            shutil.copy2(self._path, str(self._path) + ".bak")
+            backup_vars = {
+                k: v 
+                    for k, v in vars(self).items() 
+                    if not k.startswith("_")    
+                }
+            with open(str(self._path) + ".bak", 'w') as backup:
+                json.dump(backup_vars, backup, indent=4, cls=AllStringEncoder)
+
         except Exception as e:
             log_error("Cannot backup the configuration file! "
                       "The current situation is dangerous, "
@@ -143,7 +174,14 @@ class Configuration:
         to_download = []
         for position, data in getattr(self, "overlays", {}).items():
             if "path" in data.keys():
-                to_download.append(data["path"])
+                
+                path = str(data["path"]).strip()
+                if not path or path == "":
+                    log_error(f"Overlay image in position {position} has "
+                              f"no path! Ignoring it.")
+                    continue
+
+                to_download.append(path)
         return to_download
 
 

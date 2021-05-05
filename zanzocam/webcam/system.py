@@ -301,7 +301,6 @@ class System:
         Copies a file to a directory using sudo.
         Return True if the copy was successful, False otherwise
         """
-        # NOTE: Let errors here escalate!
         copy = subprocess.run(
             ["/usr/bin/sudo", "cp", str(source), str(dest)], 
             stdout=subprocess.PIPE)
@@ -320,7 +319,6 @@ class System:
         Give ownership of the specified file to root.
         Return True if the chown process worked, False otherwise.
         """
-        # NOTE: Let errors here escalate!
         chown = subprocess.run([
             "/usr/bin/sudo", "chown", "root:root", str(path)], 
             stdout=subprocess.PIPE)
@@ -329,17 +327,33 @@ class System:
             raise RuntimeError("The chown process has failed. "
                               f"Stdout: {chown.stdout if chown else ''} "
                               f"Stderr: {chown.stderr if chown else ''} "
-                              f"Execute 'sudo chown 'root:root' {path}' "
+                              f"Execute 'sudo chown root:root {path}' "
                               f"to replicate the issue")
+
+    @staticmethod
+    def remove_root_owned_file(path: Path):
+        """
+        Executes 'sudo rm <path>'
+        Return True if the chown process worked, False otherwise.
+        """
+        chown = subprocess.run([
+            "/usr/bin/sudo", "rm", str(path)], 
+            stdout=subprocess.PIPE)
+
+        if not chown or chown.returncode > 0:
+            raise RuntimeError("The chown process has failed. "
+                f"Stdout: {chown.stdout if chown else ''} "
+                f"Stderr: {chown.stderr if chown else ''} "
+                f"Execute 'sudo rm {path}' to replicate the issue")
 
 
     @staticmethod
-    def apply_system_settings(configuration: Configuration) -> None:
+    def apply_system_settings(system_settings: Dict) -> None:
         """
         Modifies the system according to the new configuration.
         """
-        if 'time' in vars(configuration).keys():
-            System.update_crontab(getattr(configuration, "time", {}))
+        if 'time' in system_settings.keys():
+            System.update_crontab(system_settings.get("time", {}))
 
 
     @staticmethod
@@ -425,6 +439,9 @@ class System:
 
         # Creates a file with the right content
         try:
+            if os.path.exists(TEMP_CRONJOB):
+                System.remove_root_owned_file(TEMP_CRONJOB)
+
             with open(TEMP_CRONJOB, 'w') as d:
                 d.writelines("# ZANZOCAM - shoot picture\n")
                 for line in cron_strings:

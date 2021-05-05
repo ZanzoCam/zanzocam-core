@@ -48,6 +48,7 @@ REMOTE_IMAGES_PATH = "configuration/overlays/"
 #
 
 LOCALE = 'it_IT.utf8'
+FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 # Cronjob constants
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"

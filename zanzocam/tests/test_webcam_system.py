@@ -20,7 +20,7 @@ from tests.conftest import point_const_to_tmpdir
 
 @pytest.fixture(autouse=True)
 def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir(webcam.system, monkeypatch, tmpdir)
+    point_const_to_tmpdir([webcam.system], monkeypatch, tmpdir)
     # Special extra constants
     webcam.system.CRONJOB_FILE = tmpdir / "zanzocam"
 
@@ -774,12 +774,9 @@ def test_update_crontab_write_temp_file_fails(monkeypatch, tmpdir, logs):
     assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
     with open(webcam.system.CRONJOB_FILE, 'w') as c:
         c.write("crontab content")
-    # Temp file exists and is read-only
-    with open(webcam.system.TEMP_CRONJOB, 'w') as c:
-        c.write("i'm unwritable")
-    os.chmod(webcam.system.TEMP_CRONJOB, 
-             stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-    
+    # update_crontab uses sys.argv[0], which is always present; but not now...
+    monkeypatch.setattr(sys, 'argv', [])
+
     System.update_crontab({})
     assert len(logs) == 1
     assert "Failed to generate the new crontab. " \
@@ -837,25 +834,33 @@ def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
         "crontab content"
 
-def test_apply_system_settings_success(logs):
+
+def test_apply_system_settings_success_no_time(logs):
     """
         Check that apply_system_settings updates the crontab.
     """
-    class Config:
-        def __init__(self):
-            self.time = {}
-
     with open(webcam.system.CRONJOB_FILE, 'w'):
         pass
 
-    System.apply_system_settings(Config())
+    System.apply_system_settings({})
+    assert len(logs) == 0
+    assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == []
+
+
+def test_apply_system_settings_success_with_time(logs):
+    """
+        Check that apply_system_settings updates the crontab.
+    """
+    with open(webcam.system.CRONJOB_FILE, 'w'):
+        pass
+
+    System.apply_system_settings({'time': {}})
     assert len(logs) == 1
     assert "Crontab updated successfully" in logs[0]['msg']
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
             for hour in range(24)]
-    
 
 
 def test_generate_diagnostics(monkeypatch):

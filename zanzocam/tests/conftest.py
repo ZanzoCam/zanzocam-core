@@ -2,13 +2,29 @@ import os
 import shutil
 import pytest
 import logging
-from pathlib import PosixPath
+from pathlib import Path, PosixPath
 
 import webcam
 import constants
 
 
-def point_const_to_tmpdir(module, monkeypatch, tmpdir):
+class MockObject:
+    """
+        Object that can be init with a dict.
+        Can mock Configuration objects, but servers too
+        to some degree
+    """
+    def __init__(self, values):
+        self.send_diagnostics = False
+        for key, value in values.items():
+            setattr(self, key, value)
+    
+    def __getattr__(self, *a, **k):
+        return lambda *a, **k: None
+
+
+
+def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
     """
         Mocks all the calues in constants.py to point to the 
         pytest temp directory.
@@ -24,11 +40,14 @@ def point_const_to_tmpdir(module, monkeypatch, tmpdir):
                 (isinstance(value, str) or 
                 isinstance(value, PosixPath)
             )):
-            value = str(value)
-            new_value = value.replace(base_path, test_path)
+            new_value = str(value).replace(base_path, test_path)
+
+            if isinstance(value, PosixPath):
+                new_value = Path(new_value)
+
             monkeypatch.setattr(constants, const, new_value)
-            monkeypatch.setattr(module, const, new_value)
-            # print(f"{const}: {new_value}")
+            for module in modules:
+                monkeypatch.setattr(module, const, new_value)
             
 
 @pytest.fixture
