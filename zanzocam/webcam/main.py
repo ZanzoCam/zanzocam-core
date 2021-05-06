@@ -68,14 +68,36 @@ def main():
         except Exception as e:
             log_error("Could not set locale. Proceeding without it.", e)
 
-        # Load current configuration
+        # Load current configuration - or try with its backup if not found
+        backup_path = str(CONFIGURATION_FILE) + ".bak"        
         try:
-            old_config = Configuration()
+            try:
+                log("Loading last configuration file...")
+                old_config = Configuration()
+
+            except Exception as e:
+                if isinstance(e, FileNotFoundError):
+                    log_error(str(e))  # Avoid stacktrace
+                else:
+                    log_error("Failed to load the initial configuration from "
+                              f"'{CONFIGURATION_FILE}'.", e )
+
+                log(f"Trying to load the backup configuration file...")
+                old_config = Configuration(path = backup_path)
+
+        except FileNotFoundError as e:
+            upload_logs = False  # Cannot do it without any server data
+            errors_were_raised = True
+            log_error(f"No backup configuration file found under "
+                      f"'{backup_path}'.",
+                      fatal="cannot proceed without any data. Exiting.")
+            return
+        
         except Exception as e:
             upload_logs = False  # Cannot do it without any server data
             errors_were_raised = True
-            log_error(f"Failed to load the initial configuration from "
-                      f"'{CONFIGURATION_FILE}'.", e, 
+            log_error(f"Failed to load the backup configuration from "
+                      f"'{backup_path}'.", e, 
                       fatal="cannot proceed without any data. Exiting.")
             return
 

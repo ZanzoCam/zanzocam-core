@@ -23,9 +23,10 @@ class Configuration:
             path = CONFIGURATION_FILE
 
         if not os.path.exists(path) or not os.path.isfile(path):
-            raise ValueError(f"No configuration file found under {path}. "
-                              "Please configure the server data from the web "
-                              "interface and try again")
+            raise FileNotFoundError(
+                f"No configuration file found under {path}. "
+                "Please configure the server data from the web "
+                "interface and try again.")
 
         # Read the configuration file
         # NOTE: a failure here *should* escalate, don't catch or rethrow

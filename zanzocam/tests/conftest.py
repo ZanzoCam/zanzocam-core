@@ -23,6 +23,14 @@ class MockObject:
         return lambda *a, **k: None
 
 
+class Mock:
+    def __init__(self, *a, **k):
+        pass
+    
+    def __getattr__(self, *a, **k):
+        return lambda *a, **k: None
+
+
 
 def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
     """
