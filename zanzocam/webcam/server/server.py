@@ -60,11 +60,14 @@ class Server:
             raise ValueError("No protocol defined, cannot render endpoint.")
 
     def update_configuration(self, old_configuration: Configuration, 
-            new_conf_path : Path = CONFIGURATION_FILE) -> Configuration:
+            new_conf_path : Path = None) -> Configuration:
         """
         Download the new configuration file from the server and updates it
         locally.
         """
+        if not new_conf_path:
+            new_conf_path = CONFIGURATION_FILE
+
         # Get the new configuration from the server
         configuration_data = self._server.download_new_configuration()
         
@@ -80,8 +83,7 @@ class Server:
     def download_overlay_images(self, images_list: List[str]) -> None:
         """ 
         Download all the overlay images that should be re-downloaded.
-        If it fails, logs it and replaces that image with a transparent pixel, 
-        to avoid adding checks later in the processing.
+        If it fails, logs it.
         """
         for image_name in images_list:
             try:
@@ -92,21 +94,27 @@ class Server:
                           f"'{image_name}'. Ignoring it. This overlay "
                           f"image will not appear on the final image.", e)
 
-    def upload_logs(self, path: Path = CAMERA_LOG):
+    def upload_logs(self, path: Path = None):
         """ 
         Send the logs to the server.
         """
-        # NOTE: exceptions in here should NOT escalate. Catch everything!!
+        if not path:
+            path = CAMERA_LOG
+
         self._server.send_logs(path)
+
         # Clear the logs once they have been uploaded
         with open(path, "w") as l:
             pass
     
     def upload_failure_report(self, wrong_conf: Dict[str, Any], 
-            right_conf: Dict[str, Any], logs_path: Path = CAMERA_LOG, ) -> None:
+            right_conf: Dict[str, Any], logs_path: Path = None) -> None:
         """ 
         Send a report of the failure to the old server.
         """
+        if not logs_path:
+            logs_path = CAMERA_LOG
+
         logs = ""
         try:
             if os.path.exists(logs_path):
@@ -143,6 +151,9 @@ class Server:
 
         # Send the logs
         self._server.send_logs(FAILURE_REPORT_PATH)
+        # Clear the report once it has been uploaded
+        with open(FAILURE_REPORT_PATH, "w") as l:
+            pass
 
 
     def upload_picture(self, image_path: Path, image_name: str, 
@@ -150,24 +161,22 @@ class Server:
         """
         Uploads the new picture to the server.
         """
-        # Note: Errors here MUST escalate
-        
-        if not os.path.exists(image_path):
-            raise ValueError(f"No picture to upload: {image_path} does not exist")
-            
         if not image_name or not image_path or not image_extension:
             raise ValueError(f"Cannot upload the picture: picture name ({image_name}) " 
                       f"or location ({image_path}) or extension ({image_extension}) "
                       f"not given.")
-        
+
         # Make sure the file in question exists
         if not os.path.exists(image_path):
-            raise ValueError(f"Cannot upload the picture: {image_path} does not exist.")
-
+            raise ValueError(f"No picture to upload: {image_path} does not exist")
+            
         # Upload the picture
-        self.final_image_path = self._server.upload_picture(image_path, image_name, image_extension)
-        log(f"Picture {self.final_image_path.name} uploaded successfully.")
+        self.final_image_path = Path(self._server.upload_picture(image_path, image_name, image_extension))
+        log(f"Picture '{self.final_image_path.name}' uploaded successfully.")
 
-        if cleanup and os.path.exists(self.final_image_path):
-            os.remove(self.final_image_path)
-            log("Uploaded image wes removed from disk successfully.")
+        if cleanup:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            if os.path.exists(self.final_image_path):
+                os.remove(self.final_image_path)
+            log("Pictures deleted successfully.")

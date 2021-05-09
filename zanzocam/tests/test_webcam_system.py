@@ -861,13 +861,3 @@ def test_apply_system_settings_success_with_time(logs):
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
             for hour in range(24)]
-
-
-def test_generate_diagnostics(monkeypatch):
-    """
-        Stub test of the diagnostic log generator
-    """
-    monkeypatch.setattr(subprocess, "check_output", lambda *a, **k: "")
-    System.generate_diagnostics(webcam.system.DIAGNOSTICS_LOG)
-    assert os.path.exists(webcam.system.DIAGNOSTICS_LOG)
-    assert open(webcam.system.DIAGNOSTICS_LOG).read() != b""
