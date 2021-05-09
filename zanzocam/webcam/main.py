@@ -57,15 +57,16 @@ def main():
             for key, value in status.items():
                 log(f" - {key}: {value}")
         except Exception as e:
+            errors_were_raised = True
             log_error("Something unexpected happened during the system "
                       "status check. Skipping this step. This might be "
                       "a symptom of deeper issues, don't ignore this!", e)
-            errors_were_raised = True
 
         # Setup locale
         try:
             locale.setlocale(locale.LC_ALL, LOCALE)
         except Exception as e:
+            errors_were_raised = True
             log_error("Could not set locale. Proceeding without it.", e)
 
         # Load current configuration - or try with its backup if not found
@@ -166,7 +167,7 @@ def main():
                 log("Applying new system settings.")
                 system.apply_system_settings(config.get_system_settings())
             else:
-                log("System settings didn't change: doing nothing.")
+                log("System settings didn't change: no action required.")
 
         except Exception as e:
             errors_were_raised = True
@@ -188,8 +189,8 @@ def main():
             # Try again using the old config file
             errors_were_raised = True
             log_error("An error occurred while taking the picture.", e)
-            log(f"Waiting 30 seconds and then trying again.")
-            sleep(30)
+            log(f"Waiting {WAIT_AFTER_CAMERA_FAIL}s and then trying again.")
+            sleep(WAIT_AFTER_CAMERA_FAIL)
 
             try:
                 log_row(char="+")
@@ -200,6 +201,7 @@ def main():
             except Exception as ee:
                 # That's the second run that failed: give up.
                 errors_were_raised = True
+                restore_required = False
                 log_error("Something happened at the second attempt too!", ee,
                             fatal="Exiting.")
                 return  # The 'finally' block will run after this
@@ -218,7 +220,7 @@ def main():
                       "It was probably not sent.", e,
                       fatal="The error was unexpected, can't fix. "
                             "The picture won't be uploaded.")
-            return # The 'finally' block will run after this
+            return  # The 'finally' block will run after this
 
 
     # Catch server errors: they block communication, so they are fatal anyway
@@ -255,6 +257,7 @@ def main():
             
         except Exception as e:
             errors_were_raised = True
+            restore_required = False
             log_error(f"Failed to clean up image files. Note that the "
                       f"filesystem might fill up if the old pictures "
                       f"are not removed, which can cause ZANZOCAM to fail.", e)
@@ -269,9 +272,11 @@ def main():
                 "downloaded config file (if it was downloaded). Check the "
                 "above logs carefully to assess the situation.")
             old_config.restore_backup()
-            log("The next run will use the following server configuration:")
             old_config = Configuration()
-            print(json.dumps(old_config.get_server_settings(), indent=4))
+            server_config = json.dumps(
+                old_config.get_server_settings(), indent=4)
+            log(f"The next run will use the following server "
+                f"configuration:\n{server_config}")
 
         errors_were_raised_str = "successfully"
         if errors_were_raised or restore_required:
@@ -285,42 +290,38 @@ def main():
         if upload_logs:
             try:
                 endpoint = "[no server available]"
-                config = Configuration()
-                server = Server(config.get_server_settings()) 
+                current_config = Configuration()
+                server = Server(current_config.get_server_settings()) 
                 endpoint = server.get_endpoint()  
 
                 server.upload_logs()
                 log(f"Logs uploaded successfully to {endpoint}")
 
-                # If restore was required, send a failure report to the old server
-                if restore_required:
-                    wrong_conf = config.get_server_settings()
-                    right_conf = old_config.get_server_settings()
+            except Exception as e:
+                log_error(f"Something happened while uploading the logs "
+                          f"to {endpoint}", e, 
+                          fatal="Logs won't be uploaded.")
 
+            # If restore was required, send also a failure report to the old server
+            if restore_required and old_config:
+                try:
+                    wrong_conf = '{"error": "no configuration found"}'
+                    if config:
+                        wrong_conf = config.get_server_settings()
+                    right_conf = old_config.get_server_settings()
+                    
                     if wrong_conf != right_conf:
                         log(f"Sending failure report to "
                             f"{server.get_endpoint()}")
                         server.upload_failure_report(wrong_conf, right_conf)
                         log("Failure report uploaded successfully.")
-                
-                # If so required, send diagnostics to the server
-                try:
-                    if getattr(config, 'send_diagnostics', False):
-                        system.generate_diagnostics()
-                        log(f"Sending diagnostic report to {endpoint}")
-                        server.upload_diagnostics()
-                except Exception as ee:
-                    # FIXME deal with this a bit better if we see 
-                    # this logs are useful
-                    log("An error occurred while sending the diagnostics. "
-                        "Ignoring this.")
 
-            except Exception as e:
-                log_row("-")
-                log_error(f"Something happened while uploading the logs "
-                          f"to {endpoint}", e, 
-                          fatal="Logs won't be uploaded.")
-                log_row("-")
+                except Exception as e:
+                    log_error(f"Something happened while uploading the "
+                            f"failure report to {endpoint}", e, 
+                            fatal="The report won't be uploaded.")
+
+
 
 
 if "__main__" == __name__:

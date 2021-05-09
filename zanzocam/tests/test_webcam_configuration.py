@@ -9,7 +9,7 @@ import webcam
 import constants
 from webcam.configuration import Configuration
 
-from tests.conftest import point_const_to_tmpdir
+from tests.conftest import point_const_to_tmpdir, in_logs
 
 
 @pytest.fixture(autouse=True)
@@ -29,10 +29,13 @@ def test_decode_json_values():
         "e": {
             "ee": "false"
         },
-        "f": {}
+        "f": {},
+        "g#h": 'g#h',
+        "i-l-m": 'i-l-m'
     })
     assert decoded == {"a": "a", "b": 2, "c": 3.0, "d": True, 'e': 
-                        {"ee": False}, "f": {}}
+                        {"ee": False}, "f": {}, 'g_h': 'g#h', 
+                        'i_l_m': 'i-l-m'}
 
 
 def test_create_from_dictionary_normal_dict(tmpdir, logs):
@@ -40,8 +43,7 @@ def test_create_from_dictionary_normal_dict(tmpdir, logs):
         Test that Configuration can be created from a dict,
         and that it will save itself.
     """
-    config = Configuration.create_from_dictionary({"a": "hello"}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({"a": "hello"})
     assert isinstance(config, Configuration)
     assert config.a == "hello"
     assert config._path == Path(webcam.configuration.CONFIGURATION_FILE)
@@ -61,8 +63,7 @@ def test_create_from_dictionary_empty_dict(tmpdir, logs):
         Test that Configuration can be created from a dict,
         and that it will save itself.
     """
-    config = Configuration.create_from_dictionary({}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     assert isinstance(config, Configuration)
     assert config._path == Path(webcam.configuration.CONFIGURATION_FILE)
     # Can't take more than a second right?
@@ -76,9 +77,9 @@ def test_init_wrong_path(tmpdir, logs):
     """
         Test that Configuration needs a valid path
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(FileNotFoundError):
         Configuration(tmpdir)
-    with pytest.raises(ValueError):
+    with pytest.raises(FileNotFoundError):
         Configuration(tmpdir / "i-dont-exist")
     assert len(logs) == 0
 
@@ -88,8 +89,7 @@ def test_within_active_hours_no_boundaries_given_1(logs):
     """
         If not boundaries are given, they go from 00:00 to 23:59
     """
-    config = Configuration.create_from_dictionary({}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -99,8 +99,7 @@ def test_within_active_hours_no_boundaries_given_2(logs):
     """
         If not boundaries are given, they go from 00:00 to 23:59
     """
-    config = Configuration.create_from_dictionary({'time': {}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({'time': {}})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -111,8 +110,7 @@ def test_within_active_hours_only_start_given_1(logs):
         If only start if given, end is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"start_activity": "11:30"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+        {'time': {"start_activity": "11:30"}})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -123,8 +121,7 @@ def test_within_active_hours_only_start_given_1(logs):
         If only start if given, end is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"start_activity": "12:00"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                {'time': {"start_activity": "12:00"}})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -135,8 +132,7 @@ def test_within_active_hours_only_start_given_3(logs):
         If only start if given, end is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"start_activity": "12:30"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                {'time': {"start_activity": "12:30"}})
     assert not config.within_active_hours()
     assert len(logs) == 0
 
@@ -147,8 +143,7 @@ def test_within_active_hours_only_stop_given_1(logs):
         If only stop is given, start is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"stop_activity": "11:30"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                {'time': {"stop_activity": "11:30"}})
     assert not config.within_active_hours()
     assert len(logs) == 0
 
@@ -159,8 +154,7 @@ def test_within_active_hours_only_stop_given_2(logs):
         If only stop is given, start is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"stop_activity": "12:00"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                {'time': {"stop_activity": "12:00"}})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -171,8 +165,7 @@ def test_within_active_hours_only_stop_given_3(logs):
         If only stop is given, start is midnight
     """
     config = Configuration.create_from_dictionary(
-                {'time': {"stop_activity": "12:30"}}, 
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                {'time': {"stop_activity": "12:30"}})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -187,8 +180,7 @@ def test_within_active_hours_start_and_stop_given_1(logs):
                 {'time': {
                     "start_activity": "10:30", 
                     "stop_activity": "11:30"
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert not config.within_active_hours()
     assert len(logs) == 0
 
@@ -203,8 +195,7 @@ def test_within_active_hours_start_and_stop_given_2(logs):
                 {'time': {
                     "start_activity": "11:30", 
                     "stop_activity": "12:30"
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -219,8 +210,7 @@ def test_within_active_hours_start_and_stop_given_3(logs):
                 {'time': {
                     "start_activity": "12:30", 
                     "stop_activity": "13:30"
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert not config.within_active_hours()
     assert len(logs) == 0
 
@@ -235,8 +225,7 @@ def test_within_active_hours_start_and_stop_given_4(logs):
                 {'time': {
                     "start_activity": "12:00", 
                     "stop_activity": "12:00"
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 0
 
@@ -249,11 +238,10 @@ def test_within_active_hours_start_and_stop_handle_typos_1(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {
                     "start_activity": "wrong", 
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 1
-    assert "Could not read the start-stop time values" in logs[0]['msg']
+    assert in_logs(logs, "Could not read the start-stop time values")
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -264,11 +252,10 @@ def test_within_active_hours_start_and_stop_handle_typos_2(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {
                     "stop_activity": "wrong", 
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 1
-    assert "Could not read the start-stop time values" in logs[0]['msg']
+    assert in_logs(logs, "Could not read the start-stop time values")
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -280,11 +267,10 @@ def test_within_active_hours_start_and_stop_handle_typos_3(logs):
                 {'time': {
                     "start_activity": "23:00", 
                     "stop_activity": "wrong", 
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 1
-    assert "Could not read the start-stop time values" in logs[0]['msg']
+    assert in_logs(logs, "Could not read the start-stop time values")
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -296,11 +282,10 @@ def test_within_active_hours_start_and_stop_handle_typos_3(logs):
                 {'time': {
                     "start_activity": "wrong", 
                     "stop_activity": "02:00", 
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 1
-    assert "Could not read the start-stop time values" in logs[0]['msg']
+    assert in_logs(logs, "Could not read the start-stop time values")
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -312,11 +297,10 @@ def test_within_active_hours_start_and_stop_handle_typos_4(logs):
                 {'time': {
                     "start_activity": "wrong", 
                     "stop_activity": "also wrong", 
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.within_active_hours()
     assert len(logs) == 1
-    assert "Could not read the start-stop time values" in logs[0]['msg']
+    assert in_logs(logs, "Could not read the start-stop time values")
 
 
 def test_backup_success(tmpdir, logs):
@@ -324,8 +308,7 @@ def test_backup_success(tmpdir, logs):
         Configuration can backup its own file 
         with a .bak extension
     """
-    config = Configuration.create_from_dictionary({},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE)
     assert not os.path.exists(
         str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
@@ -342,57 +325,55 @@ def test_backup_fail(tmpdir, logs):
     """
         Configuration can handle a failure during the backup process
     """
-    config = Configuration.create_from_dictionary({},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     
-    with open(webcam.configuration.CONFIGURATION_FILE + ".bak", 'w'):
+    backup_path = str(webcam.configuration.CONFIGURATION_FILE) + ".bak"
+    with open(backup_path, 'w'):
         pass
-    os.chmod(webcam.configuration.CONFIGURATION_FILE + ".bak", 0o444)
+    os.chmod(backup_path, 0o444)
 
     config.backup()
-    assert os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    assert os.path.exists(
-        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
     assert open(webcam.configuration.CONFIGURATION_FILE).read() != \
-        open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak").read()
+        open(backup_path).read()
     assert len(logs) == 1
-    assert "Cannot backup the configuration file" in logs[0]['msg']
+    assert in_logs(logs, "Cannot backup the configuration file")
 
 
 def test_restore_backup_success(tmpdir):
     """
         Configuration can restore its backup.
     """
-    config = Configuration.create_from_dictionary({},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     os.remove(webcam.configuration.CONFIGURATION_FILE)
+    
+    backup_path = str(webcam.configuration.CONFIGURATION_FILE) + ".bak"
     assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    with open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak", 'w'):
+    with open(backup_path, 'w'):
         pass
+
     config.restore_backup()
+    
     assert os.path.isfile(webcam.configuration.CONFIGURATION_FILE)
-    assert os.path.isfile(
-        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    assert os.path.isfile(backup_path)
     assert open(webcam.configuration.CONFIGURATION_FILE).read() == \
-        open(str(webcam.configuration.CONFIGURATION_FILE) + ".bak").read()
+        open(backup_path).read()
 
 
 def test_restore_backup_fail(tmpdir, logs):
     """
         Configuration can restore its backup.
     """
-    config = Configuration.create_from_dictionary({},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     os.remove(webcam.configuration.CONFIGURATION_FILE)
 
-    with open(webcam.configuration.CONFIGURATION_FILE + ".bak", 'w'):
+    backup_path = str(webcam.configuration.CONFIGURATION_FILE) + ".bak"
+    with open(backup_path, 'w'):
         pass
-    os.chmod(webcam.configuration.CONFIGURATION_FILE + ".bak", 0o222)
+    os.chmod(backup_path, 0o222)
 
     config.restore_backup()
     assert not os.path.exists(webcam.configuration.CONFIGURATION_FILE)
-    assert os.path.exists(
-        str(webcam.configuration.CONFIGURATION_FILE) + ".bak")
+    assert os.path.exists(backup_path)
     assert len(logs) == 1
     assert "Cannot restore the configuration file from its backup"
 
@@ -402,8 +383,7 @@ def test_overlays_to_download_no_overlays(logs):
         If the overlays block is not present or empty,
         overlays_to_download returns an empty list
     """
-    config = Configuration.create_from_dictionary({},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({})
     assert config.overlays_to_download() == []
     assert len(logs) == 0
 
@@ -418,12 +398,11 @@ def test_overlays_to_download_wrong_overlays_block(logs):
         If the overlays key dows not contain a dict,
         log the exception and return an empty list
     """
-    config = Configuration.create_from_dictionary({'overlays': "wrong!"},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+    config = Configuration.create_from_dictionary({'overlays': "wrong!"})
     assert config.overlays_to_download() == []
     assert len(logs) == 1
-    assert "The 'overlays' entry in the configuration file " \
-           "does not correspond to a dictionary" in logs[0]['msg']
+    assert in_logs(logs, "The 'overlays' entry in the configuration file " \
+           "does not correspond to a dictionary")
 
 
 def test_overlays_to_download_one_overlay_with_path(logs):
@@ -434,8 +413,7 @@ def test_overlays_to_download_one_overlay_with_path(logs):
                     'top_right': {
                         'path': "image.jpg"
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == ["image.jpg"]
     assert len(logs) == 0
 
@@ -450,8 +428,7 @@ def test_overlays_to_download_one_overlay_with_path_and_other_attrs(logs):
                         "path2": "wrong.jpg",
                         "text": "shouldn't be here"
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == ["image.jpg"]
     assert len(logs) == 0
 
@@ -467,8 +444,7 @@ def test_overlays_to_download_two_overlays_with_path(logs):
                     'bottom_center': {
                         "path": "image2.txt"  # extension not checked
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == ["image.jpg", 'image2.txt']
     assert len(logs) == 0
 
@@ -484,8 +460,7 @@ def test_overlays_to_download_one_overlay_with_path_one_without(logs):
                     'bottom_center': {
                         "text": "hello!"
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == ["image.jpg"]
     assert len(logs) == 0
 
@@ -499,8 +474,7 @@ def test_overlays_to_download_one_overlay_without_path(logs):
                         "text": "hello!",
                         "peth": "wrong.gif"
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == []
     assert len(logs) == 0
 
@@ -516,7 +490,6 @@ def test_overlays_to_download_two_overlays_without_path(logs):
                     'top_right': {
                         "path2": "image.png"
                     }
-                }},
-                path = Path(webcam.configuration.CONFIGURATION_FILE))
+                }})
     assert config.overlays_to_download() == []
     assert len(logs) == 0

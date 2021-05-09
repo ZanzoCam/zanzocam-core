@@ -23,7 +23,7 @@ class MockObject:
         return lambda *a, **k: None
 
 
-class Mock:
+class MyMock:
     def __init__(self, *a, **k):
         pass
     
@@ -64,8 +64,21 @@ def logs(monkeypatch):
 
     def mock_log(msg, *args, **kwargs):
         print(msg)
-        logs.append({"msg": msg})
+        logs.append(msg)
     
     logging.info = mock_log
     yield logs
     logs = []
+
+
+def in_logs(logs, string):
+    """
+        Looks for a string in the entire logs stack
+    """
+    total = "\n".join(logs)
+    try:
+        where = total.index(string) + 1  # So that 0 == not found
+        print(f"---------> {string}: {where}")
+        return True
+    except ValueError:
+        return False

@@ -1,6 +1,7 @@
 from typing import Dict, List, Tuple, Optional
 
 import os
+import re
 import json
 import shutil
 from datetime import datetime
@@ -22,9 +23,16 @@ class Configuration:
         if not path:
             path = CONFIGURATION_FILE
 
-        if not os.path.exists(path) or not os.path.isfile(path):
+        if not os.path.exists(path):
             raise FileNotFoundError(
                 f"No configuration file found under {path}. "
+                "Please configure the server data from the web "
+                "interface and try again.")
+        
+        if not os.path.isfile(path):
+            raise FileNotFoundError(
+                f"The path {path} does not point to a file "
+                "(is it a folder?). "
                 "Please configure the server data from the web "
                 "interface and try again.")
 
@@ -40,6 +48,7 @@ class Configuration:
         # Add info about the download time (last edit time)
         self._download_time = datetime.fromtimestamp(Path(path).stat().st_mtime)
         self._path = path
+        self._backup_path = str(path) + ".bak"
 
 
     @staticmethod
@@ -48,9 +57,13 @@ class Configuration:
         Creates a Configuration object starting from a dictionary. Will
         save the configuration file at the specified path.
         """
+        if not path:
+            path = CONFIGURATION_FILE
+
         data = Configuration._decode_json_values(data)  # Transform strings into numbers
         with open(path, "w+") as d:
             json.dump(data, d, indent=4)
+
         return Configuration(path)
 
         
@@ -124,7 +137,7 @@ class Configuration:
         return True
 
 
-    def backup(self):
+    def backup(self, path: str = None):
         """
         Creates a backup copy of the configuration file.
 
@@ -132,13 +145,17 @@ class Configuration:
         because the file might have been overwritten by a server
         (server.update_configuration()) in the meantime.
         """
+        # If path is not given, use the default one defined at init
+        if path:
+            self._backup_path = path
+        
         try:
             backup_vars = {
                 k: v 
                     for k, v in vars(self).items() 
                     if not k.startswith("_")    
                 }
-            with open(str(self._path) + ".bak", 'w') as backup:
+            with open(self._backup_path, 'w') as backup:
                 json.dump(backup_vars, backup, indent=4, cls=AllStringEncoder)
 
         except Exception as e:
@@ -152,7 +169,7 @@ class Configuration:
         Restores the configuration file from its backup copy.
         """
         try:
-            shutil.copy2(str(self._path) + ".bak", self._path)
+            shutil.copy2(self._backup_path, self._path)
         except Exception as e:
             log_error("Cannot restore the configuration file from its backup! "
                       "The current situation is dangerous, "
@@ -192,8 +209,12 @@ class Configuration:
         Ensures the JSON is parser properly: converts string numbers and
         string booleans into the correct types, recursively.
         """
+        decoded_json = {}
         for key, value in json.items():
-            # Recusrion
+            # Check keys: only alphanumeric and underscore allowed, 
+            # the rest get converted into underscore
+            key = re.sub('[^0-9a-zA-Z]+', '_', key)
+            # Recursion
             if isinstance(value, dict):
                 value = Configuration._decode_json_values(value)
             # Check if string boolean
@@ -209,5 +230,5 @@ class Configuration:
                         value = int(value)
                     except ValueError:
                         pass
-            json[key] = value
-        return json
+            decoded_json[key] = value
+        return decoded_json

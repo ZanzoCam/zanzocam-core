@@ -15,7 +15,7 @@ import webcam
 import constants
 from webcam.system import System
 
-from tests.conftest import point_const_to_tmpdir
+from tests.conftest import point_const_to_tmpdir, in_logs
 
 
 @pytest.fixture(autouse=True)
@@ -94,7 +94,7 @@ def test_get_last_reboot_time_exception(fake_process, logs):
     last_reboot_time = System.get_last_reboot_time()
     assert last_reboot_time == None
     assert len(logs) == 1
-    assert "Could not get last reboot time information" in logs[0]['msg']
+    assert in_logs(logs, "Could not get last reboot time information")
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -122,8 +122,8 @@ def test_get_uptime_exception(fake_process, logs):
     uptime = System.get_uptime()
     assert uptime == None
     assert len(logs) == 2
-    assert "Could not get uptime information" in logs[1]['msg']
-    assert "Could not get last reboot time information" in logs[0]['msg']
+    assert in_logs(logs, "Could not get uptime information")
+    assert in_logs(logs, "Could not get last reboot time information")
 
 
 def test_check_hotspot_allowed_flag_set_to_yes(logs):
@@ -157,7 +157,7 @@ def test_check_hotspot_allowed_flag_set_to_other(logs):
     allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
-    assert "The hostpot flag contains neither YES nor NO" in logs[0]["msg"]
+    assert in_logs(logs, "The hostpot flag contains neither YES nor NO")
 
 
 def test_check_hotspot_allowed_permission_error(logs):
@@ -170,7 +170,7 @@ def test_check_hotspot_allowed_permission_error(logs):
     allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
-    assert "Failed to check if the hotspot is allowed" in logs[0]["msg"]
+    assert in_logs(logs, "Failed to check if the hotspot is allowed")
 
 
 def test_check_hotspot_allowed_no_file(logs):
@@ -181,7 +181,7 @@ def test_check_hotspot_allowed_no_file(logs):
     allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
-    assert "Hotspot flag file not found" in logs[0]["msg"]
+    assert in_logs(logs, "Hotspot flag file not found")
     assert os.path.exists(constants.HOTSPOT_FLAG)
     assert open(constants.HOTSPOT_FLAG, 'r').read() == "YES"
 
@@ -274,7 +274,7 @@ def test_run_hotspot_script_failure(fake_process, logs):
     )
     assert System.run_autohotspot() is None
     assert len(logs) == 1
-    assert "The hotspot script failed to run" in logs[0]["msg"]
+    assert in_logs(logs, "The hotspot script failed to run")
 
 
 def test_get_wifi_ssid_success(fake_process, logs):
@@ -310,7 +310,7 @@ def test_get_wifi_ssid_exception(fake_process, logs):
     )
     assert System.get_wifi_ssid() is None
     assert len(logs) == 1
-    assert "Could not retrieve WiFi information" in logs[0]["msg"]
+    assert in_logs(logs, "Could not retrieve WiFi information")
 
 
 def test_check_internet_connectivity_success(monkeypatch, logs):
@@ -347,7 +347,7 @@ def test_check_internet_connectivity_exception(monkeypatch, logs):
     monkeypatch.setattr(webcam.system.requests, "head", generic_error)
     assert not System.check_internet_connectivity()
     assert len(logs) == 1
-    assert "Could not check if there is Internet access" in logs[0]['msg']
+    assert in_logs(logs, "Could not check if there is Internet access")
 
 
 def test_get_filesystem_size_success(monkeypatch, logs):
@@ -372,7 +372,7 @@ def test_get_filesystem_size_exception(monkeypatch, logs):
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", generic_exception)
     assert System.get_filesystem_size() is None
     assert len(logs) == 1
-    assert "Could not retrieve the size of the filesystem" in logs[0]['msg']
+    assert in_logs(logs, "Could not retrieve the size of the filesystem")
 
 
 def test_get_free_space_on_disk_success(monkeypatch, logs):
@@ -397,7 +397,7 @@ def test_get_free_space_on_disk_exception(monkeypatch, logs):
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", generic_exception)
     assert System.get_free_space_on_disk() is None
     assert len(logs) == 1
-    assert "Could not get the amount of free space on the filesystem" in logs[0]['msg']
+    assert in_logs(logs, "Could not get the amount of free space on the filesystem")
 
 
 def test_get_ram_stats_success(monkeypatch, meminfo, logs):
@@ -425,7 +425,7 @@ def test_get_ram_stats_exception(monkeypatch, meminfo, logs):
     monkeypatch.setattr(builtins, 'open', fail_open)
     assert System.get_ram_stats() is None
     assert len(logs) == 1
-    assert "Could not get RAM data" in logs[0]['msg']
+    assert in_logs(logs, "Could not get RAM data")
 
 
 def test_report_general_status(monkeypatch):
@@ -607,7 +607,7 @@ def test_prepare_crontab_string_unreadable_frequency(logs):
     assert crontab == [f"{(step%6)*10} {math.floor(step/6)} * * *" 
                         for step in range(24*6)]
     assert len(logs) == 1
-    assert "frequency cannot be converted into int" in logs[0]['msg']
+    assert in_logs(logs, "frequency cannot be converted into int")
 
 
 def test_prepare_crontab_string_unreadable_frequency_ignore_cron(logs):
@@ -626,7 +626,7 @@ def test_prepare_crontab_string_unreadable_frequency_ignore_cron(logs):
     assert crontab == [f"{(step%6)*10} {math.floor(step/6)} * * *" 
                         for step in range(24*6)]
     assert len(logs) == 1
-    assert "frequency cannot be converted into int" in logs[0]['msg']
+    assert in_logs(logs, "frequency cannot be converted into int")
 
 
 def test_prepare_crontab_string_affects_frequency(logs):
@@ -669,7 +669,7 @@ def test_prepare_crontab_string_unreadable_start_time(logs):
     })
     assert crontab == ["0 0 * * *", "0 8 * * *"]
     assert len(logs) == 1
-    assert "Could not read start time" in logs[0]['msg']
+    assert in_logs(logs, "Could not read start time")
 
 
 def test_prepare_crontab_string_unreadable_stop_time(logs):
@@ -683,7 +683,7 @@ def test_prepare_crontab_string_unreadable_stop_time(logs):
     })
     assert crontab == ["23 12 * * *", "23 20 * * *"]
     assert len(logs) == 1
-    assert "Could not read stop time" in logs[0]['msg']
+    assert in_logs(logs, "Could not read stop time")
 
 
 def test_prepare_crontab_string_can_fail_1():
@@ -725,7 +725,7 @@ def test_update_crontab_success(tmpdir, logs):
         pass
     System.update_crontab({})
     assert len(logs) == 1
-    assert "Crontab updated successfully" in logs[0]['msg']
+    assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
@@ -743,8 +743,8 @@ def test_update_crontab_prepare_strings_fails(monkeypatch, tmpdir, logs):
 
     System.update_crontab(None)  # Will make prepare_crontab_string fail
     assert len(logs) == 1
-    assert "Something happened assembling the crontab. " \
-           "Aborting crontab update." in logs[0]['msg']
+    assert in_logs(logs, "Something happened assembling the crontab. " \
+           "Aborting crontab update.")
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == "crontab content"
 
 
@@ -757,9 +757,9 @@ def test_update_crontab_backup_fail(tmpdir, logs):
     System.update_crontab({})  
     assert len(logs) == 2
     # Failed backup  
-    assert "Failed to backup the previous crontab!" in logs[0]['msg']
+    assert in_logs(logs, "Failed to backup the previous crontab!")
     # Actual crontab replacement
-    assert "Crontab updated successfully" in logs[1]['msg']
+    assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 
@@ -779,8 +779,8 @@ def test_update_crontab_write_temp_file_fails(monkeypatch, tmpdir, logs):
 
     System.update_crontab({})
     assert len(logs) == 1
-    assert "Failed to generate the new crontab. " \
-           "Aborting crontab update." in logs[0]['msg']
+    assert in_logs(logs, "Failed to generate the new crontab. " \
+           "Aborting crontab update.")
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
         "crontab content"
 
@@ -800,8 +800,8 @@ def test_update_crontab_chown_fail(monkeypatch, tmpdir, logs):
 
     System.update_crontab({})
     assert len(logs) == 1
-    assert "Failed to assign the correct rights to the " \
-           "new crontab file. Aborting crontab update." in logs[0]['msg']
+    assert in_logs(logs, "Failed to assign the correct rights to the " \
+           "new crontab file. Aborting crontab update.")
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
         "crontab content"
 
@@ -829,8 +829,8 @@ def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
 
     System.update_crontab({})
     assert len(logs) == 1
-    assert "Failed to replace the old crontab with a new one. " \
-           "Aborting crontab update." in logs[0]['msg']
+    assert in_logs(logs, "Failed to replace the old crontab with a new one. " \
+           "Aborting crontab update.")
     assert open(webcam.system.CRONJOB_FILE, 'r').read() == \
         "crontab content"
 
@@ -856,7 +856,7 @@ def test_apply_system_settings_success_with_time(logs):
 
     System.apply_system_settings({'time': {}})
     assert len(logs) == 1
-    assert "Crontab updated successfully" in logs[0]['msg']
+    assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
         [f"0 {hour} * * * {constants.SYSTEM_USER} {sys.argv[0]}\n" 

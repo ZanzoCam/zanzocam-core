@@ -49,6 +49,7 @@ REMOTE_IMAGES_PATH = "configuration/overlays/"
 
 LOCALE = 'it_IT.utf8'
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+WAIT_AFTER_CAMERA_FAIL = 30
 
 # Cronjob constants
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"
@@ -62,6 +63,7 @@ AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
 
 # Server constants
 FTP_CONFIG_FILE_ENCODING = 'utf-8'
+
 
 
 #

@@ -61,9 +61,8 @@ class Camera:
         """
         Takes the picture and renders the elements on it.
         """
-        # NOTE: let exceptions here escalate. Do not catch or at least rethrow!
-        self.shoot_picture()
-        self.process_picture()
+        self._shoot_picture()
+        self._process_picture()
 
 
     def _prepare_camera_object(self, expanded_framerate_range: bool = False) -> int:
@@ -109,7 +108,7 @@ class Camera:
             f"shutter speed: {shutter_speed}, iso: {iso}).")
             
 
-    def shoot_picture(self) -> None:
+    def _shoot_picture(self) -> None:
         """
         Shoots the picture using PiCamera. If the luminance is found  
         to be too low, uses an iterative algorithm to adjusts the 
@@ -128,7 +127,7 @@ class Camera:
             return
 
         # Test the luminance: if the picture is bright enough, return
-        initial_luminance = self.luminance_from_path(self.temp_photo_path)
+        initial_luminance = self.__luminance_from_path(self.temp_photo_path)
         if initial_luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
             log(f"Daylight luminance detected: {initial_luminance:.2f} "
                 f"(lower bound is {MINIMUM_DAYLIGHT_LUMINANCE}).")
@@ -136,7 +135,7 @@ class Camera:
 
         # We're in low light conditions and allowed to try correcting it.
         # Calculate new shutter speed with the low light algorithm
-        new_luminance, shutter_speed, iso, attempts = self.low_light_search(initial_luminance)
+        new_luminance, shutter_speed, iso, attempts = self._low_light_search(initial_luminance)
 
         # If we're good without one final picture with the long wait for the AWB, return here
         if not self.let_awb_settle_in_dark:
@@ -159,16 +158,16 @@ class Camera:
 
             self._camera_capture(camera)
 
-        final_luminance = self.luminance_from_path(str(self.temp_photo_path))
+        final_luminance = self._luminance_from_path(str(self.temp_photo_path))
         log(f"Final luminance: {final_luminance:.2f}.")
 
 
-    def low_light_search(self, initial_luminance: int) -> Tuple[float, int, int, int]:
+    def _low_light_search(self, initial_luminance: int) -> Tuple[float, int, int, int]:
         """
         Tries to find the correct shutter speed in low-light conditions.
         Returns the final luminance, the shutter speed, and the number of attempts done, in this order.
         """
-        target_luminance = self.compute_target_luminance(initial_luminance)        
+        target_luminance = self._compute_target_luminance(initial_luminance)        
         log(f"Low light detected: {initial_luminance:.2f} "
             f"(lower bound is {MINIMUM_DAYLIGHT_LUMINANCE})")
         log(f"Trying to get a brighter image. "
@@ -205,7 +204,7 @@ class Camera:
                 camera.shutter_speed = shutter_speed          
                 camera.exposure_mode = "off"
                 self._camera_capture(camera)
-                new_luminance = self.luminance_from_path(self.temp_photo_path)
+                new_luminance = self._luminance_from_path(self.temp_photo_path)
 
                 # In rare cases, the camera might return pitch black images for no good reason.
                 # So if the luminance is 0, just retry.
@@ -239,7 +238,7 @@ class Camera:
                     return new_luminance, shutter_speed, camera.iso, attempt
 
                 # Compute the shutter speed and loop
-                shutter_speed = self.low_light_equation(shutter_speed, new_luminance, target_luminance)
+                shutter_speed = self._low_light_equation(shutter_speed, new_luminance, target_luminance)
 
             # Exit condition - 10 iterations      
             log_error(f"The low light algorithm failed! "
@@ -249,7 +248,7 @@ class Camera:
             return new_luminance, shutter_speed, camera.iso, attempt
         
     @staticmethod
-    def low_light_equation(shutter_speed, initial_luminance, target_luminance) -> int:
+    def _low_light_equation(shutter_speed, initial_luminance, target_luminance) -> int:
         """
         Given a starting luminance, computes the best estimate of 
         the shutter speed needed to achieve the target luminance.
@@ -264,15 +263,15 @@ class Camera:
         return int(target_shutter_speed)
 
 
-    def shutter_speed_from_path(self, path: Path) -> int:
+    def _shutter_speed_from_path(self, path: Path) -> int:
         """
         Given a path to a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)
         returns the appropriate shutter speed to acheve a good target luminosity
         """
-        return self.shutter_speed_from_luminance(self.luminance_from_path(path))
+        return self._shutter_speed_from_luminance(self._luminance_from_path(path))
 
 
-    def shutter_speed_from_luminance(self, luminance: int) -> int:
+    def _shutter_speed_from_luminance(self, luminance: int) -> int:
         """
         Given a low luminosity value (< MINIMUM_DAYLIGHT_LUMINANCE)
         returns the appropriate shutter speed to acheve a good target luminosity
@@ -282,7 +281,7 @@ class Camera:
         return None
 
     @staticmethod
-    def luminance_from_path(path: Path) -> int:
+    def _luminance_from_path(path: Path) -> int:
         """
         Given a path to an image, returns its luminance
         """
@@ -292,7 +291,7 @@ class Camera:
 
 
     @staticmethod
-    def compute_target_luminance(luminance: int) -> int:
+    def _compute_target_luminance(luminance: int) -> int:
         """
         Given a luminance < MINIMUM_DAYLIGHT_LUMINANCE, 
         calculate an appropriate luminance value to raise the image to
@@ -305,7 +304,7 @@ class Camera:
             return (luminance/2) + MINIMUM_NIGHT_LUMINANCE*1.5
 
 
-    def process_picture(self) -> None:
+    def _process_picture(self) -> None:
         """ 
         Renders text and images over the picture and saves the resulting image.
         """
