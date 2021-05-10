@@ -99,16 +99,27 @@ class Configuration:
         return server_data
 
 
+    def get_camera_settings(self):
+        """
+        Return all the information relative to the settings 
+        used to take and render the picture.
+        """
+        image_data = getattr(self, "image", {})
+        overlays_data = getattr(self, "overlays", {})
+        return {
+            'image': image_data,
+            'overlays': overlays_data
+        }
+
     def get_system_settings(self):
         """
         Return all the information relative to the settings 
         that should be applied to the system.
         """
-        system_data = {
-            'time': getattr(self, "time", {})
+        time_data = getattr(self, "time", {})
+        return {
+            'time': time_data
         }
-        return system_data
-
 
     def within_active_hours(self):
         """

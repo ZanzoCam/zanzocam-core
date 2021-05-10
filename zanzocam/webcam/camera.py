@@ -22,32 +22,39 @@ class Camera:
     """
     Manages the pictures taking process.
     """
-    def __init__(self, configuration: Configuration):
-        log("Initializing camera...")
+    def __init__(self, camera_data: Dict[str, Any] = None):
 
         # Provide defaults for all the expected values of 'image'
         self.defaults = CAMERA_DEFAULTS
         
         # Populate the attributes with the 'image' data 
-        if "image" not in vars(configuration).keys():
-            log("WARNING! No image information present in the configuration! "
+        if not isinstance(camera_data, dict):
+            log("WARNING! Image information must be a dictionary! "
+                "Init camera with Camera(config.get_camera_settings()). "
                 "Please fix the error ASAP. Fallback values are being used.")
-            configuration.image = CAMERA_DEFAULTS
-        
-        for key, value in configuration.image.items():
-            setattr(self, key, value)
+            camera_data = {'image': CAMERA_DEFAULTS}
 
-        # There might be no overlays
-        self.overlays = getattr(configuration, 'overlays', {})
-        
+        elif not 'image' in camera_data.keys():
+            log("WARNING! No image information given! "
+                "Please fix the error ASAP. Fallback values are being used.")
+            camera_data['image'] = CAMERA_DEFAULTS
+
         # Image name
         self.temp_photo_path = DATA_PATH / ('.temp_image.' + self.extension)
         self.processed_image_path = DATA_PATH / ('.final_image.' + self.extension)
 
-        # TEMPORARY STUFF< HANDLE BETTER!
+        # These two are "experimental" and mostly untested, 
+        # don't use them unless desperate
         self.use_low_light_algorithm = True
         self.let_awb_settle_in_dark = True
 
+        for key, value in getattr(camera_data, 'image', {}).items():
+            setattr(self, key, value)
+
+        self.overlays = {}
+        if 'overlays' in camera_data.keys():
+            self.overlays = camera_data['overlays']
+        
 
     def __getattr__(self, name):
         """ 
@@ -72,7 +79,8 @@ class Camera:
         Use this function in `with` blocks only, or remember to close the returned `camera` object!
         """
         if expanded_framerate_range:
-            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(1, 10), Fraction(90, 1)))
+            # Fraction(6553, 65536) is the actual value that would be set if Fraction(1, 10) is passed
+            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(6553, 65536), Fraction(90.0)))
         else:
             camera = PiCamera(sensor_mode=3)  # sensor_mode 1 has a blue halo on v2!
 

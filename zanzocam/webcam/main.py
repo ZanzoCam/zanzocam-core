@@ -182,7 +182,8 @@ def main():
 
         # Create the picture
         try:
-            camera = Camera(config)
+            log("Initializing camera")
+            camera = Camera(config.get_camera_settings())
             camera.take_picture()
 
         except Exception as e:
@@ -194,7 +195,8 @@ def main():
 
             try:
                 log_row(char="+")
-                camera = Camera(config)
+                log("Initializing camera")
+                camera = Camera(config.get_camera_settings())
                 camera.take_picture()
                 log_row(char="+")
 
