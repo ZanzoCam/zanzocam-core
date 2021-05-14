@@ -2,6 +2,10 @@ import os
 import shutil
 import pytest
 import logging
+
+from fractions import Fraction
+from PIL import Image, ImageChops
+from collections import namedtuple
 from pathlib import Path, PosixPath
 
 import webcam
@@ -30,6 +34,33 @@ class MyMock:
     def __getattr__(self, *a, **k):
         return lambda *a, **k: None
 
+
+MockResolution = namedtuple('PiResolution', 'width height')
+MockFramerateRange = namedtuple('PiFramerateRange', 'low high')
+
+
+class MockPiCamera:
+    def __init__(self, sensor_mode=None, framerate_range=None, *a, **k):
+        self.sensor_mode = sensor_mode
+        if framerate_range:
+            self.framerate_range = MockFramerateRange(*framerate_range)
+        else:
+            self.framerate_range = MockFramerateRange(Fraction(30, 1), Fraction(30, 1))
+        self.MAX_RESOLUTION = MockResolution(10000, 10000)
+
+    # For the with statement
+    def __enter__(self):
+        return self
+
+    # For the with statement
+    def __exit__(self, *a, **k):
+        return
+
+    def __getattr__(self, *a, **k):
+        return
+
+    def capture(self, path, *a, **k):
+        Image.new("RGB", (64, 48), color="#FF0000").save(path)
 
 
 def point_const_to_tmpdir(modules, monkeypatch, tmpdir):

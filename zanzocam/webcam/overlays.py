@@ -19,6 +19,20 @@ class Overlay:
     def __init__(self, position: str, data: Dict, photo_width: int, photo_height: int, date_format: Optional[str], time_format: Optional[str]):
         log(f"Creating overlay {position}.")
         
+        # Where the rendered overlay is stored if can be generated
+        self.rendered_image = None
+        self.defaults = {
+            "font_size": 25,
+            "padding_ratio": 0.2,
+            "text": "~~~ DEFAULT TEXT ~~~",
+            "font_color": (0, 0, 0),
+            "background_color": (255, 255, 255, 0),
+            "image": "fallback-pixel.png",
+            "width": None,   # Might be unset to retain aspect ratio
+            "heigth": None,  # Might be unset to retain aspect ratio
+            "over_the_picture": False,
+        }
+        
         # Populate the attributes with the overlay data 
         for key, value in data.items():
             setattr(self, key, value)
@@ -34,8 +48,9 @@ class Overlay:
                  self.horizontal_position != "center" and 
                  self.horizontal_position != "right")):
                 raise ValueError()
+ 
         except Exception as e:
-            log("The position of this overlay ({position}) is malformed. "
+            log_error(f"The position of this overlay ({position}) is malformed. "
                 "It must be one of the following: top_left, top_center, "
                 "top_right, bottom_left, bottom_center, bottom_right."
                 "This overlay will be skipped.", e)
@@ -48,19 +63,6 @@ class Overlay:
             return
         self.type = data.get("type")
 
-        self.rendered_image = None  # Where the rendered overlay is stored if can be generated
-        self.defaults = {
-            "font_size": 25,
-            "padding_ratio": 0.2,
-            "text": "~~~ DEFAULT TEXT ~~~",
-            "font_color": (0, 0, 0),
-            "background_color": (255, 255, 255, 0),
-            "image": "fallback-pixel.png",
-            "width": None,   # Might be unset to retain aspect ratio
-            "heigth": None,  # Might be unset to retain aspect ratio
-            "over_the_picture": False,
-        }
-
         if self.type == "text":
             self.rendered_image = self.create_text_overlay(photo_width, photo_height)
 
@@ -68,7 +70,7 @@ class Overlay:
             self.rendered_image = self.create_image_overlay()
         
         else:
-            log_error(f"Overlay name '{self.type}' not recognized. Valid names: "
+            log_error(f"Overlay type '{self.type}' not recognized. Valid names: "
             "text, image. This overlay will be skipped.")
             return
 
@@ -78,9 +80,10 @@ class Overlay:
         Provide some fallback value for all the expected fields of 'overlay'.
         Logs the access to highlight values that are not set, but were used.
         """
-        value = self.defaults.get(name, None)
-        #log(f"WARNING: Accessing default value for {name}: {value}")
-        return value
+        if name in self.defaults.keys():
+            #log(f"WARNING: Accessing default value for {name}: {value}")
+            return self.defaults[name]
+        return None
 
 
     def compute_position(self, image_width: int, image_height: int, 
@@ -226,6 +229,3 @@ class Overlay:
             log_error("Something unexpected happened while generating "
                       "the image overlay. This overlay will be skipped", e)
             return
-
-
-            

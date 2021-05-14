@@ -39,22 +39,17 @@ class Camera:
                 "Please fix the error ASAP. Fallback values are being used.")
             camera_data['image'] = CAMERA_DEFAULTS
 
+        for key, value in camera_data['image'].items():
+            setattr(self, key, value)
+        
+        self.overlays = {}
+        if 'overlays' in camera_data.keys():
+            self.overlays = camera_data['overlays']
+
         # Image name
         self.temp_photo_path = DATA_PATH / ('.temp_image.' + self.extension)
         self.processed_image_path = DATA_PATH / ('.final_image.' + self.extension)
 
-        # These two are "experimental" and mostly untested, 
-        # don't use them unless desperate
-        self.use_low_light_algorithm = True
-        self.let_awb_settle_in_dark = True
-
-        for key, value in getattr(camera_data, 'image', {}).items():
-            setattr(self, key, value)
-
-        self.overlays = {}
-        if 'overlays' in camera_data.keys():
-            self.overlays = camera_data['overlays']
-        
 
     def __getattr__(self, name):
         """ 
@@ -68,7 +63,9 @@ class Camera:
         """
         Takes the picture and renders the elements on it.
         """
+        log("Shooting picture.")
         self._shoot_picture()
+        log("Processing picture.")
         self._process_picture()
 
 
@@ -79,8 +76,7 @@ class Camera:
         Use this function in `with` blocks only, or remember to close the returned `camera` object!
         """
         if expanded_framerate_range:
-            # Fraction(6553, 65536) is the actual value that would be set if Fraction(1, 10) is passed
-            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(6553, 65536), Fraction(90.0)))
+            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(1, 10), Fraction(90.0)))
         else:
             camera = PiCamera(sensor_mode=3)  # sensor_mode 1 has a blue halo on v2!
 
@@ -122,7 +118,6 @@ class Camera:
         to be too low, uses an iterative algorithm to adjusts the 
         shutter speed of the camera value and tries again.
         """
-        
         with self._prepare_camera_object() as camera:
             log(f"Camera warm-up ({CAMERA_WARM_UP_TIME}s)...")
             sleep(CAMERA_WARM_UP_TIME)
@@ -135,7 +130,7 @@ class Camera:
             return
 
         # Test the luminance: if the picture is bright enough, return
-        initial_luminance = self.__luminance_from_path(self.temp_photo_path)
+        initial_luminance = self._luminance_from_path(self.temp_photo_path)
         if initial_luminance >= MINIMUM_DAYLIGHT_LUMINANCE:
             log(f"Daylight luminance detected: {initial_luminance:.2f} "
                 f"(lower bound is {MINIMUM_DAYLIGHT_LUMINANCE}).")
@@ -207,7 +202,7 @@ class Camera:
             sleep(CAMERA_WARM_UP_TIME)
 
             for attempt in range(1, 10):
-
+                
                 # Take the picture & check the luminance
                 camera.shutter_speed = shutter_speed          
                 camera.exposure_mode = "off"
@@ -217,8 +212,10 @@ class Camera:
                 # In rare cases, the camera might return pitch black images for no good reason.
                 # So if the luminance is 0, just retry.
                 if new_luminance <= 0.001:  # Should not be needed, but with floats you never know
-                    pass
-                
+                    log(f"# {attempt}: The camera shot a fully black picture "
+                        f"(luminance = {new_luminance:.2f}). Trying again.")
+                    continue
+
                 # Too bright: log and retry without further checks
                 elif new_luminance > (target_luminance + TARGET_LUMINOSITY_MARGIN):
                     log(f"# {attempt}: bright. Luminance achieved: {new_luminance:.2f}. Down!")
@@ -229,8 +226,8 @@ class Camera:
                     
                     # If the max shutter speed and max ISO is already reached, break: 
                     # you can't reach the target luminance
-                    if shutter_speed == MAX_SHUTTER_SPEED:
-                        if camera.iso == 800:
+                    if shutter_speed >= MAX_SHUTTER_SPEED:
+                        if camera.iso >= 800:
                             log_error(f"ISO is at 800 and shutter speed is at max "
                                       f"({MAX_SHUTTER_SPEED/10**6:.2f}). Cannot proceed.")
                             return new_luminance, shutter_speed, camera.iso, attempt
@@ -261,6 +258,10 @@ class Camera:
         Given a starting luminance, computes the best estimate of 
         the shutter speed needed to achieve the target luminance.
         """
+        # There should be a check in _low_light_search,
+        # but let's make real sure that no zero division errors occur.
+        if not initial_luminance:
+            initial_luminance = 0.001  
         target_shutter_speed = (shutter_speed / initial_luminance) * target_luminance
 
         if target_shutter_speed > MAX_SHUTTER_SPEED:
@@ -270,23 +271,6 @@ class Camera:
 
         return int(target_shutter_speed)
 
-
-    def _shutter_speed_from_path(self, path: Path) -> int:
-        """
-        Given a path to a picture with low luminosity (< MINIMUM_DAYLIGHT_LUMINANCE)
-        returns the appropriate shutter speed to acheve a good target luminosity
-        """
-        return self._shutter_speed_from_luminance(self._luminance_from_path(path))
-
-
-    def _shutter_speed_from_luminance(self, luminance: int) -> int:
-        """
-        Given a low luminosity value (< MINIMUM_DAYLIGHT_LUMINANCE)
-        returns the appropriate shutter speed to acheve a good target luminosity
-        """
-        if luminance < MINIMUM_DAYLIGHT_LUMINANCE:
-            return int(((self.a_value / luminance) + self.b_value))
-        return None
 
     @staticmethod
     def _luminance_from_path(path: Path) -> int:
@@ -302,25 +286,24 @@ class Camera:
     def _compute_target_luminance(luminance: int) -> int:
         """
         Given a luminance < MINIMUM_DAYLIGHT_LUMINANCE, 
-        calculate an appropriate luminance value to raise the image to
+        calculate an appropriate luminance value to raise the image to.
+        Note that this function works as long as:
+            MINIMUM_NIGHT_LUMINANCE  < MINIMUM_DAYLIGHT_LUMINANCE
         """
         if luminance > MINIMUM_DAYLIGHT_LUMINANCE:
             return luminance 
-        if luminance < MINIMUM_NIGHT_LUMINANCE:
-            return luminance + (MINIMUM_NIGHT_LUMINANCE) 
         else:
-            return (luminance/2) + MINIMUM_NIGHT_LUMINANCE*1.5
+            slope =  - (MINIMUM_NIGHT_LUMINANCE - MINIMUM_DAYLIGHT_LUMINANCE) / MINIMUM_DAYLIGHT_LUMINANCE
+            return slope * luminance + MINIMUM_NIGHT_LUMINANCE
 
 
     def _process_picture(self) -> None:
         """ 
         Renders text and images over the picture and saves the resulting image.
         """
-        log("Processing picture.")
-
         # Open and measures the picture
         try:
-            photo = Image.open(self.temp_photo_path).convert("RGBA")
+            photo = Image.open(str(self.temp_photo_path)).convert("RGBA")
         except Exception as e:
             log_error("Failed to open the image for editing. "
                       "The photo will have no overlays applied.", e)
@@ -341,7 +324,7 @@ class Camera:
             except Exception as e:
                 log_error(f"Something happened processing the overlay {position}. "
                           f"This overlay will be skipped.", e)
-        
+
         # Calculate final image size
         border_top = 0
         border_bottom = 0
@@ -367,23 +350,46 @@ class Camera:
         for overlay in rendered_overlays:
             if overlay.rendered_image:  # it might be None if it failed along the way
                 x, y = overlay.compute_position(image.width, image.height, border_top, border_bottom)
-                image.paste(overlay.rendered_image, (x, y), mask=overlay.rendered_image)  # mask is to allow for transparent images
+                if x + overlay.rendered_image.width > image.width:
+                    log("WARNING! This overlay exceeds the margin of the image itself "
+                        "on the right. It might not be fully visible in the final picture.")
+                if x < 0:
+                    log("WARNING! This overlay exceeds the margin of the image itself "
+                        "on the left. It might not be fully visible in the final picture.")
+                if y < 0:
+                    log("WARNING! This overlay exceeds the margin of the image itself "
+                        "at the top. It might not be fully visible in the final picture.")
+                if y + overlay.rendered_image.height > image.height:
+                    log("WARNING! This overlay exceeds the margin of the image itself "
+                        "at the bottom. It might not be fully visible in the final picture.")
+                # mask is to allow for transparent images
+                image.paste(overlay.rendered_image, (x, y), mask=overlay.rendered_image)  
         
         # Recover and edit the EXIF data
-        exif_dict = piexif.load(photo.info["exif"])
-        exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
-        exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
-        exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
-        exif_bytes = piexif.dump(exif_dict)
+        exif_bytes = None
+        try:
+            exif_dict = piexif.load(getattr(photo.info, "exif", {"0th": {}}))
+            exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+            exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+            exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+            exif_bytes = piexif.dump(exif_dict)
 
+        except Exception as e:
+            # EXIF data is not critical, if something happens just drop them
+            log_error("Failed to copy EXIF information from the photo to the final image. Ignoring them.", e)
+        
         # Save the image appropriately
+        save_arguments = {}
+        if exif_bytes:
+            save_arguments['exif'] = exif_bytes
+
         if self.extension.lower() in ["jpg", "jpeg"]:
             image = image.convert('RGB')
-            image.save(DATA_PATH / self.processed_image_path, format='JPEG', 
-                subsampling=self.jpeg_subsampling, quality=self.jpeg_quality,
-                exif=exif_bytes)
-        else:
-            image.save(DATA_PATH / self.processed_image_path, exif=exif_bytes)
+            save_arguments['format'] = 'JPEG'
+            save_arguments['subsampling'] = self.jpeg_subsampling
+            save_arguments['quality'] = self.jpeg_quality
+
+        image.save(self.processed_image_path, **save_arguments)
 
 
     def cleanup_image_files(self):

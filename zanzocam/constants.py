@@ -114,4 +114,9 @@ CAMERA_DEFAULTS = {
     "jpeg_subsampling": 0,
     "background_color": (0,0,0,0),
     "calibrate": False,
+
+    # These two are "experimental" and mostly untested, 
+    # don't use them unless really necessary
+    'use_low_light_algorithm': True,
+    'let_awb_settle_in_dark': True,
 }

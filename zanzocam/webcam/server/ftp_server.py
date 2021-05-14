@@ -11,6 +11,7 @@ from json import JSONDecodeError
 from constants import *
 from webcam.utils import log, log_error, log_row
 from webcam.configuration import Configuration
+from webcam.errors import ServerError
 
 
 
@@ -19,21 +20,20 @@ class FtpServer:
     Handles all communication with the server over an FTP connection.
     """
     def __init__(self, parameters: Dict[str, str]):
+        if not isinstance(parameters, dict):
+            raise ValueError("FtpServer can only be instantiated with a dictionary.")
+
         # host is necessary
         self.hostname = parameters.get("hostname")
         if not self.hostname:
-            log_error("Cannot contact the server: no hostname found in "
-                      "the configuration",
-                      fatal="Exiting")
-            raise ValueError("No hostname is available")
+            raise ServerError("Cannot contact the server: "
+                              "no hostname found in the configuration")
 
         # username is necessary
         self.username = parameters.get("username")
         if not self.username:
-            log_error("Cannot contact the server: no username found in "
-                      "the configuration",
-                      fatal="Exiting")
-            raise ValueError("No username is available")
+            raise ServerError("Cannot contact the server: "
+                              "no username found in the configuration.")
 
         # password can be blank  (TODO really it can? Check)
         self.password = parameters.get("password", "")
@@ -58,17 +58,16 @@ class FtpServer:
                 self._ftp_client.cwd(self.subfolder)
                 
         except Exception as e:
-            log_error("Failed to estabilish a connection with the FTP server", e,
-                      fatal="Exiting")
+            raise ServerError("Failed to estabilish a connection "
+                              "with the FTP server") from e
         
 
     def download_new_configuration(self) -> Dict[str, Any]:
         """
         Download the new configuration file from the server.
         """
-        # NOTE: Errors here can escalate
-        
         self.configuration_string = ""
+
         # Callback for the incoming data
         def store_line(line):
             self.configuration_string += line.decode(FTP_CONFIG_FILE_ENCODING)
@@ -82,19 +81,18 @@ class FtpServer:
             self.configuration_string = ""
             return configuration_data
             
-        raise ValueError("The server replied with an error code: " + response)
+        raise ServerError("The server replied with an error code: " + response)
             
 
     def download_overlay_image(self, image_name: str) -> None:
         """ 
         Download an overlay image.
         """
-        # NOTE: Errors here can escalate
         with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as overlay:
             response = self._ftp_client.retrbinary(
                             f"RETR {REMOTE_IMAGES_PATH}{image_name}", overlay.write)
         if not "226" in response:
-            raise ValueError(f"The server replied with an error code for {image_name}: " + response)
+            raise ServerError(f"The server replied with an error code for '{image_name}': " + response)
         log(f"New overlay image downloaded: {image_name}")
         
 
@@ -102,11 +100,9 @@ class FtpServer:
         """ 
         Send the logs to the server.
         """
-        # NOTE: exceptions in here must escalate.
-        
         # Make sure the file in question exists and has some content
-        if not os.path.exists(path):
-            with open(path, "r") as l:
+        if not os.path.exists(path) or open(path, "r").read().strip() == "":
+            with open(path, "w") as l:
                 l.writelines(" ==> No logs found!! <==")
         
         # Fetch the new overlay
@@ -116,7 +112,7 @@ class FtpServer:
                 
         # Make sure the server did not reply with an error
         if not "226" in response:
-            raise ValueError(f"The server replied with an error code while " +
+            raise ServerError(f"The server replied with an error code while " +
                             "uploading the logs: " + response)
 
 
@@ -125,8 +121,6 @@ class FtpServer:
         Uploads the new picture to the server.
         Returns the final image path (for cleanup operations)
         """
-        # NOTE: Errors from here must escalate
-
         # Rename the picture according to max_photos
         modifier = ""
         if self.max_photos == 0:
@@ -134,7 +128,7 @@ class FtpServer:
         elif self.max_photos > 1:
             modifier = "__0"
         final_image_name = image_name + modifier + "." + image_extension
-        final_image_path = image_path.parent / final_image_name
+        final_image_path = Path(image_path).parent / final_image_name
         os.rename(image_path, final_image_path)
 
         # If the server is supposed to contain only a fixed amount of pictures,
@@ -147,18 +141,16 @@ class FtpServer:
             # The second -1 is the step
             # This procedure will also overwrite the oldest picture
             log("Renaming pictures of the server...")
-            for position in range(self.max_photos, -1, -1):
+            for position in range(self.max_photos-1, -1, -1):
                 
                 old_name = f"{image_name}__{position}.{image_extension}"
                 new_name = f"{image_name}__{position+1}.{image_extension}"
                 
-                #log(f"Renaming '{old_name}' to '{new_name}'")
                 try:
                     self._ftp_client.rename(f"pictures/{old_name}", f"pictures/{new_name}")
-                except error_perm as resp:
-                    if '550' in str(resp):
-                        log(f"Error: {str(resp)}. probably the image didn't exist. Ignoring.")
-                        pass
+                except Exception as e:
+                    if '550' in str(e):
+                        log(f"Error: {str(e)}. Probably the image didn't exist. Ignoring.")
                         
         # Upload the picture
         response = self._ftp_client.storbinary(
@@ -166,10 +158,9 @@ class FtpServer:
                 
         # Make sure the server did not reply with an error
         if not "226" in response:
-            log_error(f"The server replied with an error code while " +
-                            "uploading the picture: " + response)
-            log("WARNING: the image was probably not sent!")
-            raise ValueError(f"Failed to upload the picture")
+            raise ServerError("The server replied with an error code while " +
+                            "uploading the picture. The image was probably not sent! " +
+                            "FTP Error: " + response)
             
         return final_image_path
 

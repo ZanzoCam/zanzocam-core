@@ -11,6 +11,9 @@ import constants
 from webcam.utils import log
 from webcam.configuration import Configuration
 from webcam.server.server import Server
+from webcam.server.ftp_server import FtpServer
+from webcam.server.http_server import HttpServer
+
 
 from tests.conftest import point_const_to_tmpdir, MockObject
 
@@ -368,3 +371,50 @@ def test_upload_picture_needs_path_name_extension(monkeypatch, tmpdir, logs):
 
     assert len(logs) == 0
     assert not os.path.exists(tmpdir / ".temp.jpg")
+
+
+def test_create_server_ftp(monkeypatch, logs):
+
+    class MockFTP:
+        def __init__(self, *a, **k):
+            pass
+        def prot_p(self, *a, **k):
+            pass
+
+    monkeypatch.setattr(webcam.server.server, 'FtpServer', FtpServer)
+    monkeypatch.setattr(webcam.server.ftp_server, "FTP", MockFTP)
+    monkeypatch.setattr(webcam.server.ftp_server, "FTP_TLS", MockFTP)
+    monkeypatch.setattr(webcam.server.ftp_server, "_Patched_FTP_TLS", MockFTP)
+
+    server = Server({
+        'protocol': 'FtP', 
+        'hostname': 'me.it', 
+        'username': 'me',
+    })
+    assert server.protocol == "FTP"
+    assert isinstance(server._server, FtpServer)
+    assert len(logs) == 0
+
+    server = Server({
+        'protocol': 'FtP', 
+        'hostname': 'me.it', 
+        'username': 'me',
+        'tls': False,
+    })
+    assert server.protocol == "FTP"
+    assert isinstance(server._server, FtpServer)
+    assert len(logs) == 0
+
+
+def test_create_server_http(monkeypatch, logs):
+
+    class MockHttpServer:
+        def __init__(self, *a, **k):
+            pass
+
+    monkeypatch.setattr(webcam.server.server, 'HttpServer', MockHttpServer)
+    
+    server = Server({'protocol': 'hTtP', 'url': 'test'})
+    assert server.protocol == "HTTP"
+    assert isinstance(server._server, MockHttpServer)
+    assert len(logs) == 0

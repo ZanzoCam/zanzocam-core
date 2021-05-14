@@ -44,7 +44,7 @@ class Server:
 
         else:
             raise ServerError("The communication protocol with "
-                "the server (HTTP, FTP) was not specified. "
+                "the server (HTTP, FTP) is not specified or not supported. "
                 "No protocol is available to estabilish a "
                 "connection to the server.")
 

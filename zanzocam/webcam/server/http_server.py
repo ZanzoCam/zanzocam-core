@@ -9,6 +9,7 @@ from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
 from constants import *
+from webcam.errors import ServerError
 from webcam.utils import log, log_error, AllStringEncoder
 from webcam.configuration import Configuration
 from webcam.errors import UnexpectedServerResponse
@@ -19,10 +20,13 @@ class HttpServer:
     Handles all communication with the server over an HTTP connection.
     """
     def __init__(self, parameters: Dict[str, str]):
+        if not isinstance(parameters, dict):
+            raise ValueError("HttpServer can only be instantiated with a dictionary.")
+
         # URL is necessary
         self.url = parameters.get("url")
         if not self.url:
-            raise ValueError("Cannot contact the server: "
+            raise ServerError("Cannot contact the server: "
                 "no server URL found in the configuration.")
 
         self.max_photos = parameters.get("max_photos", 0)
