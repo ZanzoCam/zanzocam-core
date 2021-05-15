@@ -822,11 +822,12 @@ label {
 }
 
 .light-sky {
-    background: #3c92ffaa no-repeat fixed center; /*linear-gradient(#3c92ffaa, #3c92ff33) no-repeat fixed center;*/
+  background: linear-gradient(#81b8ff, #a6cdff) no-repeat fixed center;
 }
 .dark-sky {
-    background: #1d4582aa no-repeat fixed center; /* linear-gradient(#1d4582aa, #1d458233) no-repeat fixed center; */
+    background: linear-gradient(#476188, #6780a8) no-repeat fixed center;
 }
+
 
 .drop {
     z-index: -100;
@@ -842,9 +843,8 @@ label {
     transform: rotate(45deg);
 }
 
-/*Time to finalise the cloud shape*/
 .cloud {
-    z-index: -10;
+  z-index: -10;
 	width: 200px; 
 	height: 60px;
 	background: #eee;	
@@ -874,138 +874,96 @@ label {
 }
 
 .x1 {
-    top: 35%;
-    right: -20vw;
-	animation: moveclouds 30s ease-in-out infinite;
+  top: 35%;
+  right: 20vw;
 }
 
 .x2 {
-    top: 81%;
-    right: -20vw;
+  top: 81%;
+  right: 5vw;
 	transform: scale(0.6);
 	opacity: 0.6; /*opacity proportional to the size*/
-	
-	/*Speed will also be proportional to the size and opacity*/
-	animation: moveclouds 50s ease-in-out infinite;
-	animation-delay: -6s;
 }
 
 .x3 {
 	top: 46%;
-    right: -20vw;
+  right: 17vw;
 	transform: scale(0.8);
 	opacity: 0.8;
-	animation: moveclouds 40s ease-in-out infinite;
-	animation-delay: -14s;
-
 }
 
 .x4 {
 	top: 14%;
-    right: -20vw;
+  right: 73vw;
 	transform: scale(0.9);
 	opacity: 0.9;
-	animation: moveclouds 36s ease-in-out infinite;
-	animation-delay: -20s;
-
 }
 
 .x5 {
 	top: 89%;
-    right: -20vw;
+  right: 89vw;
 	transform: scale(0.6);
 	opacity: 0.6; 
-	animation: moveclouds 50s ease-in-out infinite;
-	animation-delay: -28s;
-
 }
 
 .x6 {
 	top: 26%;
-    right: -20vw;
+  right: 97vw;
 	transform: scale(1);
 	opacity: 1;
-	animation: moveclouds 30s ease-in-out infinite;
-	animation-delay: -34s;
 }
-
 
 .x7 {
 	top: 54%;
-    right: -20vw;
+  right: 3vw;
 	transform: scale(0.6);
 	opacity: 0.6;
-	animation: moveclouds 52s ease-in-out infinite;
-	animation-delay: -40s;
 }
 
 .x11 {
-    top: 90%;
-    right: -20vw;
-	animation: moveclouds 30s ease-in-out infinite;
-	animation-delay: 10s;
+  top: 90%;
+  right: 79vw;
 }
 
 .x12 {
-    top: 15%;
-    right: -20vw;
+  top: 15%;
+  right: -3vw;
 	transform: scale(0.6);
 	opacity: 0.6;
-	animation: moveclouds 50s ease-in-out infinite;
-	animation-delay: 26s;
 }
 
 .x13 {
 	top: 60%;
-    right: -20vw;
+  right: 85vw;
 	transform: scale(0.8);
 	opacity: 0.8;
-	animation: moveclouds 40s ease-in-out infinite;
-	animation-delay: 34s;
-
 }
 
 .x14 {
 	top: 80%;
-    right: -20vw;
+  right: 12vw;
 	transform: scale(0.9);
 	opacity: 0.9;
-	animation: moveclouds 36s ease-in-out infinite;
-	animation-delay: 40s;
-
 }
 
 .x15 {
 	top: 23%;
-    right: -20vw;
+  right: 68vw;
 	transform: scale(0.6);
 	opacity: 0.6; 
-	animation: moveclouds 50s ease-in-out infinite;
-	animation-delay: 48s;
-
 }
 
 .x16 {
 	top: 70%;
-    right: -20vw;
+  right: 30vw;
 	transform: scale(1);
 	opacity: 1;
-	animation: moveclouds 30s ease-in-out infinite;
-	animation-delay: 54s;
 }
-
 
 .x17 {
 	top: 42%;
-    right: -20vw;
+  right: 61vw;
 	transform: scale(0.6);
 	opacity: 0.6;
-	animation: moveclouds 52s ease-in-out infinite;
-	animation-delay: 60s;
 }
 
-
-@keyframes moveclouds {
-	0% {right: -210px;}
-	100% {right: 100vw;}
-}
