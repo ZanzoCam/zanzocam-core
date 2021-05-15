@@ -12,36 +12,6 @@ from webcam.errors import ServerError
 from webcam.server.server import Server
 from webcam.server.ftp_server import FtpServer
 
-from tests.conftest import point_const_to_tmpdir
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir([webcam.server.ftp_server], monkeypatch, tmpdir)
-
-
-class MockFTP:
-    def __init__(self, *a, **k):
-        pass
-    def prot_p(self, *a, **k):
-        pass
-    def cwd(self, folder, **k):
-        pass
-    def retrbinary(self, bin_to_download, callback, **k):
-        pass
-    def storlines(self, command, lines, **k):
-        pass
-    def storbinary(self, command, file_handle, **k):
-        pass
-    def rename(self, old, new, **k):
-        pass
-
-
-@pytest.fixture(autouse=True)
-def mock_ftplib(monkeypatch):
-    monkeypatch.setattr(webcam.server.ftp_server, "FTP", MockFTP)
-    monkeypatch.setattr(webcam.server.ftp_server, "FTP_TLS", MockFTP)
-    monkeypatch.setattr(webcam.server.ftp_server, "_Patched_FTP_TLS", MockFTP)
 
 
 def test_create_ftpserver_no_dict(logs):
@@ -242,6 +212,30 @@ def test_send_logs_no_logs_to_send(monkeypatch, tmpdir, logs):
     assert open(tmpdir/"received_logs", 'r').read().strip() != ""
 
 
+def test_send_logs_no_logs_to_send_cant_write_mock(monkeypatch, tmpdir, logs):
+
+    def storlines(self, command, lines):
+        with open(tmpdir/"received_logs", 'wb') as r:
+            r.writelines(lines)
+        return "226 OK"
+
+    monkeypatch.setattr(webcam.server.ftp_server.FTP, 'storlines', storlines)
+    
+    with open(tmpdir/'logs.txt', 'w') as r:
+        pass
+    os.chmod(tmpdir/'logs.txt', 0o000)
+
+    server = FtpServer({'hostname': 'me.it', 
+                        'username': 'me'})
+
+    server.send_logs(tmpdir/'logs.txt')
+
+    assert len(logs) == 1
+    assert "No logs were found and no mock log file can be written."\
+           "Logs won't be uploaded." in logs[0]
+    assert not os.path.exists(tmpdir/"received_logs")
+
+
 def test_send_logs_some_logs_to_send(monkeypatch, tmpdir, logs):
 
     def storlines(self, command, lines):
@@ -292,17 +286,6 @@ def test_send_logs_python_error(monkeypatch, tmpdir, logs):
         assert "The server replied with an error code while " \
                "uploading the logs: 550 FAIL" in str(e)
     assert len(logs) == 0
-
-
-
-
-
-
-
-
-
-
-
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -428,8 +411,9 @@ def test_upload_picture_missing_picture(monkeypatch, tmpdir, logs):
     server = FtpServer({'hostname': 'me.it', 
                         'username': 'me',
                         'max_photos': 1})
-    with pytest.raises(FileNotFoundError) as e:
+    with pytest.raises(ServerError) as e:
         server.upload_picture(tmpdir/'pic.jpg', 'test', 'JPEG')
+        assert "No picture to upload" in str(e)
 
     assert len(logs) == 0
     assert not os.path.exists(tmpdir/'test.JPEG')

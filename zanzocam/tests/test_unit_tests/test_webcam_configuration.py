@@ -9,12 +9,7 @@ import webcam
 import constants
 from webcam.configuration import Configuration
 
-from tests.conftest import point_const_to_tmpdir, in_logs
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir([webcam.configuration], monkeypatch, tmpdir)
+from tests.conftest import in_logs
 
 
 def test_decode_json_values():

@@ -13,7 +13,7 @@ from webcam.utils import log, log_error, log_row
 from webcam.configuration import Configuration
 from webcam.server.http_server import HttpServer
 from webcam.server.ftp_server import FtpServer
-from webcam.errors import ServerError, UnexpectedServerResponse
+from webcam.errors import ServerError
 
 
 

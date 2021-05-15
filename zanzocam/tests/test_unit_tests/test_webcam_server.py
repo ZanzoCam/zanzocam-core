@@ -15,9 +15,6 @@ from webcam.server.ftp_server import FtpServer
 from webcam.server.http_server import HttpServer
 
 
-from tests.conftest import point_const_to_tmpdir, MockObject
-
-
 class MockServerImplementation:
     def __init__(self, values):
         for key, value in values.items():
@@ -37,12 +34,6 @@ class MockServerImplementation:
 
     def upload_picture(self, *a, **k):
         pass
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir([webcam.server.server, webcam.configuration], 
-        monkeypatch, tmpdir)
 
 
 @pytest.fixture(autouse=True)

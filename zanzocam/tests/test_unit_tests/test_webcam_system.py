@@ -7,7 +7,6 @@ import requests
 import builtins
 import subprocess
 from unittest import mock
-from textwrap import dedent
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
@@ -15,58 +14,8 @@ import webcam
 import constants
 from webcam.system import System
 
-from tests.conftest import point_const_to_tmpdir, in_logs
+from conftest import meminfo, in_logs
 
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir([webcam.system], monkeypatch, tmpdir)
-    # Special extra constants
-    webcam.system.CRONJOB_FILE = tmpdir / "zanzocam"
-
-
-@pytest.fixture
-def meminfo():
-    yield dedent("""\n
-        MemTotal:         245724 kB
-        MemFree:          146968 kB
-        MemAvailable:     160988 kB
-        Buffers:           20764 kB
-        Cached:            38232 kB
-        SwapCached:         1024 kB
-        Active:            57428 kB
-        Inactive:          12616 kB
-        Active(anon):       9140 kB
-        Inactive(anon):     6372 kB
-        Active(file):      48288 kB
-        Inactive(file):     6244 kB
-        Unevictable:          16 kB
-        Mlocked:              16 kB
-        SwapTotal:        102396 kB
-        SwapFree:          61948 kB
-        Dirty:                 0 kB
-        Writeback:             0 kB
-        AnonPages:         10628 kB
-        Mapped:            13660 kB
-        Shmem:              4464 kB
-        KReclaimable:       9084 kB
-        Slab:              18772 kB
-        SReclaimable:       9084 kB
-        SUnreclaim:         9688 kB
-        KernelStack:         832 kB
-        PageTables:         1732 kB
-        NFS_Unstable:          0 kB
-        Bounce:                0 kB
-        WritebackTmp:          0 kB
-        CommitLimit:      225256 kB
-        Committed_AS:     348148 kB
-        VmallocTotal:     770048 kB
-        VmallocUsed:        3352 kB
-        VmallocChunk:          0 kB
-        Percpu:               64 kB
-        CmaTotal:          65536 kB
-        CmaFree:           58580 kB
-    """)
 
 def test_get_last_reboot_time_success(fake_process, logs):
     """

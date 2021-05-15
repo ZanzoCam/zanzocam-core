@@ -5,6 +5,7 @@ import json
 import shutil
 import datetime
 import requests
+import traceback
 from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
@@ -12,7 +13,6 @@ from constants import *
 from webcam.errors import ServerError
 from webcam.utils import log, log_error, AllStringEncoder
 from webcam.configuration import Configuration
-from webcam.errors import UnexpectedServerResponse
 
 
 class HttpServer:
@@ -51,66 +51,87 @@ class HttpServer:
         """
         Download the new configuration file from the server.
         """
-        # NOTE: Errors here must escalate
-        raw_response = {}
+        r = "[no response from server]"
         try:
             # Fetch the new config
-            auth = None
-            raw_response = requests.get(self.url, auth=self.credentials, timeout=REQUEST_TIMEOUT)
-            response = raw_response.json()
-
+            r = requests.get(self.url, auth=self.credentials, timeout=REQUEST_TIMEOUT)
+            
+            if r.status_code >= 400:
+                raise ServerError(f"Failed to download the configuration file. "
+                                  f"The server replied with status code "
+                                  f"{r.status_code} ({r.reason}). "
+                                  f"Check your server configuration for errors. "
+                                  f"Full server response:\n\n"
+                                  f"{self._try_print_response_content(r)}")
+                
+            response = r.json()
             if "configuration" not in response:
-                raise UnexpectedServerResponse(
+                raise ServerError(
                     f"The server did not reply with a configuration file. "
                     f"Full server response:\n\n"
-                    f"{self._try_print_response_content(raw_response)}")
+                    f"{self._try_print_response_content(r)}")
 
             return response["configuration"]
 
         except json.decoder.JSONDecodeError as e:
-            e.args = (f"The server did not reply valid JSON. "
-                      f"JSON exception: {str(e.args[0])}\n"
-                      f"Full server response:\n\n"
-                      f"{self._try_print_response_content(raw_response)}", )
-            raise e.with_traceback(e.__traceback__)
+            err = ServerError(f"The server did not reply valid JSON. "
+                              f"JSON exception: {str(e.args[0])}\n"
+                              f"Full server response:\n\n"
+                              f"{self._try_print_response_content(r)}", )
+            raise err.with_traceback(e.__traceback__)
 
         except Exception as e:
-            raise RuntimeError(
-                      f"Something went wrong downloading the new configuration "+
-                      f"file from the server. The server replied:\n\n"
-                      f"{self._try_print_response_content(raw_response)}") from e
+            err = ServerError(f"Something went wrong downloading the new "+
+                              f"configuration file from the server. " +
+                              f"Full server response:\n\n"
+                              f"{self._try_print_response_content(r)}")
+            raise err.with_traceback(e.__traceback__)
 
 
     def download_overlay_image(self, image_name: str) -> None:
         """ 
         Download an overlay image.
         """
-        # NOTE: Errors here must escalate
-        overlays_url = self.url + ("" if self.url.endswith("/") else "/") + REMOTE_IMAGES_PATH
-        # Download from the server
-        r = requests.get(f"{overlays_url}{image_name}",
-                            stream=True,
-                            auth=self.credentials,
-                            timeout=REQUEST_TIMEOUT)
-        # Save image to file
-        if r.status_code < 400:
+        r = "[no response from server]"
+        try:
+            overlays_url = self.url + \
+                            ("" if self.url.endswith("/") else "/") + \
+                            REMOTE_IMAGES_PATH
+            
+            # Download from the server
+            r = requests.get(f"{overlays_url}{image_name}",
+                                stream=True,
+                                auth=self.credentials,
+                                timeout=REQUEST_TIMEOUT)
+
+            # Report every error code as a failed download
+            if r.status_code >= 400:
+                raise ServerError(f"Failed to download overlay image '{image_name}'. "
+                                  f"The server replied with status code "
+                                  f"{r.status_code} ({r.reason}). "
+                                  f"Check your server configuration for errors. "
+                                  f"Full server response:\n\n"
+                                  f"{self._try_print_response_content(r)}")
+
+            # Save image to file
             r.raw.decode_content = True
 
             with open(IMAGE_OVERLAYS_PATH / image_name ,'wb') as f:
                 shutil.copyfileobj(r.raw, f)
             log(f"New overlay image downloaded: {image_name}")
 
-        # Report every other status code as a failed download
-        else:
-            raise ValueError(f"Overlay image failed to download: {image_name} "
-                             f"Response status code: {r.status_code}")
+        except Exception as e:
+            err = ServerError(f"Something went wrong downloading the "
+                              f"overlay image '{image_name}'. "
+                              f"Full server response:\n\n"
+                              f"{self._try_print_response_content(r)}")
+            raise err.with_traceback(e.__traceback__)
 
 
     def send_logs(self, path: Path):
         """ 
         Send the logs to the server.
         """
-        # NOTE: Errors here must escalate
         logs = ""
         # Load the logs from file
         try:
@@ -118,87 +139,115 @@ class HttpServer:
                 with open(path, "r") as l:
                     logs = l.readlines()
                     logs = "".join(logs)
-
         except Exception as e:
-            raise OSError("Something went wrong opening the logs file."
-                          "No logs can be sent.") from e
+            log_error("Something went wrong opening the logs file. Sending a mock logfile.", e)
+            logs = f"Failed to read the log file. Exception:\n\n" \
+                   f"{traceback.format_exc()}\n"
             
         # Prevent the server from returning 'No logs detected' when the file is empty
         if logs == "":
-            logs = " ==> No logs found!! <== "
-            
-        # Send the logs
-        data = {'logs': logs}
-        raw_response = requests.post(self.url, 
-                                     data=data, 
-                                     auth=self.credentials, 
-                                     timeout=REQUEST_TIMEOUT)
-
-        if raw_response.status_code >= 400:
-            raise UnexpectedServerResponse(
-                f"The server replied with status code {raw_response.status_code}. "
-                f"Check your server configuration for errors. "
-                f"Full server response:\n\n"
-                f"{self._try_print_response_content(raw_response)}")
+            logs = ' ==> No logs found!! <== '
+        
+        r = {}
         try:
-            response = raw_response.json()
-        except json.decoder.JSONDecodeError as e:
-            e.args = (f"The server did not reply valid JSON. "
-                      f"JSON exception: {str(e.args[0])}\n"
-                      f"Full server response:\n\n"
-                      f"{self._try_print_response_content(raw_response)}", )
-            raise e.with_traceback(e.__traceback__)
+            # Send the logs
+            data = {'logs': logs}
+            r = requests.post(self.url, 
+                            data=data, 
+                            auth=self.credentials, 
+                            timeout=REQUEST_TIMEOUT)
 
-        # Make sure the server did not return an error
-        reply = response.get("logs", "No field named 'logs' in the response")
+            if r.status_code >= 400:
+                raise ServerError(
+                    f"The server replied with status code {r.status_code} ({r.reason}). "
+                    f"Check your server configuration for errors. "
+                    f"Full server response:\n\n"
+                    f"{self._try_print_response_content(r)}")
+            try:
+                response = r.json()
+            except json.decoder.JSONDecodeError as e:
+                err = ServerError(f"The server did not reply valid JSON. "
+                                  f"JSON exception: {str(e.args[0])}\n"
+                                  f"Full server response:\n\n"
+                                  f"{self._try_print_response_content(r)}")
+                raise err.with_traceback(e.__traceback__)
 
-        if reply != "" and reply != "Logs not detected":
-            raise UnexpectedServerResponse(
-                f"The server reply was unexpected. "
-                f"The reply message is: {str(reply)}\n" 
-                f"Full server response:\n\n"
-                f"{self._try_print_response_content(raw_response)}")
+            # Make sure the server did not return an error
+            reply = response.get("logs", "[No field named 'logs' in the response]")
+
+            if reply != "" and reply != "Logs not detected":
+                raise ServerError(
+                    f"The server reply was unexpected. "
+                    f"The reply message is: {str(reply)}\n" 
+                    f"Full server response:\n\n"
+                    f"{self._try_print_response_content(r)}")
+
+        except Exception as e:
+            err = ServerError(f"Something went wrong uploading the logs. "
+                              f"Full server response:\n\n"
+                              f"{self._try_print_response_content(r)}")
+            raise err.with_traceback(e.__traceback__)
 
 
     def upload_picture(self, image_path: Path, image_name: str, image_extension: str) -> None:
         """
         Uploads the new picture to the server.
         """
+        if not os.path.isfile(image_path):
+            raise ServerError(f"No picture to upload at {image_path}")
+
         # Deal only with the date-time if max_photos = 0, otherwise rename and send.
         # The server will take care of numbering them if needed
-        date_time = datetime.datetime.now().strftime("_%Y-%m-%d_%H:%M:%S") if not self.max_photos else ""
-        final_image_path = image_path.parent / (image_name + date_time + "." + image_extension)
-        os.rename(image_path, final_image_path)
+        r = {}
+        try:
+            date_time = ""
+            if not self.max_photos:
+                date_time = datetime.datetime.now().strftime("_%Y-%m-%d_%H:%M:%S")
+            final_image_name = f"{image_name}{date_time}.{image_extension}"
+            final_image_path = Path(image_path).parent / final_image_name
+            os.rename(image_path, final_image_path)
+
+        except Exception as e:
+            log_error("Something went wrong renaming the image. "\
+                      f"It's going to be sent under its temporary name: {image_path}", e)
+            final_image_path = image_path
 
         # Upload the picture
-        files = {'photo': open(final_image_path, 'rb')}
-        raw_response = requests.post(self.url, 
-                                     files=files, 
-                                     auth=self.credentials,
-                                     timeout=REQUEST_TIMEOUT)
-
-        if raw_response.status_code >= 400:
-            raise UnexpectedServerResponse(
-                f"The server replied with status code {raw_response.status_code}. "
-                f"Check your server configuration for errors. "
-                f"Full server response:\n\n"
-                f"{self._try_print_response_content(raw_response)}")
         try:
-            response = raw_response.json()
-        except json.decoder.JSONDecodeError as e:
-            e.args = (f"The server did not reply valid JSON. "
-                      f"JSON exception: {str(e.args[0])}\n"
-                      f"Full server response:\n\n"
-                      f"{self._try_print_response_content(raw_response)}", )
-            raise e.with_traceback(e.__traceback__)
-                    
-        # Make sure the server did not return an error
-        reply = response.get("photo", "< no field named 'photo' in the response >")
-        if reply != "":
-            raise UnexpectedServerResponse(
-                f"The server reply was unexpected: the image was probably not sent. "
-                f"The reply is: {str(reply)}\n" 
-                f"Full server response:\n\n" 
-                f"{self._try_print_response_content(raw_response)}")
+            files = {'photo': open(final_image_path, 'rb')}
+            r = requests.post(self.url, 
+                            files=files, 
+                            auth=self.credentials,
+                            timeout=REQUEST_TIMEOUT)
 
-        return final_image_path
+            if r.status_code >= 400:
+                raise ServerError(
+                    f"The server replied with status code {r.status_code} ({r.reason}). "
+                    f"Check your server configuration for errors. "
+                    f"Full server response:\n\n"
+                    f"{self._try_print_response_content(r)}")
+            try:
+                response = r.json()
+            except json.decoder.JSONDecodeError as e:
+                err = ServerError(f"The server did not reply valid JSON. "
+                                f"JSON exception: {str(e.args[0])}\n"
+                                f"Full server response:\n\n"
+                                f"{self._try_print_response_content(r)}", )
+                raise err.with_traceback(e.__traceback__)
+                        
+            # Make sure the server did not return an error
+            reply = response.get("photo", "[no field named 'photo' in the response]")
+            if reply != "":
+                raise ServerError(
+                    f"The server reply was unexpected: the image probably didn't arrive. "
+                    f"The reply is: {str(reply)}\n" 
+                    f"Full server response:\n\n" 
+                    f"{self._try_print_response_content(r)}")
+
+            return final_image_path
+        
+        except Exception as e:
+            err = ServerError(f"Something went wrong uploading the picture. "
+                              f"Full server response:\n\n"
+                              f"{self._try_print_response_content(r)}")
+            raise err.with_traceback(e.__traceback__)

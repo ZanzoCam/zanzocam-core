@@ -7,7 +7,6 @@ from textwrap import dedent
 from fractions import Fraction
 from PIL import Image, ImageChops
 from freezegun import freeze_time
-from collections import defaultdict
 from datetime import datetime, timedelta
 
 import webcam
@@ -15,38 +14,13 @@ import constants
 from webcam.camera import Camera
 from webcam.configuration import Configuration
 
-from tests.conftest import point_const_to_tmpdir
-
-# Try to import PiCamera - If you're running off a RPi, this won't
-# work and a mock is loaded instead
+# Try to import PiCamera - unless you're running on a RPi, 
+# this won't work and a mock is loaded instead
 try:
-    from picamera import PiCameraa
+    from picamera import PiCamera
 except ImportError as e:
     from tests.conftest import MockPiCamera as PiCamera
     webcam.camera.PiCamera = PiCamera
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    point_const_to_tmpdir([webcam.camera, webcam.configuration], monkeypatch, tmpdir)
-
-
-@pytest.fixture(autouse=True)
-def mock_piexif(monkeypatch):
-
-    monkeypatch.setattr(
-        webcam.camera.piexif,
-        'load',
-        lambda *a, **k: defaultdict(lambda: defaultdict(lambda: ""))
-    )
-    monkeypatch.setattr(
-        webcam.camera.piexif,
-        'dump',
-        lambda *a, **k: None
-    )
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'Make', None)
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'Software', None)
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'ProcessingSoftware', None)
 
 
 

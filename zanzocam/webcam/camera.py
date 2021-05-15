@@ -228,8 +228,8 @@ class Camera:
                     # you can't reach the target luminance
                     if shutter_speed >= MAX_SHUTTER_SPEED:
                         if camera.iso >= 800:
-                            log_error(f"ISO is at 800 and shutter speed is at max "
-                                      f"({MAX_SHUTTER_SPEED/10**6:.2f}). Cannot proceed.")
+                            log(f"WARNING! ISO is at 800 and shutter speed is at max "
+                                f"({MAX_SHUTTER_SPEED/10**6:.2f}). Cannot increase further.")
                             return new_luminance, shutter_speed, camera.iso, attempt
 
                         log(f"Not allowed to raise the shutter speed further. "

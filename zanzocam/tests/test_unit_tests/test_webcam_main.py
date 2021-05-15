@@ -12,118 +12,12 @@ import constants
 from webcam.utils import log
 from webcam.main import main
 from webcam.system import System
-from webcam.errors import ServerError, UnexpectedServerResponse
+from webcam.errors import ServerError
 from webcam.server import Server
 from webcam.camera import Camera
 from webcam.configuration import Configuration
 
-from tests.conftest import point_const_to_tmpdir, MyMock, MockObject, in_logs
-
-
-class MockSystem:
-    
-    @staticmethod
-    def report_general_status():
-        return {'test-message':'good'}
-
-    @staticmethod
-    def apply_system_settings(settings):
-        log("[TEST] applying system settings - mocked")
-        return
-
-
-class MockServer:
-    def __init__(self, *a, **k):
-        log("[TEST] init Server - mocked")
-
-    def __getattr__(self, *a, **k):
-        return
-
-    def get_endpoint(self, *a, **k):
-        return "[MOCKED TEST ENDPOINT]"
-
-    def download_overlay_images(self, *a, **k):
-        log("[TEST] downloading overlays images - mocked")
-    
-    def upload_logs(self, *a, **k):
-        log("[TEST] uploading logs - mocked")
-
-    def upload_diagnostics(self, *a, **k):
-        log("[TEST] uploading diagnostics - mocked")
-    
-    def upload_failure_report(self, *a, **k):
-        log("[TEST] uploading failure report - mocked")
-
-    def upload_picture(self, *a, **k):
-        log("[TEST] uploading picture - mocked")
-
-    def update_configuration(self, *a, **k):
-        return Configuration.create_from_dictionary({
-            "server": {"new-test-config": "present"}
-        })
-
-
-class MockCamera:
-    def __init__(self, config, *a, **k):
-        log("[TEST] init Camera - mocked")
-        if isinstance(config, Configuration):
-            self.fail = bool(getattr(config, 'camera_will_fail', False))
-
-    def __getattr__(self, *a, **k):
-        return None
-
-    def take_picture(self, *a, **k):
-        log("[TEST] taking picture - mocked")
-
-    def cleanup_image_files(self, *a, **k):
-        log("[TEST] cleanup image files - mocked")
-
-
-class MockConfig:
-    def __init__(self, *a, **k):
-        log("[TEST] init Config - mocked")
-
-    def __getattr__(self, *a, **k):
-        return lambda *a, **k: None
-
-    def within_active_hours(self):
-        return True
-    
-    def __str__(self):
-        return json.dumps(vars(self), indent=4, default=lambda x: str(x))
-
-
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    modules = [
-        webcam.main,
-        webcam.system,
-        webcam.server.server,
-        webcam.server.http_server,
-        webcam.server.ftp_server,
-        webcam.camera,
-        webcam.configuration
-    ]
-    point_const_to_tmpdir(modules, monkeypatch, tmpdir)
-
-
-@pytest.fixture()
-def mock_modules(monkeypatch, tmpdir):
-    monkeypatch.setattr(webcam.main, 'System', MockSystem)
-    monkeypatch.setattr(webcam.main, 'Server', MockServer)    
-    monkeypatch.setattr(webcam.main, 'Camera', MockCamera)
-    monkeypatch.setattr(webcam.main, 'Configuration', MockConfig)
-    monkeypatch.setattr(webcam.main, 'WAIT_AFTER_CAMERA_FAIL', 1)
-
-
-@pytest.fixture()
-def mock_modules_apart_config(monkeypatch):
-    monkeypatch.setattr(webcam.main, 'System', MockSystem)
-    monkeypatch.setattr(webcam.main, 'Server', MockServer)    
-    monkeypatch.setattr(webcam.main, 'Camera', MockCamera)
-    monkeypatch.setattr(webcam.main, 'WAIT_AFTER_CAMERA_FAIL', 1)
+from tests.conftest import in_logs
 
 
 def test_main_fail_status_check(mock_modules_apart_config, monkeypatch, logs):

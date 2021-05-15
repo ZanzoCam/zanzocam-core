@@ -101,9 +101,14 @@ class FtpServer:
         Send the logs to the server.
         """
         # Make sure the file in question exists and has some content
-        if not os.path.exists(path) or open(path, "r").read().strip() == "":
-            with open(path, "w") as l:
-                l.writelines(" ==> No logs found!! <==")
+        try:
+            if not os.path.exists(path) or open(path, "r").read().strip() == "":
+                with open(path, "w") as l:
+                    l.writelines(" ==> No logs found!! <==")
+        except Exception as e:
+            log_error("No logs were found and no mock log file can be written."
+                      "Logs won't be uploaded.", e)
+            return
         
         # Fetch the new overlay
         with open(path ,'rb') as logs:
@@ -121,6 +126,9 @@ class FtpServer:
         Uploads the new picture to the server.
         Returns the final image path (for cleanup operations)
         """
+        if not os.path.isfile(image_path):
+            raise ServerError(f"No picture to upload at {image_path}")
+        
         # Rename the picture according to max_photos
         modifier = ""
         if self.max_photos == 0:

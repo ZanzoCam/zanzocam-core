@@ -4,7 +4,6 @@ import logging
 import datetime
 import traceback
 import constants
-from webcam.errors import UnexpectedServerResponse
 
 
 class AllStringEncoder(json.JSONEncoder):
