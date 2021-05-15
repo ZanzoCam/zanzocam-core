@@ -11,21 +11,43 @@ from constants import *
 
 
 
-def configure_wifi(form_data: Dict[str, str]):
+def configure_network(form_data: Dict[str, str]):
     """ 
-    Save the WiFi data, write wpa_supplicant.conf and run the hotspot script.
+    Save the network data, write wpa_supplicant.conf 
+    and run the hotspot script if necessary.
     """
-    # Gather wifi data
-    ssid = form_data["wifi_ssid"]
-    password = form_data["wifi_password"]
+    # Gather network data
+    network_type = form_data.get("network_type", "").lower()
 
-    # Save wifi data
-    write_json_file(path=WIFI_DATA, 
-                    content={
-                        "ssid": ssid,
-                        "password": password
-                    })
+    if network_type == "wifi":
+        config = {
+                "type": "WiFi",
+                "ssid": form_data.get("network_ssid", None),
+                "password": form_data.get("network_password", None)
+            }
+    elif network_type == "ethernet":
+        config = {
+                "type": "Ethernet"
+            }
+    elif network_type == "sim":
+        config = {
+                "type": "SIM",
+                "ap": form_data.get("network_ap", None)
+            }
     
+    # Save network data
+    write_json_file(path=NETWORK_DATA, content=config)
+    
+    # If the network is a WiFi network, 
+    # save the wpa_supplicant file and run the hotspot
+    if network_type == "wifi":
+        _configure_wifi(config['ssid'], config['password'])
+
+    elif network_type == "sim":
+        _configure_modem(config['ap'])
+        
+
+def _configure_wifi(ssid, password):
     # Write wpa_supplicant.conf
     write_text_file(path=".tmp-wpa_supplicant",
                     content=f"""
@@ -51,6 +73,10 @@ def configure_wifi(form_data: Dict[str, str]):
     except subprocess.CalledProcessError as e:
         return f"Si e' verificato un errore: {e}"
     return ""
+
+
+def _configure_modem(ap):
+    pass
 
 
 def configure_server(form_data: Dict[str, str]):

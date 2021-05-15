@@ -45,9 +45,9 @@ def home_endpoint(feedback: str=None, feedback_sheet_name: str=None, feedback_ty
     return pages.home(), return_code
 
 
-@app.route("/wifi", methods=["GET"])
-def wifi_endpoint():
-    return pages.wifi()
+@app.route("/network", methods=["GET"])
+def network_endpoint():
+    return pages.network()
 
 
 @app.route("/server", methods=["GET"])
@@ -65,12 +65,12 @@ def webcam_endpoint():
 # API for setting configuration values
 #
 
-@app.route("/configure/wifi", methods=["POST"])
+@app.route("/configure/network", methods=["POST"])
 def configure_wifi_endpoint():
-    feedback = api.configure_wifi(request.form)
+    feedback = api.configure_network(request.form)
     if feedback == "":
-        return redirect(url_for('home_endpoint', feedback="Wifi configurato con successo", feedback_sheet_name="wifi", feedback_type="positive")), 20
-    return redirect(url_for('home_endpoint', feedback=feedback, feedback_sheet_name="wifi", feedback_type="negative"))
+        return redirect(url_for('home_endpoint', feedback="Rete configurata con successo", feedback_sheet_name="network", feedback_type="positive")), 20
+    return redirect(url_for('home_endpoint', feedback=feedback, feedback_sheet_name="network", feedback_type="negative"))
     
 
 @app.route("/configure/server", methods=["POST"])

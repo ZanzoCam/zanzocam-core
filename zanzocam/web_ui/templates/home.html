@@ -16,12 +16,20 @@
 
         <div class="sheet">
             <div class="row">
-                <h3>WiFi:</h3>
-                <a href="/wifi" id="configure-wifi" class="button" style="margin: auto 0;">Configura il WiFi</a> 
+                <h3>Rete:</h3>
+                <a href="/network" id="configure-network" class="button" style="margin: auto 0;">Configura la rete</a> 
             </div>
             <p>
-                Nome della rete (SSID): <b>{{ wifi_data.ssid or "[non configurato]"}}</b><br>
+                Tipo di connessione: <b>{{ network_data.type or "[non configurato]"}}</b><br>
+                {% if network_data.type == "WiFi"%}
+                Nome della rete (SSID): <b>{{ network_data.ssid or "[non configurato]"}}</b><br>
                 Password: <b id="wifi_pwd"></b><a id="wifi_pwd_button" onclick="toggle_wifi_password()" style="margin-left:1rem;">Mostra</a>
+                
+                {% elif network_data.type == "Ethernet"%}
+                
+                {% elif network_data.type == "SIM"%}
+                Access Point (AP): <b>{{ network_data.ap or "[non configurato]"}}</b><br>
+                {% endif %}
             </p>
         </div>
 
@@ -93,7 +101,7 @@
         const button_wifi = document.getElementById("wifi_pwd_button");
         if( button_wifi.innerHTML == 'Mostra' ) {
             button_wifi.innerHTML = 'Nascondi';
-            field_wifi.innerHTML="{{ wifi_data.password  or '[non configurato]' }}";
+            field_wifi.innerHTML="{{ network_data.password  or '[non configurato]' }}";
         } else {
             button_wifi.innerHTML = 'Mostra';
             field_wifi.innerHTML="";

@@ -27,7 +27,7 @@ FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 
 # Setup related files
-WIFI_DATA = DATA_PATH / "wifi_data.json"
+NETWORK_DATA = DATA_PATH / "network_data.json"
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 

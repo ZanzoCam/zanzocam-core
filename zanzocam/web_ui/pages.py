@@ -14,22 +14,22 @@ from constants import *
 def home():
     """ The initial page with the summary """
     hotspot_value = read_flag_file(HOTSPOT_FLAG, "YES")
-    wifi_data = read_setup_data_file(WIFI_DATA)
+    network_data = read_setup_data_file(NETWORK_DATA)
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 
                                 title="Setup", 
                                 version=VERSION, 
                                 hotspot_value=hotspot_value,
-                                wifi_data=wifi_data,
+                                network_data=network_data,
                                 server_data=server_data)
 
-def wifi():
-    """ The page with the wifi forms """
-    wifi_data = read_setup_data_file(WIFI_DATA)
-    return render_template("wifi.html", 
+def network():
+    """ The page with the network forms """
+    network_data = read_setup_data_file(NETWORK_DATA)
+    return render_template("network.html", 
                                 title="Setup WiFi", 
                                 version=VERSION,
-                                wifi_data=wifi_data)
+                                network_data=network_data)
 
 def server():
     """ The page with the server data forms """
