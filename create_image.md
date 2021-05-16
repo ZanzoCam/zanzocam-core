@@ -112,7 +112,7 @@ Comment it out to avoid such errors from arising on your Pi.
   - `sudo dphys-swapfile swapoff`
   - `sudo dphys-swapfile uninstall`
   - `sudo update-rc.d dphys-swapfile remove`
-  - `sudo apt purge dphys-swapfile`
+  - `sudo apt purge -y dphys-swapfile`
 
 - Install the webcam module:
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
