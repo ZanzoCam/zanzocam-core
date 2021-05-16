@@ -57,6 +57,7 @@ setup(
     extras_require={
         **REQUIREMENTS,
         'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
+        'ci': [req for reqs in [REQUIREMENTS['webcam'], REQUIREMENTS['test']] for req in reqs],
     },
     entry_points={
         'console_scripts': [
