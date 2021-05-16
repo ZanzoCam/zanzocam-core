@@ -17,6 +17,7 @@ import constants
 from webcam.utils import log, log_error
 
 
+
 def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
     """
         Mocks all the calues in constants.py to point to the 
@@ -41,10 +42,10 @@ def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
             monkeypatch.setattr(constants, const, new_value)
             for module in modules:
                 monkeypatch.setattr(module, const, new_value)
-            
+
 
 class MockSystem:
-    
+
     @staticmethod
     def report_general_status():
         return {'test-message':'good'}
@@ -410,3 +411,4 @@ def in_logs(logs, string):
         return True
     except ValueError:
         return False
+

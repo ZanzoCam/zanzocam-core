@@ -7,9 +7,13 @@ import datetime
 import textwrap
 from time import sleep
 from pathlib import Path
-from picamera import PiCamera
 from fractions import Fraction
 from PIL import Image, ImageFont, ImageDraw, ImageStat
+
+try:
+    from picamera import PiCamera
+except ImportError:  # On the CI picamera is not installed
+    from tests.conftest import MockPiCamera as PiCamera
 
 from constants import *
 from webcam.utils import log, log_error
