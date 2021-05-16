@@ -26,6 +26,9 @@ dtparam=act_led_activelow=on
 start_x=1             # essential, although a bit misleading
 gpu_mem=256           # the memory allocated for the camera
 disable_camera_led=1  # optional, if you don't want the led to glow
+
+# Disable Bluetooth
+dtoverlay=disable-bt
 ```
 - Change `/etc/wpa_supplicant/wpa_supplicant.conf` on `rootfs` with your local wifi data
     - Example content:
