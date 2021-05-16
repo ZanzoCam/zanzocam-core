@@ -22,4 +22,4 @@ jobs:
           pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun
           pip install --no-deps -e zanzocam/
       - name: Run tests with pytest
-        run: pytest
+        run: pytest zanzocam/tests/test_unit_tests/
