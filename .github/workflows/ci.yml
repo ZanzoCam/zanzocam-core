@@ -18,6 +18,7 @@ jobs:
           python-version: 3.7
       - name: Install dependencies
         run: |
-          pip install -e zanzocam/[webcam,test]
+          pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun
+          pip install --no-deps -e zanzocam/
       - name: Run tests with pytest
         run: pytest 
