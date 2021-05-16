@@ -27,7 +27,7 @@ def network():
     """ The page with the network forms """
     network_data = read_setup_data_file(NETWORK_DATA)
     return render_template("network.html", 
-                                title="Setup WiFi", 
+                                title="Setup Rete", 
                                 version=VERSION,
                                 network_data=network_data)
 

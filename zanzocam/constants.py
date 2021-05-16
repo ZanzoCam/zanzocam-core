@@ -99,6 +99,20 @@ TARGET_LUMINOSITY_MARGIN = 3
 # light conditions (AWB requires more)
 CAMERA_WARM_UP_TIME = 5
 
+# White balancin modes from picamera
+PICAMERA_AWB_MODES = [
+    'off',
+    'auto',
+    'sunlight',
+    'cloudy',
+    'shade',
+    'tungsten',
+    'fluorescent',
+    'incandescent',
+    'flash',
+    'horizon',
+]
+
 # Fallback values for the camera configuration
 CAMERA_DEFAULTS = {
     "name": "no-name",
@@ -113,7 +127,7 @@ CAMERA_DEFAULTS = {
     "jpeg_quality": 90,
     "jpeg_subsampling": 0,
     "background_color": (0,0,0,0),
-    "calibrate": False,
+    "awb_mode": 'auto',
 
     # These two are "experimental" and mostly untested, 
     # don't use them unless really necessary

@@ -17,7 +17,7 @@ def configure_network(form_data: Dict[str, str]):
     and run the hotspot script if necessary.
     """
     # Gather network data
-    network_type = form_data.get("network_type", "").lower()
+    network_type = form_data.get("network_type", "WiFi").lower()
 
     if network_type == "wifi":
         config = {
@@ -32,7 +32,7 @@ def configure_network(form_data: Dict[str, str]):
     elif network_type == "sim":
         config = {
                 "type": "SIM",
-                "ap": form_data.get("network_ap", None)
+                "apn": form_data.get("network_apn", None)
             }
     
     # Save network data
@@ -44,7 +44,7 @@ def configure_network(form_data: Dict[str, str]):
         _configure_wifi(config['ssid'], config['password'])
 
     elif network_type == "sim":
-        _configure_modem(config['ap'])
+        _configure_modem(config['apn'])
         
 
 def _configure_wifi(ssid, password):
@@ -75,7 +75,7 @@ def _configure_wifi(ssid, password):
     return ""
 
 
-def _configure_modem(ap):
+def _configure_modem(apn):
     pass
 
 

@@ -96,6 +96,8 @@ class Camera:
         camera.vflip = self.ver_flip
         camera.hflip = self.hor_flip
         camera.rotation = int(self.rotation)
+        if self.awb_mode and self.awb_mode in PICAMERA_AWB_MODES:
+            camera.awb_mode = self.awb_mode
         return camera
 
     def _camera_capture(self, camera):
@@ -308,8 +310,6 @@ class Camera:
             log_error("Failed to open the image for editing. "
                       "The photo will have no overlays applied.", e)
             return
-
-        print(type(photo), vars(photo))
 
         # Create the overlay images
         rendered_overlays = []
