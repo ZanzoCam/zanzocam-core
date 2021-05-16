@@ -1,4 +1,4 @@
-name: Run Tests
+name: Unit Tests
 on:
   push:
     branches:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install Python 3
+      - name: Install Python 3.7
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
@@ -21,5 +21,5 @@ jobs:
           sudo apt-get install language-pack-it wireless-tools
           pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun
           pip install --no-deps -e zanzocam/
-      - name: Run tests with pytest
+      - name: Run unit tests
         run: pytest zanzocam/tests/test_unit_tests/
