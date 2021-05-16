@@ -18,6 +18,6 @@ jobs:
           python-version: 3.7
       - name: Install dependencies
         run: |
-          pip install -e zanzocam/[all]
+          pip install -e zanzocam/[ci]
       - name: Run tests with pytest
         run: pytest 
