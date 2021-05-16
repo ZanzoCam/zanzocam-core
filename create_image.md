@@ -108,6 +108,12 @@ Comment it out to avoid such errors from arising on your Pi.
 # Disable the HDMI port (to save power)
 @reboot /usr/bin/tvservice -o
 ```
+- Disable the swap (swaps tends to "burn" SD cards very fast due to the very frequent writes. Turns out the Raspberry Pi has quite enough RAM to work without swap):
+  - `sudo dphys-swapfile swapoff`
+  - `sudo dphys-swapfile uninstall`
+  - `sudo update-rc.d dphys-swapfile remove`
+  - `sudo apt purge dphys-swapfile`
+
 - Install the webcam module:
     - Install pip3 and venv: `sudo apt install -y python3-pip python3-venv`
     - Create venv in the home: `cd ~ && python3 -m venv venv`
