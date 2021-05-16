@@ -5,7 +5,7 @@ from pathlib import Path
 from flask import Flask, Response, render_template, redirect, url_for, abort, request
 
 import constants
-from web_ui import pages, api, utils, video_feed
+from web_ui import pages, api, utils
 
 
 app = Flask(__name__)
