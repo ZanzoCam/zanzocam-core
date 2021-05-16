@@ -99,7 +99,8 @@ Comment it out to avoid such errors from arising on your Pi.
     - Add at the end: `alias ll="ls -lah"`
 
 - Update the index: `sudo apt update`
-- Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu libatlas-base-dev` (libatlas is for numpy).
+- Install utilities, graphics libraries, fonts: `sudo apt install -y git whois libopenjp2-7-dev libtiff-dev fonts-dejavu`.
+  - Note: we're installing the DejaVu font. If you want to change it, install the proper package at this stage and, at the end of the procedure, modify `constants.py` in `home/zanzocam-bot/venv/src/zanzocam/zanzocam/`. This file constains a constant called `FONT_PATH` which you should point to your font's path. 
 - Setup cronjob to turn off HDMI at reboot:
     - `sudo nano /etc/cron.d/no-hdmi`
     - Content:
