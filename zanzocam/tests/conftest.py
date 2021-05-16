@@ -1,4 +1,5 @@
 import os
+import PIL
 import json
 import shutil
 import pytest
@@ -306,7 +307,26 @@ class MockPiCamera:
 def mock_piexif(monkeypatch):
     """
         Used in the tests of camera.py to mock away PIEXIF
+        Note: PIEXIF can be mocked, but the data need to be
+        there somehow, so the workaround is copying it from
+        a real picture, exif-source.jpg
     """
+    original_image_save = webcam.camera.Image.Image.save
+
+    def altered_image_save(self, *a, **k):
+        if "exif" in k.keys():
+            original_image_save(self, *a, **k)
+            return
+        photo = Image.open(str(Path(__file__).parent / "exif-source.jpg"))
+        exif = photo.info["exif"]
+        original_image_save(self, *a, **k, exif=exif)
+
+    monkeypatch.setattr(
+        webcam.camera.Image.Image,
+        "save",
+        altered_image_save
+    )
+
     monkeypatch.setattr(
         webcam.camera.piexif,
         'load',

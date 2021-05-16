@@ -309,6 +309,8 @@ class Camera:
                       "The photo will have no overlays applied.", e)
             return
 
+        print(type(photo), vars(photo))
+
         # Create the overlay images
         rendered_overlays = []
         for position, data in self.overlays.items():
@@ -364,11 +366,11 @@ class Camera:
                         "at the bottom. It might not be fully visible in the final picture.")
                 # mask is to allow for transparent images
                 image.paste(overlay.rendered_image, (x, y), mask=overlay.rendered_image)  
-        
+
         # Recover and edit the EXIF data
         exif_bytes = None
         try:
-            exif_dict = piexif.load(getattr(photo.info, "exif", {"0th": {}}))
+            exif_dict = piexif.load(photo.info["exif"])
             exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
             exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
             exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"

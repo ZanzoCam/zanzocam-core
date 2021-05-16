@@ -17,7 +17,7 @@ from webcam.configuration import Configuration
 # Try to import PiCamera - unless you're running on a RPi, 
 # this won't work and a mock is loaded instead
 try:
-    from picamera import PiCamera
+    from picamera import PiCameraa
 except ImportError as e:
     from tests.conftest import MockPiCamera as PiCamera
     webcam.camera.PiCamera = PiCamera
