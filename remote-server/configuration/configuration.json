@@ -4,7 +4,7 @@
       "max_photos": "3"
     },
     "time": {
-      "frequency": "10",
+      "frequency": "10"
     },
     "image": {
       "name": "image",
