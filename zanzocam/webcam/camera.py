@@ -80,7 +80,7 @@ class Camera:
         Use this function in `with` blocks only, or remember to close the returned `camera` object!
         """
         if expanded_framerate_range:
-            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(1, 10), Fraction(90.0)))
+            camera = PiCamera(sensor_mode=3, framerate_range=(Fraction(1, 10), Fraction(15, 1)))
         else:
             camera = PiCamera(sensor_mode=3)  # sensor_mode 1 has a blue halo on v2!
 
