@@ -51,8 +51,8 @@ def test_same_config_on_ftp(tmpdir, logs):
             "image": {
                 "name": "image",
                 "extension": "jpg",
-                "width": "2666",
-                "height": "1520",
+                "width": "3280",
+                "height": "2464",
                 "hor_flip": "false",
                 "ver_flip": "true",
                 "background_color": "#FFFF00",
@@ -116,8 +116,8 @@ def test_same_config_on_http(tmpdir, logs):
             "image": {
                 "name": "image",
                 "extension": "jpg",
-                "width": "2666",
-                "height": "1520",
+                "width": "3280",
+                "height": "2464",
                 "background_color": "#FFFF00"
             },
             "overlays": {
@@ -165,8 +165,8 @@ def test_night_time(tmpdir, logs):
             "image": {
                 "name": "image",
                 "extension": "jpg",
-                "width": "2666",
-                "height": "1520"
+                "width": "3280",
+                "height": "2464"
             }
         }
         """))
