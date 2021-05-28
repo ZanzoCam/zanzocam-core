@@ -86,7 +86,7 @@ def test_prepare_camera_object_default_extended_framerate(logs):
         # Note: the fraction actually set might differ a bit,
         # what's important is that it can be a wider range, not a smaller one.
         assert picam.framerate_range.low <= Fraction(1, 10)
-        assert picam.framerate_range.high >= Fraction(90, 1)
+        assert picam.framerate_range.high >= Fraction(15, 1)
 
 
 def test_prepare_camera_object_too_wide(logs):
