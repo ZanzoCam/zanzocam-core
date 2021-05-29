@@ -624,7 +624,7 @@
                 <div class="row">
                     <div class="column column-75">
                         <label for="image__name">Nome:</label>
-                        <input type="text" placeholder="foto"  name="image__name">
+                        <input type="text" placeholder="no-name"  name="image__name">
                     </div>
                     <div class="column">
                         <label for="image__extension">Estensione:</label>
@@ -648,7 +648,7 @@
                           <option data-width=3280 data-height=2464 value=2464> 8 Megapixel (4K), 4:3 (3280x2464)</option>
                           <option data-width=3280 data-height=1845 value=1845> 6 Megapixel, 16:9 (3280x1845)</option>
                           <option data-width=2310 data-height=1732 value=1732> 4 Megapixel (2K), 4:3 (2310x1732)</option>
-                          <option data-width=2666 data-height=1520 value=1520> 4 Megapixel (2K), 16:9 (2666x1500)</option>
+                          <option data-width=2666 data-height=1520 value=1520 selected="selected"> 4 Megapixel (2K), 16:9 (2666x1500)</option>
                           <option data-width=1920 data-height=1080 value=1080> 2 Megapixel (FHP), 16:9 (1920x1080)</option>
                           <option data-width=1280 data-height=720 value=720> 1 Megapixel (HD), 16:9 (1280x720)</option>
                           <option data-width=640 data-height=480 value=480> 0.3 Megapixel (VGA), 4:3 (640x480)</option>
@@ -874,7 +874,7 @@
                     
                     <div id="top_right_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="overlays__top_right__text">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__top_right__text"></textarea>
+                        <textarea placeholder="... testo ..." name="overlays__top_right__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -896,7 +896,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -910,7 +910,7 @@
                                 <label for="overlays__top_right__background_color">Colore Sfondo (RGBA):</label>
                                     <select id="overlays__top_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+					<option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -956,18 +956,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_right__width">
+                                <input type="text" name="overlays__top_right__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_right__height">
+                                <input type="text" name="overlays__top_right__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__top_right__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__top_right__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_right__over_the_picture">
@@ -1000,7 +1000,7 @@
                     
                     <div id="top_center_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="top_center_text-content">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__top_center__text"></textarea>
+                        <textarea placeholder="... testo ..." name="overlays__top_center__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -1023,7 +1023,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -1039,7 +1039,7 @@
                                 <span>
                                     <select id="overlays__top_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -1085,18 +1085,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_center__width">
+                                <input type="text" name="overlays__top_center__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_center__height">
+                                <input type="text" name="overlays__top_center__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__top_center__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__top_center__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_center__over_the_picture">
@@ -1128,7 +1128,7 @@
 
                     <div id="top_left_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="top_left_text-content">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__top_left__text"></textarea>
+                        <textarea placeholder="... testo ..." name="overlays__top_left__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -1151,7 +1151,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -1167,7 +1167,7 @@
                                 <span>
                                     <select id="overlays__top_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -1213,18 +1213,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_left__width">
+                                <input type="text" name="overlays__top_left__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__top_left__height">
+                                <input type="text" name="overlays__top_left__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__top_left__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__top_left__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__top_left__over_the_picture">
@@ -1255,7 +1255,7 @@
 
                     <div id="bottom_right_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="bottom_right_text-content">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__bottom_right__text"></textarea>
+                        <textarea placeholder=".. testo ..." name="overlays__bottom_right__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -1278,7 +1278,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -1294,7 +1294,7 @@
                                 <span>
                                     <select id="overlays__bottom_right__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -1340,18 +1340,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_right__width">
+                                <input type="text" name="overlays__bottom_right__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_right__height">
+                                <input type="text" name="overlays__bottom_right__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__bottom_right__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__bottom_right__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_right__over_the_picture">
@@ -1382,7 +1382,7 @@
                     
                     <div id="bottom_center_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="bottom_center_text-content">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__bottom_center__text"></textarea>
+                        <textarea placeholder=".. testo ..." name="overlays__bottom_center__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -1405,7 +1405,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -1421,7 +1421,7 @@
                                 <span>
                                     <select id="overlays__bottom_center__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -1467,18 +1467,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_center__width">
+                                <input type="text" name="overlays__bottom_center__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_center__height">
+                                <input type="text" name="overlays__bottom_center__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__bottom_center__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__bottom_center__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_center__over_the_picture">
@@ -1509,7 +1509,7 @@
                     
                     <div id="bottom_left_text-vars"  class="overlay-fields" style="display: none;">
                         <label for="bottom_left_text-content">Testo</label>
-                        <textarea placeholder="Testo..." name="overlays__bottom_left__text"></textarea>
+                        <textarea placeholder="... testo ..." name="overlays__bottom_left__text"></textarea>
                         
                         <div class="row">
                             <div class="column">
@@ -1532,7 +1532,7 @@
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
-                                        <option value="#000000">nero</option>
+                                        <option value="#000000" selected="selected">nero (default)</option>
                                         <option value="#FF0000">rosso</option>
                                         <option value="#FFFF00">giallo</option>
                                         <option value="#008000">verde</option>
@@ -1548,7 +1548,7 @@
                                 <span>
                                     <select id="overlays__bottom_left__background_color" onchange="setColorField(this.nextElementSibling, this.value);">
                                         <option value=""></option>
-                                        <option value="#FFFFFF">bianco</option>
+                                        <option value="#FFFFFF" selected="selected">bianco (default)</option>
                                         <option value="#CCCCCC">grigio chiaro</option>
                                         <option value="#999999">grigio</option>
                                         <option value="#333333">grigio scuro</option>
@@ -1594,18 +1594,18 @@
                         <div class="row">
                             <div class="column">
                                 <label>Larghezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_left__width">
+                                <input type="text" name="overlays__bottom_left__width">
                             </div>
                             <div class="column">
                                 <label>Altezza:</label>
-                                <input type="text" placeholder="100"  name="overlays__bottom_left__height">
+                                <input type="text" name="overlays__bottom_left__height">
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="column">
                                 <label>Margine (% dim. immagine):</label>
-                                <input type="text" placeholder="20"  name="overlays__bottom_left__padding_ratio">
+                                <input type="text" placeholder="0.2"  name="overlays__bottom_left__padding_ratio">
                             </div>
                             <div class="column" style="padding:40px 0 0 10px;">
                                 <input type="checkbox"  name="overlays__bottom_left__over_the_picture">
