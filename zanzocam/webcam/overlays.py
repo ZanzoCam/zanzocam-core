@@ -21,17 +21,7 @@ class Overlay:
         
         # Where the rendered overlay is stored if can be generated
         self.rendered_image = None
-        self.defaults = {
-            "font_size": 25,
-            "padding_ratio": 0.2,
-            "text": "~~~ DEFAULT TEXT ~~~",
-            "font_color": (0, 0, 0),
-            "background_color": (255, 255, 255, 0),
-            "image": "fallback-pixel.png",
-            "width": None,   # Might be unset to retain aspect ratio
-            "heigth": None,  # Might be unset to retain aspect ratio
-            "over_the_picture": False,
-        }
+        self.defaults = OVERLAY_DEFAULTS
         
         # Populate the attributes with the overlay data 
         for key, value in data.items():
