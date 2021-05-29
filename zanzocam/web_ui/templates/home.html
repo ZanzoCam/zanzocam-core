@@ -75,16 +75,35 @@
                 </label>
                 <br>
             </div>
-            <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZANZOCAM di generare o meno un hotspot quando perde contatto
-            con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZANZOCAM è gia' in grado di collegarsi
+            <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZanzoCam di generare o meno un hotspot quando perde contatto
+            con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZanzoCam è gia' in grado di collegarsi
             con un'altra rete WiFi o è collegata via rete Ethernet.<br>
             Si consiglia di selezionare SI durante il setup della webcam, e di selezionare NO una volta che il sistema e'
             completamente funzionante.</p>
         </div>
+        
+        <div class="sheet">
+            <div class="row">
+                <h3>Pannello di Setup:</h3>
+                <label class="toggle">
+                    <input type="radio" value="YES" name="ui_value" {% if not ui_value or ui_value=="YES" %}checked{%endif%} onchange="javascript:uiYES();">
+                    <span class="label">SI</span>
+                </label>
+                <label class="toggle">
+                    <input type="radio" value="NO" name="ui_value" {% if ui_value=="NO" %}checked{%endif%} onchange="javascript:uiNO();">
+                    <span class="label">NO</span>
+                </label>
+                <br>
+            </div>
+            <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZanzoCam di attivare o disattivare l'interfaccia che stai usando ora.
+            Selezionando OFF, questa pagina e tutte le altre diventeranno inaccessibili.
+            Si consiglia di lasciare attivo questo pannello, a meno che questa ZanzoCam non funzioni a batterie o con un RTC.
+            </p>
+        </div>
 
         <div class="sheet">
             <div class="row">
-                <h3>Riavvia ZANZOCAM:</h3>
+                <h3>Riavvia ZanzoCam:</h3>
                 <a href="/reboot" class="button" type="button" style="margin: auto 0; background-color:#bb0000; border:0px;">Riavvia</a>
             </div>
             <p>
@@ -122,7 +141,7 @@
     
     function hotspotNO() {
         confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
-              "ZANZOCAM smettera' di produrre il suo hotspot in caso di " +
+              "ZanzoCam smettera' di produrre il suo hotspot in caso di " +
               "assenza di WiFi.\n\n" +
               "Sei sicuro\a di voler proseguire?");
         if(confirmation){
@@ -134,17 +153,17 @@
                     alert("Modifica completata con successo.");
                 } else {
                     alert("Qualcosa è andato storto! " +
-                      "ZANZOCAM ha risposto con un codice "+ r.status +".");
+                      "ZanzoCam ha risposto con un codice "+ r.status +".");
                 }
             }).catch(r => {
                 alert("Qualcosa è andato storto! " +
-                      "ZANZOCAM non è raggiungibile.");
+                      "ZanzoCam non è raggiungibile.");
             })   
         }
     }
     function hotspotYES() {
         confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
-              "ZANZOCAM comincera' a produrre il suo hotspot in caso di " +
+              "ZanzoCam comincera' a produrre il suo hotspot in caso di " +
               "assenza di WiFi.\n\n" +
               "Sei sicuro\a di voler proseguire?");
         if(confirmation){
@@ -156,13 +175,52 @@
                     alert("Modifica completata con successo.");
                 } else {
                     alert("Qualcosa è andato storto! " +
-                      "ZANZOCAM ha risposto con un codice "+ r.status +".");
+                      "ZanzoCam ha risposto con un codice "+ r.status +".");
                 }
             }).catch(r => {
                 alert("Qualcosa è andato storto! " +
-                      "ZANZOCAM non è raggiungibile.");
+                      "ZanzoCam non è raggiungibile.");
             })   
         }
+    }
+        
+        function uiNO() {
+        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
+              "ZanzoCam spegnera' questa pagina web.\n\n" +
+              "Sei sicuro\a di voler proseguire?");
+        if(confirmation){
+            fetch("/configure/ui/NO", {
+                method:'POST',
+            })
+            .then(r => {
+                if (r.status === 200){
+                    alert("Modifica completata con successo.");
+                } else {
+                    alert("Qualcosa è andato storto! " +
+                      "ZanzoCam ha risposto con un codice "+ r.status +".");
+                }
+            }).catch(r => {
+                alert("Qualcosa è andato storto! " +
+                      "ZanzoCam non è raggiungibile.");
+            })   
+        }
+    }
+    
+    function uiYES() {
+        fetch("/configure/ui/YES", {
+            method:'POST',
+        })
+        .then(r => {
+            if (r.status === 200){
+                alert("Modifica completata con successo.");
+            } else {
+                alert("Qualcosa è andato storto! " +
+                  "ZanzoCam ha risposto con un codice "+ r.status +".");
+            }
+        }).catch(r => {
+            alert("Qualcosa è andato storto! " +
+                  "ZanzoCam non è raggiungibile.");
+        })
     }
     </script>
     
