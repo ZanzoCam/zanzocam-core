@@ -195,7 +195,7 @@ def test_shoot_picture_low_light_luminance_no_settle(monkeypatch, tmpdir, logs):
     assert "Camera warm-up" in logs[0]
     assert "Taking picture" in logs[1]
     assert "Picture taken" in logs[2]
-    assert "No final picture will be taken" in logs[3]
+    assert "AWB adjusted picture not required" in logs[3]
 
 
 def test_shoot_picture_low_light_luminance_with_settle(monkeypatch, tmpdir, logs):
@@ -214,7 +214,7 @@ def test_shoot_picture_low_light_luminance_with_settle(monkeypatch, tmpdir, logs
     assert "Camera warm-up" in logs[0]
     assert "Taking picture" in logs[1]
     assert "Picture taken" in logs[2]
-    assert "Taking one more picture with the final parameters" in logs[3]
+    assert "Taking AWB stabilized picture with the final parameters" in logs[3]
     assert "Adjusting white balance" in logs[4]
     assert "Taking picture" in logs[5]
     assert "Picture taken" in logs[6]
