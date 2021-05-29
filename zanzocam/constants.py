@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 
 
 #
@@ -33,6 +33,7 @@ HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 
 # Flags (single value files)
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
+UI_FLAG = DATA_PATH / "web_ui.flag"
 
 # Image paths (they have to be served out, so they go in the statics)
 PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
@@ -132,5 +133,5 @@ CAMERA_DEFAULTS = {
     # These two are "experimental" and mostly untested, 
     # don't use them unless really necessary
     'use_low_light_algorithm': True,
-    'let_awb_settle_in_dark': True,
+    'let_awb_settle_in_dark': False,
 }
