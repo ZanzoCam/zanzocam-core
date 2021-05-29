@@ -124,6 +124,16 @@ def toggle_hotspot(value: str) -> int:
     if value == "YES" or value == "NO":
         return "", toggle_flag(HOTSPOT_FLAG, value)
     abort(404)
+    
+
+def toggle_ui(value: str) -> int:
+    """ 
+    Activate/deactivate the web ui
+    """
+    value = value.upper().strip()
+    if value == "YES" or value == "NO":
+        return "", toggle_flag(UI_FLAG, value)
+    abort(404)
 
 
 def get_logs(kind: str, name: str):
