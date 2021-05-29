@@ -134,3 +134,15 @@ CAMERA_DEFAULTS = {
     'use_low_light_algorithm': True,
     'let_awb_settle_in_dark': False,
 }
+
+OVERLAY_DEFAULTS = {
+    "font_size": 25,
+    "padding_ratio": 0.2,
+    "text": "Testo...",
+    "font_color": (0, 0, 0),
+    "background_color": (255, 255, 255, 0),
+    "image": None,
+    "width": None,   # Might be unset to retain aspect ratio
+    "heigth": None,  # Might be unset to retain aspect ratio
+    "over_the_picture": False,
+}
