@@ -136,9 +136,9 @@ CAMERA_DEFAULTS = {
 }
 
 OVERLAY_DEFAULTS = {
-    "font_size": 25,
+    "font_size": 30,
     "padding_ratio": 0.2,
-    "text": "Testo...",
+    "text": "... testo ...",
     "font_color": (0, 0, 0),
     "background_color": (255, 255, 255, 0),
     "image": None,
