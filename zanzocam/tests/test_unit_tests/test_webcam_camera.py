@@ -660,7 +660,7 @@ def test_process_long_text_overlay_out_of_picture(tmpdir, logs):
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
-    image = Image.new("RGB", (100, 100), color="#FFFFFF")
+    image = Image.new("RGB", (1000, 1000), color="#FFFFFF")
     image.save(str(camera.temp_photo_path))
 
     camera._process_picture()
