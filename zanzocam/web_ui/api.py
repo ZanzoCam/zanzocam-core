@@ -131,8 +131,29 @@ def toggle_ui(value: str) -> int:
     Activate/deactivate the web ui
     """
     value = value.upper().strip()
-    if value == "YES" or value == "NO":
-        return "", toggle_flag(UI_FLAG, value)
+    if value == "NO":
+        disable_ui = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "disable",
+            "zanzocam-web-ui.service"
+        ])
+        stop_ui = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "stop",
+            "zanzocam-web-ui.service"
+        ])
+    if value == "YES":
+        enable_ui = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "enable",
+            "zanzocam-web-ui.service"
+        ])
     abort(404)
 
 
