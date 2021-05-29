@@ -199,7 +199,7 @@ def test_shoot_picture_low_light_luminance_no_settle(monkeypatch, tmpdir, logs):
 
 
 def test_shoot_picture_low_light_luminance_with_settle(monkeypatch, tmpdir, logs):
-    camera = Camera({'image': {}})
+    camera = Camera({'image': {'let_awb_settle_in_dark': True}})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
 
     monkeypatch.setattr(webcam.camera.Camera, 
