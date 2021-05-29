@@ -148,12 +148,11 @@ class Camera:
 
         # If we're good without one final picture with the long wait for the AWB, return here
         if not self.let_awb_settle_in_dark:
-            log(f"No final picture will be taken, because "
-                f"`let_awb_settle_in_dark = {self.let_awb_settle_in_dark}`.")
+            log(f"AWB adjusted picture not required")
             return
 
         # Once the correct shutter speed has been found, shoot again a picture with the correct params.
-        log(f"Taking one more picture with the final parameters "
+        log(f"Taking AWB stabilized picture with the final parameters "
             f"(shutter speed: {shutter_speed/10**6:.2f}s, ISO: {iso})")
 
         with self._prepare_camera_object(expanded_framerate_range=True) as camera:
