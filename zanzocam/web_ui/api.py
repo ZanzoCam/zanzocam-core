@@ -146,6 +146,20 @@ def toggle_ui(value: str) -> int:
             "stop",
             "zanzocam-web-ui.service"
         ])
+        disable_nginx = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "stop",
+            "nginx.service"
+        ])
+        stop_nginx = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "stop",
+            "nginx.service"
+        ])
     if value == "YES":
         enable_ui = subprocess.run(
         [
@@ -153,6 +167,13 @@ def toggle_ui(value: str) -> int:
             "systemctl",
             "enable",
             "zanzocam-web-ui.service"
+        ])
+        enable_nginx = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "systemctl",
+            "enable",
+            "nginx.service"
         ])
     abort(404)
 
