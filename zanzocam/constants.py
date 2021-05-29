@@ -33,7 +33,6 @@ HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 
 # Flags (single value files)
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
-UI_FLAG = DATA_PATH / "web_ui.flag"
 
 # Image paths (they have to be served out, so they go in the statics)
 PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
