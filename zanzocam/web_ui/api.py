@@ -6,8 +6,8 @@ import picamera
 import subprocess
 from flask import send_from_directory, abort
 
-from web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
-from constants import *
+from zanzocam.web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
+from zanzocam.constants import *
 
 
 

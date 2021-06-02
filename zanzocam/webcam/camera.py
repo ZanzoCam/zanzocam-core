@@ -15,11 +15,11 @@ try:
 except ImportError:  # On the CI picamera is not installed
     from tests.conftest import MockPiCamera as PiCamera
 
-from constants import *
-from webcam.utils import log, log_error
-from webcam.system import System
-from webcam.overlays import Overlay
-from webcam.configuration import Configuration 
+from zanzocam.constants import *
+from zanzocam.webcam.utils import log, log_error
+from zanzocam.webcam.system import System
+from zanzocam.webcam.overlays import Overlay
+from zanzocam.webcam.configuration import Configuration 
 
 
 class Camera:

@@ -8,12 +8,12 @@ import requests
 from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
-from constants import *
-from webcam.utils import log, log_error, log_row
-from webcam.configuration import Configuration
-from webcam.server.http_server import HttpServer
-from webcam.server.ftp_server import FtpServer
-from webcam.errors import ServerError
+from zanzocam.constants import *
+from zanzocam.webcam.utils import log, log_error, log_row
+from zanzocam.webcam.configuration import Configuration
+from zanzocam.webcam.server.http_server import HttpServer
+from zanzocam.webcam.server.ftp_server import FtpServer
+from zanzocam.webcam.errors import ServerError
 
 
 

@@ -9,10 +9,10 @@ import traceback
 from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
-from constants import *
-from webcam.errors import ServerError
-from webcam.utils import log, log_error, AllStringEncoder
-from webcam.configuration import Configuration
+from zanzocam.constants import *
+from zanzocam.webcam.errors import ServerError
+from zanzocam.webcam.utils import log, log_error, AllStringEncoder
+from zanzocam.webcam.configuration import Configuration
 
 
 class HttpServer:

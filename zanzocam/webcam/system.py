@@ -10,9 +10,9 @@ import subprocess
 from pathlib import Path
 from textwrap import dedent
 
-from constants import *
-from webcam.utils import log, log_error, log_row
-from webcam.configuration import Configuration
+from zanzocam.constants import *
+from zanzocam.webcam.utils import log, log_error, log_row
+from zanzocam.webcam.configuration import Configuration
 
 
 class System:

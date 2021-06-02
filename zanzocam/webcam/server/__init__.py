@@ -1,1 +1,1 @@
-from webcam.server.server import Server
+from zanzocam.webcam.server.server import Server

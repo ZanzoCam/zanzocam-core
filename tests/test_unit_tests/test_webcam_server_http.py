@@ -7,13 +7,13 @@ from freezegun import freeze_time
 from PIL import Image, ImageChops
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.errors import ServerError
-from webcam.server.server import Server
-from webcam.server.http_server import HttpServer
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.errors import ServerError
+from zanzocam.webcam.server.server import Server
+from zanzocam.webcam.server.http_server import HttpServer
 
-from conftest import MockCredentials, MockGetRequest, MockPostRequest
+from tests.conftest import MockCredentials, MockGetRequest, MockPostRequest
 
 
 

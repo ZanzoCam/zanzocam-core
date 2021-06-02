@@ -12,9 +12,9 @@ from collections import namedtuple
 from collections import defaultdict
 from pathlib import Path, PosixPath
 
-import webcam
-import constants
-from webcam.utils import log, log_error
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.utils import log, log_error
 
 
 

@@ -10,11 +10,11 @@ from unittest import mock
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.system import System
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.system import System
 
-from conftest import meminfo, in_logs
+from tests.conftest import meminfo, in_logs
 
 
 def test_get_last_reboot_time_success(fake_process, logs):

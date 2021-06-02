@@ -7,14 +7,13 @@ import datetime
 import subprocess
 from time import sleep
 
-import constants
-from constants import *
-from webcam.system import System
-from webcam.configuration import Configuration
-from webcam.server import Server
-from webcam.camera import Camera
-from webcam.errors import ServerError
-from webcam.utils import log, log_error, log_row
+from zanzocam.constants import *
+from zanzocam.webcam.system import System
+from zanzocam.webcam.configuration import Configuration
+from zanzocam.webcam.server import Server
+from zanzocam.webcam.camera import Camera
+from zanzocam.webcam.errors import ServerError
+from zanzocam.webcam.utils import log, log_error, log_row
 
 
 
@@ -30,7 +29,7 @@ def main():
         level=logging.INFO,
         format='%(message)s',
         handlers=[
-            logging.FileHandler(constants.CAMERA_LOG),
+            logging.FileHandler(CAMERA_LOG),
             logging.StreamHandler(sys.stdout),
         ]
     )

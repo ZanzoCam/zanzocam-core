@@ -9,10 +9,10 @@ from PIL import Image, ImageChops
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.camera import Camera
-from webcam.configuration import Configuration
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.camera import Camera
+from zanzocam.webcam.configuration import Configuration
 
 # Try to import PiCamera - unless you're running on a RPi, 
 # this won't work and a mock is loaded instead

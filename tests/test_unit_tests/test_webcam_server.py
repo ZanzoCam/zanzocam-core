@@ -6,13 +6,13 @@ from unittest.mock import Mock
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.utils import log
-from webcam.configuration import Configuration
-from webcam.server.server import Server
-from webcam.server.ftp_server import FtpServer
-from webcam.server.http_server import HttpServer
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.utils import log
+from zanzocam.webcam.configuration import Configuration
+from zanzocam.webcam.server.server import Server
+from zanzocam.webcam.server.ftp_server import FtpServer
+from zanzocam.webcam.server.http_server import HttpServer
 
 
 class MockServerImplementation:

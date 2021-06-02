@@ -6,11 +6,11 @@ from freezegun import freeze_time
 from PIL import Image, ImageChops
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.errors import ServerError
-from webcam.server.server import Server
-from webcam.server.ftp_server import FtpServer
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.errors import ServerError
+from zanzocam.webcam.server.server import Server
+from zanzocam.webcam.server.ftp_server import FtpServer
 
 
 

@@ -7,8 +7,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from constants import *
-from webcam.utils import log, log_error, AllStringEncoder
+from zanzocam.constants import *
+from zanzocam.webcam.utils import log, log_error, AllStringEncoder
 
 
 class Configuration:

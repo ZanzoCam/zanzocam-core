@@ -7,8 +7,8 @@ import textwrap
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
 
-from constants import *
-from webcam.utils import log, log_error
+from zanzocam.constants import *
+from zanzocam.webcam.utils import log, log_error
 
 
 

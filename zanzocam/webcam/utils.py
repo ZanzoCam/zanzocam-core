@@ -3,7 +3,6 @@ import json
 import logging
 import datetime
 import traceback
-import constants
 
 
 class AllStringEncoder(json.JSONEncoder):

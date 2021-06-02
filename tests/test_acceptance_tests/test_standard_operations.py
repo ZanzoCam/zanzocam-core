@@ -3,10 +3,10 @@ from PIL import Image
 from textwrap import dedent
 from freezegun import freeze_time
 
-import webcam
-import constants
-from webcam.main import main
-from conftest import in_logs
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.main import main
+from tests.conftest import in_logs
 
 # Try to import PiCamera - unless you're running on a RPi, 
 # this won't work and a mock is loaded instead

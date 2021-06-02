@@ -5,9 +5,9 @@ from textwrap import dedent
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
-import webcam
-import constants
-from webcam.configuration import Configuration
+import zanzocam.webcam as webcam
+import zanzocam.constants as constants
+from zanzocam.webcam.configuration import Configuration
 
 from tests.conftest import in_logs
 
