@@ -8,7 +8,7 @@ with (Path(__file__).parent.absolute() / 'README.md').open('rt') as fh:
 with (Path(__file__).parent.absolute() / 'zanzocam' / 'constants.py').open('r') as cs:
     for line in cs.readlines():
         if line.startswith("VERSION"):
-            VERSION = line.replace("VERSION", "").replace("=", "").replace('"', "").replace(" ", "")
+            VERSION = line.replace("VERSION", "").replace("=", "").replace('"', "").replace(" ", "").replace("\n", "")
             break
 
 setup(
