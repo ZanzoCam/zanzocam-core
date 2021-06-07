@@ -1,8 +1,0 @@
-picamera
-
-Pillow
-requests
-piexif
-
-uwsgi
-Flask
