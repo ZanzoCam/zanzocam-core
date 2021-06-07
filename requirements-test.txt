@@ -1,8 +1,0 @@
-Pillow
-requests
-piexif
-
-pytest
-pytest-coverage
-pytest-subprocess
-freezegun
