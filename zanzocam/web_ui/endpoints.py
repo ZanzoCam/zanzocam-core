@@ -4,7 +4,7 @@ from time import sleep
 from pathlib import Path
 from flask import Flask, Response, render_template, redirect, url_for, abort, request
 
-import zanzocam.constants
+import zanzocam.constants as constants
 from zanzocam.web_ui import pages, api, utils
 
 
