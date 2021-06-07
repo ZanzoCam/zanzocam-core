@@ -11,18 +11,20 @@ with (Path(__file__).parent.absolute() / 'zanzocam' / 'constants.py').open('r') 
             VERSION = line.replace("VERSION", "").replace("=", "").replace('"', "").replace(" ", "").replace("\n", "")
             break
 REQUIREMENTS: dict = {
-    'webcam': [
+    'deploy': [
         "picamera",
         "Pillow",
         "requests",
         "piexif",  # Carry over and edit EXIF information
-    ],
-    'web-ui': [
-        "picamera",
+
         "uwsgi",
         "Flask"
     ],
     'test': [
+        'Pillow',
+        'requests',
+        'piexif',
+        
         'pytest',
         'pytest-coverage',
         'pytest-subprocess',
@@ -51,7 +53,6 @@ setup(
     install_requires=[],
     extras_require={
         **REQUIREMENTS,
-        'deploy': [req for reqs in [REQUIREMENTS['webcam'], REQUIREMENTS['web-ui']] for req in reqs],
         'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
     },
     entry_points={
