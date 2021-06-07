@@ -30,8 +30,8 @@ setup(
     install_requires=[],
     entry_points={
         'console_scripts': [
-            'z-webcam=webcam.main:main',
-            'z-ui=web_ui.endpoints:main',
+            'z-webcam=zanzocam.webcam.main:main',
+            'z-ui=zanzocam.web_ui.endpoints:main',
         ],
     },
 )
