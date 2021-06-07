@@ -41,6 +41,7 @@ setup(
     url='https://zanzocam.github.io/',
 
     packages=find_packages(),
+    include_package_data=True,
     python_requires='>=3.6, <4',
     classifiers=[
         "Programming Language :: Python :: 3",
