@@ -1,0 +1,2 @@
+recursive-include zanzocam/data *.*
+recursive-include zanzocam/web_ui *.*
