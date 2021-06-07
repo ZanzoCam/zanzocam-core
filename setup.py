@@ -10,6 +10,25 @@ with (Path(__file__).parent.absolute() / 'zanzocam' / 'constants.py').open('r') 
         if line.startswith("VERSION"):
             VERSION = line.replace("VERSION", "").replace("=", "").replace('"', "").replace(" ", "").replace("\n", "")
             break
+REQUIREMENTS: dict = {
+    'webcam': [
+        "picamera",
+        "Pillow",
+        "requests",
+        "piexif",  # Carry over and edit EXIF information
+    ],
+    'web-ui': [
+        "picamera",
+        "uwsgi",
+        "Flask"
+    ],
+    'test': [
+        'pytest',
+        'pytest-coverage',
+        'pytest-subprocess',
+        'freezegun',  # Mock datetime objects
+    ]
+}
 
 setup(
     name='zanzocam',
@@ -28,6 +47,11 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[],
+    extras_require={
+        **REQUIREMENTS,
+        'deploy': [req for reqs in [REQUIREMENTS['webcam'], REQUIREMENTS['web-ui']] for req in reqs],
+        'all': [req for reqs in REQUIREMENTS.values() for req in reqs],
+    },
     entry_points={
         'console_scripts': [
             'z-webcam=zanzocam.webcam.main:main',
