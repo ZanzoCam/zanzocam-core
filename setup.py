@@ -46,6 +46,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
+    setup_requires=['wheel'],
     install_requires=[],
     extras_require={
         **REQUIREMENTS,
