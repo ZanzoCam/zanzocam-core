@@ -119,10 +119,6 @@ class Overlay:
             font = ImageFont.truetype(FONT_PATH, font_size)
             line_height = font.getsize("a")[1] * 1.5
 
-            # Calculate the padding as a percentage of the line height
-            padding_ratio = self.padding_ratio
-            padding = math.ceil(line_height*padding_ratio)
-
             # Replace %%TIME and %%DATE with respective values
             time_string = datetime.datetime.now().strftime(self.time_format)
             date_string = datetime.datetime.now().strftime(self.date_format)
@@ -131,7 +127,7 @@ class Overlay:
 
             # Calculate the dimension of the text with the padding added
             text_width, text_height = self.process_text(font, photo_width)
-            text_size = (text_width + padding*2, text_height + padding*2)
+            text_size = (text_width + self.padding*2, text_height + self.padding*2)
 
             # Some very popular browsers use \r\n to save newlines from 
             # textareas: normalize
@@ -140,7 +136,8 @@ class Overlay:
             # Creates the image
             label = Image.new("RGBA", text_size, color=self.background_color)
             draw = ImageDraw.Draw(label)
-            draw.text((padding, padding, padding), self.text, self.font_color, font=font)
+            draw.text((self.padding, self.padding, self.padding), 
+                      self.text, self.font_color, font=font)
 
             # Store it
             return label
@@ -206,12 +203,9 @@ class Overlay:
             if self.width and self.height:
                 image = image.resize((self.width, self.height))
 
-            padding_width = math.ceil(image.width*self.padding_ratio)
-            padding_height = math.ceil(image.height*self.padding_ratio)
-
-            overlay_size = (image.width+padding_width*2, image.height+padding_height*2)
+            overlay_size = (image.width+self.padding*2, image.height+self.padding*2)
             overlay = Image.new("RGBA", overlay_size, color=self.background_color)
-            overlay.paste(image, (padding_width, padding_height), mask=image)
+            overlay.paste(image, (self.padding, self.padding), mask=image)
 
             return overlay
             

@@ -12,17 +12,27 @@ from collections import namedtuple
 from collections import defaultdict
 from pathlib import Path, PosixPath
 
-import zanzocam.webcam as webcam
-import zanzocam.constants as constants
+from zanzocam import constants
+from zanzocam.webcam import main, system, server, camera, overlays, configuration, utils
 from zanzocam.webcam.utils import log, log_error
 
 
-
-def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
+@pytest.fixture(autouse=True)
+def point_to_tmpdir(monkeypatch, tmpdir):
     """
         Mocks all the calues in constants.py to point to the 
         pytest temp directory.
     """
+    modules = [
+        main,
+        system,
+        server.server,
+        server.http_server,
+        server.ftp_server,
+        camera,
+        overlays,
+        configuration
+    ]
     os.mkdir(tmpdir / "data")
     os.mkdir(tmpdir / "web_ui")
     os.mkdir(tmpdir / "data" / "overlays")
@@ -42,6 +52,33 @@ def point_const_to_tmpdir(modules, monkeypatch, tmpdir):
             monkeypatch.setattr(constants, const, new_value)
             for module in modules:
                 monkeypatch.setattr(module, const, new_value)
+
+    system.CRONJOB_FILE = tmpdir / "zanzocam"
+
+
+@pytest.fixture()
+def mock_modules(monkeypatch, tmpdir):
+    """
+        Used in tests of main.py to mock all submodules
+    """
+    monkeypatch.setattr(main, 'System', MockSystem)
+    monkeypatch.setattr(main, 'Server', MockServer)    
+    monkeypatch.setattr(main, 'Camera', MockCamera)
+    monkeypatch.setattr(main, 'Configuration', MockConfig)
+    monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
+
+
+@pytest.fixture()
+def mock_modules_apart_config(monkeypatch):
+    """
+        Used in tests of main.py to mock all submodules,
+        apart from Configuration, which is very simple and
+        deeply used
+    """
+    monkeypatch.setattr(main, 'System', MockSystem)
+    monkeypatch.setattr(main, 'Server', MockServer)    
+    monkeypatch.setattr(main, 'Camera', MockCamera)
+    monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
 
 
 class MockSystem:
@@ -82,7 +119,7 @@ class MockServer:
         log("[TEST] uploading picture - mocked")
 
     def update_configuration(self, *a, **k):
-        return webcam.configuration.Configuration.create_from_dictionary({
+        return configuration.Configuration.create_from_dictionary({
             "server": {"new-test-config": "present"}
         })
 
@@ -90,7 +127,7 @@ class MockServer:
 class MockCamera:
     def __init__(self, config, *a, **k):
         log("[TEST] init Camera - mocked")
-        if isinstance(config, webcam.configuration.Configuration):
+        if isinstance(config, configuration.Configuration):
             self.fail = bool(getattr(config, 'camera_will_fail', False))
 
     def __getattr__(self, *a, **k):
@@ -115,47 +152,6 @@ class MockConfig:
     
     def __str__(self):
         return json.dumps(vars(self), indent=4, default=lambda x: str(x))
-
-
-@pytest.fixture(autouse=True)
-def point_to_tmpdir(monkeypatch, tmpdir):
-    modules = [
-        webcam.main,
-        webcam.system,
-        webcam.server.server,
-        webcam.server.http_server,
-        webcam.server.ftp_server,
-        webcam.camera,
-        webcam.overlays,
-        webcam.configuration
-    ]
-    point_const_to_tmpdir(modules, monkeypatch, tmpdir)
-    webcam.system.CRONJOB_FILE = tmpdir / "zanzocam"
-
-
-@pytest.fixture()
-def mock_modules(monkeypatch, tmpdir):
-    """
-        Used in tests of main.py to mock all submodules
-    """
-    monkeypatch.setattr(webcam.main, 'System', MockSystem)
-    monkeypatch.setattr(webcam.main, 'Server', MockServer)    
-    monkeypatch.setattr(webcam.main, 'Camera', MockCamera)
-    monkeypatch.setattr(webcam.main, 'Configuration', MockConfig)
-    monkeypatch.setattr(webcam.main, 'WAIT_AFTER_CAMERA_FAIL', 1)
-
-
-@pytest.fixture()
-def mock_modules_apart_config(monkeypatch):
-    """
-        Used in tests of main.py to mock all submodules,
-        apart from Configuration, which is very simple and
-        deeply used
-    """
-    monkeypatch.setattr(webcam.main, 'System', MockSystem)
-    monkeypatch.setattr(webcam.main, 'Server', MockServer)    
-    monkeypatch.setattr(webcam.main, 'Camera', MockCamera)
-    monkeypatch.setattr(webcam.main, 'WAIT_AFTER_CAMERA_FAIL', 1)
 
 
 class MockFTP:
@@ -198,9 +194,12 @@ class MockFTP:
 
 @pytest.fixture(autouse=True)
 def mock_ftplib(monkeypatch):
-    monkeypatch.setattr(webcam.server.ftp_server, "FTP", MockFTP)
-    monkeypatch.setattr(webcam.server.ftp_server, "FTP_TLS", MockFTP)
-    monkeypatch.setattr(webcam.server.ftp_server, "_Patched_FTP_TLS", MockFTP)
+    try:
+        monkeypatch.setattr(server.ftp_server, "FTP", MockFTP)
+        monkeypatch.setattr(server.ftp_server, "FTP_TLS", MockFTP)
+        monkeypatch.setattr(server.ftp_server, "_Patched_FTP_TLS", MockFTP)
+    except Exception:
+        print(f"Failed to apply ftplib monkeypatch")
 
 
 class MockCredentials:
@@ -224,10 +223,10 @@ class MockPostRequest:
 
     def __init__(self, data=None, image=None, response=None, status=200, tmpdir=None):
         if data:
-            webcam.utils.log(f"[TEST] POSTing: {data}")
+            utils.log(f"[TEST] POSTing: {data}")
 
         if image and tmpdir:
-            webcam.utils.log(f"[TEST] POSTing an image")
+            utils.log(f"[TEST] POSTing an image")
             with open(tmpdir / "received_image.jpg", "wb") as received:
                 received.write(image['photo'].read())
 
@@ -249,10 +248,7 @@ class MockPostRequest:
 
 @pytest.fixture(autouse=True)
 def mock_requests(monkeypatch):
-    monkeypatch.setattr(webcam.server.http_server.requests.auth,
-                        'HTTPBasicAuth',
-                        lambda u, p: MockCredentials(u, p))
-
+    
     def default_get_behavior(url, auth=None, timeout=None, *a, **k):
         
         # If you're asking for the config file, download it
@@ -260,8 +256,7 @@ def mock_requests(monkeypatch):
             return MockGetRequest(data=
                 '{"configuration": \n' +
                 open(constants.CONFIGURATION_FILE, 'r').read() +
-                '\n}'
-            )
+                '\n}')
         
         # Else, download an overlay
         else:
@@ -269,11 +264,18 @@ def mock_requests(monkeypatch):
             image.save(str(constants.BASE_PATH /'test.png'))
             return MockGetRequest(file_stream=open(constants.BASE_PATH/'test.png', 'rb'))
     
-    monkeypatch.setattr(webcam.server.http_server.requests, 
-                        'get', default_get_behavior)
+    try:
+        monkeypatch.setattr(server.http_server.requests.auth,
+                            'HTTPBasicAuth',
+                            lambda u, p: MockCredentials(u, p))
 
-    monkeypatch.setattr(webcam.server.http_server.requests,
-                        'post', lambda *a, **k: MockPostRequest())
+        monkeypatch.setattr(server.http_server.requests, 
+                            'get', default_get_behavior)
+
+        monkeypatch.setattr(server.http_server.requests,
+                            'post', lambda *a, **k: MockPostRequest())
+    except Exception:
+        print(f"Failed to apply requests monkeypatch")
 
 
 MockResolution = namedtuple('PiResolution', 'width height')
@@ -312,7 +314,7 @@ def mock_piexif(monkeypatch):
         there somehow, so the workaround is copying it from
         a real picture, exif-source.jpg
     """
-    original_image_save = webcam.camera.Image.Image.save
+    original_image_save = camera.Image.Image.save
 
     def altered_image_save(self, *a, **k):
         if "exif" in k.keys():
@@ -323,24 +325,24 @@ def mock_piexif(monkeypatch):
         original_image_save(self, *a, **k, exif=exif)
 
     monkeypatch.setattr(
-        webcam.camera.Image.Image,
+        camera.Image.Image,
         "save",
         altered_image_save
     )
 
     monkeypatch.setattr(
-        webcam.camera.piexif,
+        camera.piexif,
         'load',
         lambda *a, **k: defaultdict(lambda: defaultdict(lambda: ""))
     )
     monkeypatch.setattr(
-        webcam.camera.piexif,
+        camera.piexif,
         'dump',
         lambda *a, **k: None
     )
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'Make', None)
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'Software', None)
-    monkeypatch.setattr(webcam.camera.piexif.ImageIFD, 'ProcessingSoftware', None)
+    monkeypatch.setattr(camera.piexif.ImageIFD, 'Make', None)
+    monkeypatch.setattr(camera.piexif.ImageIFD, 'Software', None)
+    monkeypatch.setattr(camera.piexif.ImageIFD, 'ProcessingSoftware', None)
 
 
 @pytest.fixture

@@ -13,7 +13,8 @@ from zanzocam.webcam.errors import ServerError
 from zanzocam.webcam.server.server import Server
 from zanzocam.webcam.server.http_server import HttpServer
 
-from tests.conftest import MockCredentials, MockGetRequest, MockPostRequest
+import tests.conftest
+from tests.conftest import MockGetRequest, MockPostRequest
 
 
 
@@ -42,7 +43,7 @@ def test_create_httpserver_url_and_credentials(logs):
     server = HttpServer({'url': 'test', 'username': 'me', 'password': 'pwd'})
     assert len(logs) == 0
     assert 'credentials' in vars(server).keys()
-    assert isinstance(server.credentials, MockCredentials)
+    assert server.credentials is not None
 
 
 def test_download_new_configuration_succeed(monkeypatch, logs):

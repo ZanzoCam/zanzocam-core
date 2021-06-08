@@ -581,7 +581,7 @@ def test_process_picture_overlay_into_picture(tmpdir, logs):
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
-    image = Image.new("RGB", (10, 10), color="#000000")
+    image = Image.new("RGB", (1000, 1000), color="#000000")
     image.save(str(camera.temp_photo_path))
 
     overlay_image = Image.new("RGBA", (5, 5), color="#FFFFFF99")
@@ -605,8 +605,9 @@ def test_process_text_overlay_into_picture(tmpdir, logs):
     camera = Camera({'image': {}, 'overlays': {
         'top_right': {
             'type': 'text',
-            'text': "Hello",
+            'text': '.',
             'over_the_picture': True,
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -630,8 +631,9 @@ def test_process_text_overlay_out_of_picture(tmpdir, logs):
     camera = Camera({'image': {}, 'overlays': {
         'top_right': {
             'type': 'text',
-            'text': "Hello",
+            'text': '.',
             'over_the_picture': False,
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -684,7 +686,7 @@ def test_process_picture_overlay_missing_file(tmpdir, logs):
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
-    image = Image.new("RGB", (10, 10), color="#000000")
+    image = Image.new("RGB", (1000, 1000), color="#000000")
     image.save(str(camera.temp_photo_path))
 
     camera._process_picture()
@@ -706,13 +708,13 @@ def test_process_picture_overlay_out_of_picture_both_above(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay1.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         },
         'top_center': {
             'type': 'image',
             'path': tmpdir / 'overlay2.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -746,13 +748,13 @@ def test_process_picture_overlay_out_of_picture_above_and_below(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay1.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         },
         'bottom_center': {
             'type': 'image',
             'path': tmpdir / 'overlay2.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -786,7 +788,7 @@ def test_process_picture_overlay_negative_margin_on_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': True,
-            'padding_ratio': -0.2
+            'padding': -2
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -817,7 +819,7 @@ def test_process_picture_overlay_negative_margin_out_of_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
-            'padding_ratio': -0.2
+            'padding': -2
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -839,7 +841,7 @@ def test_process_picture_overlay_negative_margin_out_of_picture(tmpdir, logs):
     proc_img = Image.open(str(camera.processed_image_path))
     assert ImageChops.difference(temp_img, proc_img).getbbox()
     assert temp_img.width == proc_img.width
-    assert temp_img.height + 3 == proc_img.height
+    assert temp_img.height + 3 - 2 == proc_img.height
 
 
 def test_process_picture_overlay_negative_position_on_picture(monkeypatch, tmpdir, logs):
@@ -848,7 +850,7 @@ def test_process_picture_overlay_negative_position_on_picture(monkeypatch, tmpdi
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': True,
-            'padding_ratio': -0.2
+            'padding': -2
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -858,18 +860,10 @@ def test_process_picture_overlay_negative_position_on_picture(monkeypatch, tmpdi
     overlay_image = Image.new("RGBA", (5, 5), color="#FFFFFF99")
     overlay_image.save(str(tmpdir / 'overlay.png'))
 
-    monkeypatch.setattr(webcam.camera.Overlay,
-                        "compute_position",
-                        lambda *a, **k: (-2, -2))
-
     camera._process_picture()
 
-    assert len(logs) == 3
+    assert len(logs) == 1
     assert "Creating overlay" in logs[0]
-    assert "This overlay exceeds the margin of the image itself " \
-           "on the left" in logs[1]
-    assert "This overlay exceeds the margin of the image itself " \
-           "at the top" in logs[2]
     assert os.path.exists(camera.temp_photo_path)    
     assert os.path.exists(camera.processed_image_path)
     temp_img = Image.open(str(camera.temp_photo_path))
@@ -885,7 +879,7 @@ def test_process_picture_overlay_negative_position_out_of_picture(monkeypatch, t
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
-            'padding_ratio': -0.2
+            'padding': -2
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -895,25 +889,17 @@ def test_process_picture_overlay_negative_position_out_of_picture(monkeypatch, t
     overlay_image = Image.new("RGBA", (5, 5), color="#FFFFFF99")
     overlay_image.save(str(tmpdir / 'overlay.png'))
 
-    monkeypatch.setattr(webcam.camera.Overlay,
-                        "compute_position",
-                        lambda *a, **k: (-2, -2))
-
     camera._process_picture()
 
-    assert len(logs) == 3
+    assert len(logs) == 1
     assert "Creating overlay" in logs[0]
-    assert "This overlay exceeds the margin of the image itself " \
-           "on the left" in logs[1]
-    assert "This overlay exceeds the margin of the image itself " \
-           "at the top" in logs[2]
     assert os.path.exists(camera.temp_photo_path)    
     assert os.path.exists(camera.processed_image_path)
     temp_img = Image.open(str(camera.temp_photo_path))
     proc_img = Image.open(str(camera.processed_image_path))
     assert ImageChops.difference(temp_img, proc_img).getbbox()
     assert temp_img.width == proc_img.width
-    assert temp_img.height + 3 == proc_img.height
+    assert temp_img.height + 3 - 2 == proc_img.height
 
 
 def test_process_picture_overlay_too_wide_on_picture(tmpdir, logs):
@@ -922,7 +908,7 @@ def test_process_picture_overlay_too_wide_on_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': True,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -953,7 +939,7 @@ def test_process_picture_overlay_too_wide_out_of_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -984,7 +970,7 @@ def test_process_picture_overlay_too_tall_on_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': True,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -1015,7 +1001,7 @@ def test_process_picture_overlay_very_tall_out_of_picture(tmpdir, logs):
             'type': 'image',
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
-            'padding_ratio': 0
+            'padding': 0
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -1045,7 +1031,7 @@ def test_process_picture_overlay_specify_only_width(tmpdir, logs):
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
             'width': 2,
-            'padding_ratio': 0,
+            'padding': 0,
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
@@ -1075,7 +1061,7 @@ def test_process_picture_overlay_specify_only_height(tmpdir, logs):
             'path': tmpdir / 'overlay.png',
             'over_the_picture': False,
             'height': 2,
-            'padding_ratio': 0,
+            'padding': 0,
         }
     }})
     camera.temp_photo_path = tmpdir / "temp_photo.jpg"
