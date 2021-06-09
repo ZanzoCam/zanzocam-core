@@ -12,7 +12,6 @@ jobs:
  
   build_docs:
     runs-on: ubuntu-latest
-    container: debian:buster-slim
  
     steps:
     - name: Prerequisites
