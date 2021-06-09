@@ -24,7 +24,7 @@ jobs:
       - name: Run unit tests
         run: pytest tests/test_unit_tests/
 
-      - ame: Upload coverage data to coveralls.io
+      - name: Upload coverage data to coveralls.io
         run: coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
