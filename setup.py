@@ -20,7 +20,8 @@ REQUIREMENTS: dict = {
         "uwsgi",
         "Flask"
     ],
-    'test': [
+    'test-on-rpi': [
+        "picamera",
         'Pillow',
         'requests',
         'piexif',
@@ -29,6 +30,17 @@ REQUIREMENTS: dict = {
         'pytest-coverage',
         'pytest-subprocess',
         'freezegun',  # Mock datetime objects
+    ],
+    'ci': [
+        'Pillow',
+        'requests',
+        'piexif',
+        
+        'pytest',
+        'pytest-coverage',
+        'pytest-subprocess',
+        'freezegun',  # Mock datetime objects
+        'coveralls',  # To publish the coverage data on coveralls
     ]
 }
 
