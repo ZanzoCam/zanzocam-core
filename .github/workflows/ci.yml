@@ -30,6 +30,6 @@ jobs:
       - name: Coveralls.io
         run: coveralls
         env:
-          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
           COVERALLS_SERVICE_NAME: 'github'
