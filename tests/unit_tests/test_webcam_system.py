@@ -401,22 +401,12 @@ def test_report_general_status(monkeypatch):
     assert "RAM status" in status.keys()
 
 
-def test_copy_system_file_success(fake_process, tmpdir, logs):
+def test_copy_system_file_success(tmpdir, logs):
     """
         Copy a system file under normal conditions
     """
     pathfrom = tmpdir / "from"
     pathto = tmpdir / "to"
-
-    def fake_copy(process):
-        shutil.copy(process.args[2], process.args[3])
-        process.returncode = 0
-        print(vars(process))
-
-    fake_process.register_subprocess(
-        ['/usr/bin/sudo', 'cp', str(pathfrom), str(pathto)],
-        callback=fake_copy, returncode=0
-    )
     with open(pathfrom, 'w'):
         pass
     System.copy_system_file(pathfrom, pathto)
@@ -425,18 +415,12 @@ def test_copy_system_file_success(fake_process, tmpdir, logs):
     assert len(logs) == 0
 
 
-def test_copy_system_file_exception(fake_process, tmpdir, logs):
+def test_copy_system_file_exception(tmpdir, logs):
     """
         Copy a system file, behavior under exception
     """
     pathfrom = tmpdir / "from"
     pathto = tmpdir / "to"
-    fake_process.register_subprocess(
-        ['/usr/bin/sudo', 'cp', pathfrom, pathto],
-        stdin_callable=lambda fro, to: subprocess.run(
-                ["/usr/bin/cp", str(fro), str(to)], 
-                stdout=subprocess.PIPE)
-    )
     with pytest.raises(RuntimeError):
         System.copy_system_file(pathfrom, pathto)
     assert not os.path.exists(pathto)
