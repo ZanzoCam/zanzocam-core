@@ -23,7 +23,7 @@ jobs:
         apt-get install -y git
         git clone "https://token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
         
-        sudo apt-get install language-pack-it wireless-tools
+        apt-get install language-pack-it wireless-tools
         pip install Pillow requests piexif sphinx sphinx-rtd-theme
         pip install --no-deps -e .
       shell: bash
