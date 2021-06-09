@@ -27,10 +27,8 @@ jobs:
       - name: Coveralls
         uses: AndreMiras/coveralls-python-action@develop
         with:
-          github-token: 'KOoJbBhdkouoldFwfCRBnFfCMomclKvU5'
           parallel: true
-          flag-name: Unit Test
-          base-path: '.'
+          flag-name: Test Coverage
 
   coveralls_finish:
     needs: test
