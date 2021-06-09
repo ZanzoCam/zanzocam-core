@@ -25,12 +25,13 @@ jobs:
           pip install --no-deps -e .
 
       - name: Unit tests
-        run: coverage run --source=zanzocam -m pytest tests/unit_tests/
+        run: coverage run --source=zanzocam/webcam -m pytest tests/unit_tests/
 
       - name: Coveralls.io
-        run: coveralls
+        run: |
+          coveralls
+          coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
           COVERALLS_PARALLEL: true
           COVERALLS_SERVICE_NAME: 'github'
