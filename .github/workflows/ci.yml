@@ -28,7 +28,9 @@ jobs:
         run: coverage run --source=zanzocam/webcam -m pytest tests/unit_tests/
 
       - name: Coveralls.io
-        run: coveralls
+        run: |
+          coveralls
+          coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
