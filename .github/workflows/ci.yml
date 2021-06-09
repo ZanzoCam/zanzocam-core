@@ -19,11 +19,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install language-pack-it wireless-tools
-          pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun
+          pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun coveralls
           pip install --no-deps -e .
       - name: Run unit tests
         run: pytest tests/test_unit_tests/
-
       - name: Upload coverage data to coveralls.io
         run: coveralls
         env:
