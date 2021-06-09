@@ -2,104 +2,138 @@ import sys
 from pathlib import Path
 
 
+#: ZanzoCam version
 VERSION = "0.10.2"
 
 
-#
-# Paths & local URLs
-#
-
 # Executables constants
+# #####################
+
+
+#: Main user of the system, must be able to perform a passwordless sudo
 SYSTEM_USER = "zanzocam-bot"
+
+#: Location of the z-webcam executable
 ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
 
+
 # Base paths
+# ##########
+
+#: Folder containing the source code
 BASE_PATH = Path(__file__).parent
+
+#: Folder containing the data used by the ZanzoCam for its operations
 DATA_PATH = BASE_PATH / "data" 
 
+
 # Log files
+# #########
+
+#: Logs of the local server (stay on disk and get rotated)
 SERVER_LOG = DATA_PATH / 'interface.log'
+
+#: Logs produced during the main procedure (will be sent to the server)
 CAMERA_LOG = DATA_PATH / 'camera.log'
-DIAGNOSTICS_LOG = DATA_PATH / 'diagnostics.log'
+
+#: Logs produced in case of issues with the server
 FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 
-# Configuration file
+#: Main configuration file
 CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 
-# Setup related files
+#: Information about the Internet connection
 NETWORK_DATA = DATA_PATH / "network_data.json"
+
+#: (probably unused, TO CHECK)
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
+
+#: (probably unused, TO CHECK)
 HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 
-# Flags (single value files)
+#: Whether the hotspot is allowed
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
 
-# Image paths (they have to be served out, so they go in the statics)
+#: URL to the preview picture in the web UI
 PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
+
+#: Path to the preview picture in the web UI
 PREVIEW_PICTURE = BASE_PATH / "web_ui" / PREVIEW_PICTURE_URL
 
-# Camera overlays
+#: Local camera overlays path
 IMAGE_OVERLAYS_PATH = DATA_PATH / "overlays"
+
+#: Remote camera overlays path
 REMOTE_IMAGES_PATH = "configuration/overlays/"
 
 
-#
 # Constants & defaults
-#
+# ####################
 
+#: Locale
 LOCALE = 'it_IT.utf8'
+
+#: Path to the default font (can be customized if you install another font)
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+#: Time to wait in between failed shots of the camera (to overcome colliding crontabs)
 WAIT_AFTER_CAMERA_FAIL = 30
 
-# Cronjob constants
+#: Temporary crontab path
 TEMP_CRONJOB = DATA_PATH / ".tmp-cronjob-file"
+
+#: Path to the crontab's backup
 BACKUP_CRONJOB = DATA_PATH / ".crontab.bak"
+
+#: Path to the system crontab
 CRONJOB_FILE = "/etc/cron.d/zanzocam"
 
-# System constants
+#: Timeout for HTTP requests
 REQUEST_TIMEOUT = 60
+
+#: URL to check to ensure Internet is reachable
 CHECK_UPLINK_URL = "http://www.google.com"
+
+#: Path to the autohotspot script
 AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
 
-# Server constants
+#: Ecoding of the FTP server files
 FTP_CONFIG_FILE_ENCODING = 'utf-8'
 
 
+# Camera constants
+# ################
 
-#
-#  Camera constants
-#
-
-# Minimum luminance for the daytime. 
-# If the detected luminance goes below this value, the night mode kicks in.
+#: Minimum luminance for the daytime. 
+#:  If the detected luminance goes below this value, the night mode kicks in.
 MINIMUM_DAYLIGHT_LUMINANCE = 60
 
-# Minimum luminance to target for pictures in low light conditions.
+#: Minimum luminance to target for pictures in low light conditions.
 MINIMUM_NIGHT_LUMINANCE = 30
 
-# Starting ISO level for low light pictures
+#: Starting ISO level for low light pictures
 INITIAL_LOW_LIGHT_ISO = 400  
 
-# When to consider the image totally black, where the low light estimation doesn't work well
+#: When to consider the image totally black, where the low light estimation doesn't work well
 NO_LUMINANCE_THRESHOLD = 1  
 
-# What "random" shutter speed to use if the image is so black that the equation doesn't work
+#: What "random" shutter speed to use if the image is so black that the equation doesn't work
 NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6 
 
-# Min shutter speed for low light, the max that PiCamera would use with automatic settings
+#: Min shutter speed for low light, the max that PiCamera would use with automatic settings
 MIN_SHUTTER_SPEED = int(0.03 * 10**6)
 
-# Max shutter speed allowed by the camera hardware 
+#: Max shutter speed allowed by the camera hardware 
 MAX_SHUTTER_SPEED = int(9.5 * 10**6)
 
-# How much tolerance to give to the low light search algorithm
+#: How much tolerance to give to the low light search algorithm
 TARGET_LUMINOSITY_MARGIN = 3
 
-# Time to allow the firmware to compute the right exposure in normal 
-# light conditions (AWB requires more)
+#: Time to allow the firmware to compute the right exposure in normal 
+#:  light conditions (AWB requires more)
 CAMERA_WARM_UP_TIME = 5
 
-# White balancin modes from picamera
+#: White balancing modes from picamera
 PICAMERA_AWB_MODES = [
     'off',
     'auto',
@@ -113,7 +147,7 @@ PICAMERA_AWB_MODES = [
     'horizon',
 ]
 
-# Fallback values for the camera configuration
+#: Fallback values for the camera configuration
 CAMERA_DEFAULTS = {
     "name": "no-name",
     "extension": "jpg",
@@ -135,6 +169,7 @@ CAMERA_DEFAULTS = {
     'let_awb_settle_in_dark': False,
 }
 
+#: Fallback values for the image overlays
 OVERLAY_DEFAULTS = {
     "font_size": 30,
     "padding": 50,

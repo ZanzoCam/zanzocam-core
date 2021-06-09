@@ -41,6 +41,10 @@ REQUIREMENTS: dict = {
         'pytest-subprocess',
         'freezegun',  # Mock datetime objects
         'coveralls',  # To publish the coverage data on coveralls
+    ],
+    'docs': [
+        'sphinx',
+        'sphinx-rtd-theme',
     ]
 }
 

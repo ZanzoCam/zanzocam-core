@@ -1,9 +1,11 @@
+
 **/*.zip
 **/*.img
 **/wpa_supplicant.conf
 zanzocam/web_ui/static/previews/*
 zanzocam/data/*
-!zanzocam/data/overlays/fallback-pixel.png
+
+**/build/*.*
 
 
 # Byte-compiled / optimized / DLL files
