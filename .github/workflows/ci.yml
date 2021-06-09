@@ -25,7 +25,7 @@ jobs:
           pip install --no-deps -e .
 
       - name: Unit tests
-        run: coverage run --source=zanzocam -m pytest tests/unit_tests/
+        run: coverage run --source=zanzocam/webcam -m pytest tests/unit_tests/
 
       - name: Coveralls.io
         run: coveralls
