@@ -27,5 +27,5 @@ jobs:
     - name: Build the docs and update pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: "docs/build_docs.sh"
+      run: ".github/workflows/build_docs.sh"
       shell: bash
