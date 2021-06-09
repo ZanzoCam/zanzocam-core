@@ -24,11 +24,12 @@ jobs:
       - name: Run unit tests
         run: pytest tests/test_unit_tests/
 
-      - name: Coveralls
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel: true
-          flag-name: Test Coverage
+      - ame: Upload coverage data to coveralls.io
+        run: coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
+          COVERALLS_PARALLEL: true
 
   coveralls_finish:
     needs: test
