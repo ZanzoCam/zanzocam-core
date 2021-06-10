@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 #: ZanzoCam version
-VERSION = "0.10.2"
+VERSION = "1.0.0"
 
 
 # Executables constants
