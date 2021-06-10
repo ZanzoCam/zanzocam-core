@@ -5,13 +5,13 @@ Internal documentation for ``zanzocam-core``.
 
 Better documentation coming soon.
 
+..
+      Indices and tables
+      ------------------
 
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+      * :ref:`genindex`
+      * :ref:`modindex`
+      * :ref:`search`
 
 
 --------------------
