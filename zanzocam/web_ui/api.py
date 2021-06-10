@@ -126,66 +126,10 @@ def toggle_hotspot(value: str) -> int:
     abort(404)
     
 
-def toggle_ui(value: str) -> int:
-    """ 
-    Activate/deactivate the web ui
-    """
-    value = value.upper().strip()
-    if value == "NO":
-        disable_ui = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "disable",
-            "zanzocam-web-ui.service"
-        ])
-        stop_ui = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "stop",
-            "zanzocam-web-ui.service"
-        ])
-        disable_nginx = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "disable",
-            "nginx.service"
-        ])
-        stop_nginx = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "stop",
-            "nginx.service"
-        ])
-    if value == "YES":
-        # I assume both nginx and zanzocam-web-ui are running already
-        # if we could reach this point at all, but let's
-        # enable them just to be sure
-        enable_ui = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "enable",
-            "zanzocam-web-ui.service"
-        ])
-        enable_nginx = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "systemctl",
-            "enable",
-            "nginx.service"
-        ])
-    abort(404)
-
-
 def get_logs(kind: str, name: str):
     """ 
     Endpoint for fetching the latest logs 
     """
-
     # Figure out which log has been requested
     if name == "hotspot":
         logs_path = HOTSPOT_LOGS

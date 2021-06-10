@@ -86,11 +86,6 @@ def toggle_hotspot_endpoint(value):
     return api.toggle_hotspot(value)
 
 
-@app.route("/configure/ui/<value>", methods=["POST"])
-def toggle_ui_endpoint(value):
-    return api.toggle_ui(value)
-
-
 #
 # API to take actions
 #
