@@ -1,6 +1,58 @@
-# ZanzoCam
+# ZanzoCam - Python module
 
 [![CodeQL](https://github.com/ZanSara/zanzocam/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/ZanSara/zanzocam/actions/workflows/codeql-analysis.yml)   [![Unit Tests](https://github.com/ZanSara/zanzocam/actions/workflows/ci.yml/badge.svg)](https://github.com/ZanSara/zanzocam/actions/workflows/ci.yml) [![Coverage Status](https://coveralls.io/repos/github/ZanzoCam/zanzocam-core/badge.svg)](https://coveralls.io/github/ZanzoCam/zanzocam-core)
 
+Python module of ZanzoCam, a remote camera for autonomous operation in isolated locations, based on Raspberry Pi.
 
-Remote camera for autonomous operation in isolated locations, based on Raspberry Pi. Documentation: zansara.github.io/zanzocam/
+See the full documentation for this project [here](zanzocam.github.io/) and the internal docs [here](zanzocam.github.io/zanzocam-core))
+
+## Setup
+
+This package provides the `z-webcam` command to a Raspberry Pi OS, once all the [prerequisites](zanzocam.github.io/docs/image-creation/) are satisfied.
+
+It can be installed on a Raspberry Pi with:
+```
+pip install "zanzocam[deploy] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
+```
+
+## Tests
+
+Tests should be run on a Raspberry Pi, but the unit tests can be run also on another machine or on a CI. 
+
+To make a test install on a Raspberry Pi, run:
+```
+pip install "zanzocam[test-on-rpi] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
+```
+
+To make a test install on a CI, run:
+```
+pip install "zanzocam[ci] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
+```
+
+## Docs
+
+To build the docs, first install the dependencies (on any machine) with:
+```
+pip install "zanzocam[docs] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
+```
+Then move into the `docs` and execute:
+```
+make html
+```
+You will get the resulting doc pages under `build/html`.
+
+## Contribute
+
+This project is young and we have no definite contributing guidelines yet. Open an issue, make a  small PR or get in touch with the developers at zanzocam@gmail.com before investing a lot of time into a feature or a bugfix.
+
+As a starting point, here are my current guidelines:
+
+- The system must keep small and simple.
+- The system must keep being monolithic and stay fully on the Raspberry (no server components here, see [this repo](https://github.com/ZanzoCam/zanzocam-control-panel) if you want to improve the server side).
+- ZanzoCam must support Raspberry Pi Camera v2 and HQ from a Raspberry Pi Zero W in its base version. Other versions can be discussed.
+- Always make sure all tests pass.
+- Keep the code tidy, short and heavily commented.
+
+## Get in touch
+
+You can reach out at zanzocam@gmail.com for any question or remark that don't fit as a GitHub issue.
