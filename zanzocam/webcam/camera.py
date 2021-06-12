@@ -374,9 +374,9 @@ class Camera:
         exif_bytes = None
         try:
             exif_dict = piexif.load(photo.info["exif"])
-            exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
-            exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
-            exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zansara.github.io/zanzocam/)"
+            exif_dict["0th"][piexif.ImageIFD.Make] = f"ZANZOCAM {VERSION} (https://zanzocam.github.io)"
+            exif_dict["0th"][piexif.ImageIFD.Software] = f"ZANZOCAM {VERSION} (https://zanzocam.github.io)"
+            exif_dict["0th"][piexif.ImageIFD.ProcessingSoftware] = f"ZANZOCAM {VERSION} (https://zanzocam.github.io)"
             exif_bytes = piexif.dump(exif_dict)
 
         except Exception as e:
