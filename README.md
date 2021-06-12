@@ -47,11 +47,11 @@ This project is young and we have no definite contributing guidelines yet. Open 
 
 As a starting point, here are my current guidelines:
 
-- The system must keep small and simple.
-- The system must keep being monolithic and stay fully on the Raspberry (no server components here, see [this repo](https://github.com/ZanzoCam/zanzocam-control-panel) if you want to improve the server side).
-- ZanzoCam must support Raspberry Pi Camera v2 and HQ from a Raspberry Pi Zero W in its base version. Other versions can be discussed.
-- Always make sure all tests pass.
+- The system must stay small and simple.
+- The system must stay monolithic and fully executable on the Raspberry (no server components here, see [this repo](https://github.com/ZanzoCam/zanzocam-control-panel) if you want to improve the server side).
+- Always make sure all tests pass before sending a PR.
 - Keep the code tidy, short and heavily commented.
+- ZanzoCam must support Raspberry Pi Camera v2 and HQ from a Raspberry Pi Zero W in its base version.
 
 ## Get in touch
 
