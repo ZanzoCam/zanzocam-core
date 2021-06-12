@@ -55,4 +55,4 @@ As a starting point, here are my current guidelines:
 
 ## Get in touch
 
-You can reach out at zanzocam@gmail.com for any question or remark that don't fit as a GitHub issue.
+You can reach out at zanzocam@gmail.com for any question or remark that doesn't fit as a GitHub issue.
