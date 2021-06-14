@@ -117,7 +117,6 @@ class Overlay:
             # Creates the font and calculate the line height
             font_size = self.font_size
             font = ImageFont.truetype(FONT_PATH, font_size)
-            line_height = font.getsize("a")[1] * 1.5
 
             # Replace %%TIME and %%DATE with respective values
             time_string = datetime.datetime.now().strftime(self.time_format)
@@ -169,10 +168,13 @@ class Overlay:
                     lines.append(new_line)
         self.text = '\n'.join(lines)
 
-        # Create a temporary image to measure the text size
-        temp = Image.new("RGBA", (1,1))
-        temp_draw = ImageDraw.Draw(temp)
-        return temp_draw.textsize(self.text, font)
+        # Measure text's bounding box (no margins applied here)
+        text_width = max([font.getsize(line)[0] for line in lines])
+        # https://stackoverflow.com/questions/43060479/how-to-get-the-font-pixel-height-using-pils-imagefont-class
+        ascent, descent = font.getmetrics()
+        # The text has approximately a 3% interline space
+        text_height = math.ceil(len(lines) * ascent * 1.03) + descent
+        return text_width, text_height
 
 
     def create_image_overlay(self) -> Any:
