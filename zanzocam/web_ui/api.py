@@ -210,7 +210,6 @@ def clean_data():
             os.remove(PREVIEW_PICTURE)
         for overlay in os.listdir(IMAGE_OVERLAYS_PATH):
             os.remove(IMAGE_OVERLAYS_PATH / overlay)
-        1/0
     except Exception as e:
         flash(str(e))
         return 500
