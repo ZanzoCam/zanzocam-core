@@ -65,18 +65,18 @@ def webcam_endpoint():
 @app.route("/configure/network", methods=["POST"])
 def configure_wifi_endpoint():
     api.configure_network(request.form)
-    return redirect(url_for('home_endpoint')), 200
+    return redirect(url_for('home_endpoint'))
     
 
 @app.route("/configure/server", methods=["POST"])
 def configure_server_endpoint():
     api.configure_server(request.form)
-    return redirect(url_for('home_endpoint')), 200
+    return redirect(url_for('home_endpoint'))
     
 
 @app.route("/configure/hotspot/<value>", methods=["POST"])
 def toggle_hotspot_endpoint(value):
-    return api.toggle_hotspot(value), 200
+    return api.toggle_hotspot(value)
 
 
 #
@@ -96,7 +96,7 @@ def shoot_picture_endpoint():
 @app.route("/clean-data", methods=["GET"])
 def clean_data_endpoint():
     api.clean_data()
-    return redirect(url_for('home_endpoint')), 200
+    return redirect(url_for('home_endpoint'))
 
 
 #
