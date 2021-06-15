@@ -21,12 +21,10 @@ Tests should be run on a Raspberry Pi, but the unit tests can be run also on ano
 
 To make a test install on a Raspberry Pi, run:
 ```
-pip install "zanzocam[test-on-rpi] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
-```
-
-To make a test install on a CI, run:
-```
-pip install "zanzocam[ci] @ git+https://github.com/ZanzoCam/zanzocam-core.git"
+git clone https://github.com/zanzocam/zanzocam-core.git
+cd zanzocam-core
+pip install -e .[test-on-rpi]
+pytest
 ```
 
 ## Docs
