@@ -4,7 +4,7 @@ import os
 import json
 import picamera
 import subprocess
-from flask import send_from_directory, abort
+from flask import send_from_directory, abort, flash
 
 from zanzocam.web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
 from zanzocam.constants import *
@@ -192,6 +192,27 @@ def reboot():
     try:
         reboot = subprocess.run(['/usr/bin/sudo', 'reboot'])
     except subprocess.CalledProcessError as e:
+        flash(str(e))
+        return 500
+    return 200
+
+
+def clean_data():
+    """ 
+    Deletes all overlays and logs.
+    """
+    try:
+        if os.path.exists(SERVER_LOG):
+            os.remove(SERVER_LOG)
+        if os.path.exists(CAMERA_LOG):
+            os.remove(CAMERA_LOG)
+        if os.path.exists(PREVIEW_PICTURE):
+            os.remove(PREVIEW_PICTURE)
+        for overlay in os.listdir(IMAGE_OVERLAYS_PATH):
+            os.remove(IMAGE_OVERLAYS_PATH / overlay)
+        1/0
+    except Exception as e:
+        flash(str(e))
         return 500
     return 200
 

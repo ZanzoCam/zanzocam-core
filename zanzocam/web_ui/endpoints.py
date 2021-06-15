@@ -2,7 +2,7 @@ import sys
 import logging
 from time import sleep
 from pathlib import Path
-from flask import Flask, Response, render_template, redirect, url_for, abort, request
+from flask import Flask, Response, render_template, redirect, url_for, abort, request, flash
 
 import zanzocam.constants as constants
 from zanzocam.web_ui import pages, api, utils
@@ -12,6 +12,7 @@ app = Flask(__name__)
 
 # Prevent caching: can break the logs fetching client-side
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 @app.after_request
 def add_header(r):
     r.headers["Cache-Control"] = "no-store"
@@ -37,12 +38,8 @@ logging.basicConfig(
 #
 
 @app.route("/", methods=["GET"])
-def home_endpoint(feedback: str=None, feedback_sheet_name: str=None, feedback_type: str=None):
-    if feedback_type=="positive":
-        return_code = 200
-    else:
-        return_code = 200
-    return pages.home(), return_code
+def home_endpoint():
+    return pages.home()
 
 
 @app.route("/network", methods=["GET"])
@@ -67,23 +64,19 @@ def webcam_endpoint():
 
 @app.route("/configure/network", methods=["POST"])
 def configure_wifi_endpoint():
-    feedback = api.configure_network(request.form)
-    if feedback == "":
-        return redirect(url_for('home_endpoint', feedback="Rete configurata con successo", feedback_sheet_name="network", feedback_type="positive")), 20
-    return redirect(url_for('home_endpoint', feedback=feedback, feedback_sheet_name="network", feedback_type="negative"))
+    api.configure_network(request.form)
+    return redirect(url_for('home_endpoint')), 200
     
 
 @app.route("/configure/server", methods=["POST"])
 def configure_server_endpoint():
-    feedback = api.configure_server(request.form)
-    if feedback == "":
-        return redirect(url_for('home_endpoint', feedback="Dati server configurati con successo", feedback_sheet_name="server", feedback_type="positive"))
-    return redirect(url_for('home_endpoint', feedback=feedback, feedback_sheet_name="server", feedback_type="negative"))
+    api.configure_server(request.form)
+    return redirect(url_for('home_endpoint')), 200
     
 
 @app.route("/configure/hotspot/<value>", methods=["POST"])
 def toggle_hotspot_endpoint(value):
-    return api.toggle_hotspot(value)
+    return api.toggle_hotspot(value), 200
 
 
 #
@@ -98,6 +91,12 @@ def reboot_endpoint():
 @app.route("/shoot-picture", methods=["POST"])
 def shoot_picture_endpoint():
     return "", api.shoot_picture()
+
+
+@app.route("/clean-data", methods=["GET"])
+def clean_data_endpoint():
+    api.clean_data()
+    return redirect(url_for('home_endpoint')), 200
 
 
 #
