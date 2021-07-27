@@ -24,7 +24,7 @@ copyright = '2021, Sara Zanzottera'
 author = 'Sara Zanzottera'
 
 # The full version, including alpha/beta/rc tags
-release = '0.10.2'
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
