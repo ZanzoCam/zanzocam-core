@@ -153,7 +153,7 @@ def test_main_error_creating_server_servererror(mock_modules_apart_config, monke
     assert in_logs(logs, "An error occurred communicating with the server")
     assert in_logs(logs, "Restoring the old configuration file")
     assert in_logs(logs, "Execution completed with errors")
-    new_conf_content = open(webcam.server.server.CONFIGURATION_FILE, 'r').read()
+    new_conf_content = open(constants.CONFIGURATION_FILE, 'r').read()
     assert "".join(new_conf_content.split()) == '{"old-test-stuff":"present"}'
 
 
@@ -173,7 +173,7 @@ def test_main_error_creating_server_exception(mock_modules_apart_config, monkeyp
     assert in_logs(logs, "Something unexpected occurred running the main procedure.")
     assert in_logs(logs, "Restoring the old configuration file")
     assert in_logs(logs, "Execution completed with errors")
-    new_conf_content = open(webcam.server.server.CONFIGURATION_FILE, 'r').read()
+    new_conf_content = open(constants.CONFIGURATION_FILE, 'r').read()
     assert "".join(new_conf_content.split()) == '{"old-test-stuff":"present"}'
     
 
