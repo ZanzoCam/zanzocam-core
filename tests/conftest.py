@@ -51,7 +51,10 @@ def point_to_tmpdir(monkeypatch, tmpdir):
 
             monkeypatch.setattr(constants, const, new_value)
             for module in modules:
-                monkeypatch.setattr(module, const, new_value)
+                try:
+                    monkeypatch.setattr(module, const, new_value)
+                except Exception:
+                    pass
 
     system.CRONJOB_FILE = tmpdir / "zanzocam"
 
