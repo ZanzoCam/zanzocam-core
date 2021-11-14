@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 #: ZanzoCam version
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 
 # Executables constants
@@ -24,7 +24,7 @@ ZANZOCAM_EXECUTABLE = "/home/zanzocam-bot/venv/bin/z-webcam"
 BASE_PATH = Path(__file__).parent
 
 #: Folder containing the data used by the ZanzoCam for its operations
-DATA_PATH = BASE_PATH / "data" 
+DATA_PATH = BASE_PATH / "data"
 
 
 # Log files
@@ -55,7 +55,7 @@ HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
 
 #: URL to the preview picture in the web UI
-PREVIEW_PICTURE_URL =  "static/previews/zanzocam-preview.jpg"
+PREVIEW_PICTURE_URL = "static/previews/zanzocam-preview.jpg"
 
 #: Path to the preview picture in the web UI
 PREVIEW_PICTURE = BASE_PATH / "web_ui" / PREVIEW_PICTURE_URL
@@ -76,7 +76,8 @@ LOCALE = 'it_IT.utf8'
 #: Path to the default font (can be customized if you install another font)
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
-#: Time to wait in between failed shots of the camera (to overcome colliding crontabs)
+#: Time to wait in between failed shots of the camera
+#:  (to overcome colliding crontabs)
 WAIT_AFTER_CAMERA_FAIL = 30
 
 #: Temporary crontab path
@@ -104,7 +105,7 @@ FTP_CONFIG_FILE_ENCODING = 'utf-8'
 # Camera constants
 # ################
 
-#: Minimum luminance for the daytime. 
+#: Minimum luminance for the daytime.
 #:  If the detected luminance goes below this value, the night mode kicks in.
 MINIMUM_DAYLIGHT_LUMINANCE = 60
 
@@ -112,24 +113,27 @@ MINIMUM_DAYLIGHT_LUMINANCE = 60
 MINIMUM_NIGHT_LUMINANCE = 30
 
 #: Starting ISO level for low light pictures
-INITIAL_LOW_LIGHT_ISO = 400  
+INITIAL_LOW_LIGHT_ISO = 400
 
-#: When to consider the image totally black, where the low light estimation doesn't work well
-NO_LUMINANCE_THRESHOLD = 1  
+#: When to consider the image totally black,
+#:  where the low light estimation doesn't work well
+NO_LUMINANCE_THRESHOLD = 1
 
-#: What "random" shutter speed to use if the image is so black that the equation doesn't work
-NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6 
+#: What "random" shutter speed to use if the image
+#:  is so black that the equation doesn't work
+NO_LUMINANCE_SHUTTER_SPEED = 2 * 10**6
 
-#: Min shutter speed for low light, the max that PiCamera would use with automatic settings
+#: Min shutter speed for low light, the
+#:  max that PiCamera would use with automatic settings
 MIN_SHUTTER_SPEED = int(0.03 * 10**6)
 
-#: Max shutter speed allowed by the camera hardware 
+#: Max shutter speed allowed by the camera hardware
 MAX_SHUTTER_SPEED = int(9.5 * 10**6)
 
 #: How much tolerance to give to the low light search algorithm
 TARGET_LUMINOSITY_MARGIN = 3
 
-#: Time to allow the firmware to compute the right exposure in normal 
+#: Time to allow the firmware to compute the right exposure in normal
 #:  light conditions (AWB requires more)
 CAMERA_WARM_UP_TIME = 5
 
@@ -160,10 +164,10 @@ CAMERA_DEFAULTS = {
     "rotation": 0,
     "jpeg_quality": 90,
     "jpeg_subsampling": 0,
-    "background_color": (0,0,0,0),
+    "background_color": (0, 0, 0, 0),
     "awb_mode": 'auto',
 
-    # These two are "experimental" and mostly untested, 
+    # These two are "experimental" and mostly untested,
     # don't use them unless really necessary
     'use_low_light_algorithm': True,
     'let_awb_settle_in_dark': False,
