@@ -9,7 +9,6 @@ VERSION = "1.2.0"
 # Executables constants
 # #####################
 
-
 #: Main user of the system, must be able to perform a passwordless sudo
 SYSTEM_USER = "zanzocam-bot"
 
