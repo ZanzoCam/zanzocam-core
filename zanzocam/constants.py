@@ -175,7 +175,7 @@ CAMERA_DEFAULTS = {
 #: Fallback values for the image overlays
 OVERLAY_DEFAULTS = {
     "font_size": 30,
-    "padding": 50,
+    "padding": 10,
     "text": "... testo ...",
     "font_color": (0, 0, 0),
     "background_color": (255, 255, 255, 0),
