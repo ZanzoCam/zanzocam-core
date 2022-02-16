@@ -7,6 +7,7 @@ from pathlib import Path
 from functools import wraps
 
 from zanzocam.constants import (
+    CONFIGURATION_FILE,
     FAILURE_REPORT_PATH,
     CAMERA_LOG
 )
@@ -96,7 +97,7 @@ class Server:
         locally.
         """
         if not new_conf_path:
-            new_conf_path = FAILURE_REPORT_PATH
+            new_conf_path = CONFIGURATION_FILE
 
         # Get the new configuration from the server
         configuration_data = self._server.download_new_configuration()
