@@ -1,3 +1,5 @@
+
+from PIL import Image
 from textwrap import dedent
 from freezegun import freeze_time
 
@@ -17,7 +19,7 @@ except ImportError as e:
 
 
 @freeze_time("2021-01-01 10:00:00")
-def test_same_config_on_ftp(logs):
+def test_same_config_on_ftp(tmpdir, logs):
     """
         In this test:
             - Everything works as expected, no errors
@@ -80,7 +82,7 @@ def test_same_config_on_ftp(logs):
 
 
 @freeze_time("2021-01-01 10:00:00")
-def test_same_config_on_http(logs):
+def test_same_config_on_http(tmpdir, logs):
     """
         In this test:
             - Everything works as expected, no errors
@@ -139,7 +141,7 @@ def test_same_config_on_http(logs):
 
 
 @freeze_time("2021-01-01 00:00:00")
-def test_night_time(logs):
+def test_night_time(tmpdir, logs):
     """
         In this test:
             - Everything works as expected, no errors
@@ -176,7 +178,7 @@ def test_night_time(logs):
 
 
 @freeze_time("2021-01-01 10:00:00")
-def test_no_initial_config_or_backup(logs):
+def test_no_initial_config_or_backup(tmpdir, logs):
     """
         In this test the user forgot to configure ZANZOCAM
         before shooting the first picture, so neither the 
@@ -184,7 +186,7 @@ def test_no_initial_config_or_backup(logs):
     """
     main()
     assert in_logs(logs, "Execution completed with errors")
-    assert in_logs(logs, "No configuration")
-    assert in_logs(logs, "No backup configuration")
+    assert in_logs(logs, "No configuration file")
+    assert in_logs(logs, "No backup configuration file")
     assert not in_logs(logs, "Traceback (most recent call last):")
     

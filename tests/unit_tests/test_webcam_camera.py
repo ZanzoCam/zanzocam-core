@@ -1,11 +1,18 @@
 import os
+import shutil
+import pytest
+from pathlib import Path
 from unittest import mock
+from textwrap import dedent
 from fractions import Fraction
 from PIL import Image, ImageChops
+from freezegun import freeze_time
+from datetime import datetime, timedelta
 
 import zanzocam.webcam as webcam
 import zanzocam.constants as constants
 from zanzocam.webcam.camera import Camera
+from zanzocam.webcam.configuration import Configuration
 
 # Try to import PiCamera - unless you're running on a RPi, 
 # this won't work and a mock is loaded instead
@@ -15,7 +22,6 @@ except ImportError as e:
     from tests.conftest import MockPiCamera as PiCamera
     webcam.camera.PiCamera = PiCamera
 
-from conftest import in_logs
 
 
 def test_create_camera_no_dict(monkeypatch, logs):
@@ -1109,5 +1115,4 @@ def test_cleanup_image_files_no_files(tmpdir, logs):
     camera.cleanup_image_files()
     assert not os.path.exists(camera.temp_photo_path)
     assert not os.path.exists(camera.processed_image_path)
-    assert len(logs) == 1
-    assert in_logs("Failed to clean up")
+    assert len(logs) == 0

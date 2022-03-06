@@ -6,6 +6,7 @@ from freezegun import freeze_time
 from datetime import datetime, timedelta
 
 import zanzocam.webcam as webcam
+import zanzocam.constants as constants
 from zanzocam.webcam.configuration import Configuration
 
 from tests.conftest import in_logs
@@ -85,9 +86,7 @@ def test_within_active_hours_no_boundaries_given_1(logs):
     """
     config = Configuration.create_from_dictionary({})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -97,9 +96,7 @@ def test_within_active_hours_no_boundaries_given_2(logs):
     """
     config = Configuration.create_from_dictionary({'time': {}})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -110,9 +107,7 @@ def test_within_active_hours_only_start_given_1(logs):
     config = Configuration.create_from_dictionary(
         {'time': {"start_activity": "11:30"}})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -123,9 +118,7 @@ def test_within_active_hours_only_start_given_1(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {"start_activity": "12:00"}})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -136,9 +129,7 @@ def test_within_active_hours_only_start_given_3(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {"start_activity": "12:30"}})
     assert not config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "outside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -149,9 +140,7 @@ def test_within_active_hours_only_stop_given_1(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {"stop_activity": "11:30"}})
     assert not config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "outside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -162,9 +151,7 @@ def test_within_active_hours_only_stop_given_2(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {"stop_activity": "12:00"}})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -175,9 +162,7 @@ def test_within_active_hours_only_stop_given_3(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {"stop_activity": "12:30"}})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -192,9 +177,7 @@ def test_within_active_hours_start_and_stop_given_1(logs):
                     "stop_activity": "11:30"
                 }})
     assert not config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "outside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -209,9 +192,7 @@ def test_within_active_hours_start_and_stop_given_2(logs):
                     "stop_activity": "12:30"
                 }})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
     
 @freeze_time("2021-01-01 12:00:00")
@@ -226,9 +207,7 @@ def test_within_active_hours_start_and_stop_given_3(logs):
                     "stop_activity": "13:30"
                 }})
     assert not config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "outside" in logs[1]
+    assert len(logs) == 0
 
     
 @freeze_time("2021-01-01 12:00:00")
@@ -243,9 +222,7 @@ def test_within_active_hours_start_and_stop_given_4(logs):
                     "stop_activity": "12:00"
                 }})
     assert config.within_active_hours()
-    assert len(logs) == 2
-    assert "Checking" in logs[0]
-    assert "inside" in logs[1]
+    assert len(logs) == 0
 
 
 @freeze_time("2021-01-01 12:00:00")
@@ -257,7 +234,8 @@ def test_within_active_hours_start_and_stop_handle_typos_1(logs):
                 {'time': {
                     "start_activity": "wrong", 
                 }})
-    assert config.within_active_hours() is None
+    assert config.within_active_hours()
+    assert len(logs) == 1
     assert in_logs(logs, "Could not read the start-stop time values")
 
 
@@ -270,7 +248,8 @@ def test_within_active_hours_start_and_stop_handle_typos_2(logs):
                 {'time': {
                     "stop_activity": "wrong", 
                 }})
-    assert config.within_active_hours() is None
+    assert config.within_active_hours()
+    assert len(logs) == 1
     assert in_logs(logs, "Could not read the start-stop time values")
 
 
@@ -284,7 +263,23 @@ def test_within_active_hours_start_and_stop_handle_typos_3(logs):
                     "start_activity": "23:00", 
                     "stop_activity": "wrong", 
                 }})
-    assert config.within_active_hours() is None
+    assert config.within_active_hours()
+    assert len(logs) == 1
+    assert in_logs(logs, "Could not read the start-stop time values")
+
+
+@freeze_time("2021-01-01 12:00:00")
+def test_within_active_hours_start_and_stop_handle_typos_3(logs):
+    """
+        Either start or stop is not a valid time
+    """
+    config = Configuration.create_from_dictionary(
+                {'time': {
+                    "start_activity": "wrong", 
+                    "stop_activity": "02:00", 
+                }})
+    assert config.within_active_hours()
+    assert len(logs) == 1
     assert in_logs(logs, "Could not read the start-stop time values")
 
 
@@ -296,23 +291,10 @@ def test_within_active_hours_start_and_stop_handle_typos_4(logs):
     config = Configuration.create_from_dictionary(
                 {'time': {
                     "start_activity": "wrong", 
-                    "stop_activity": "02:00", 
-                }})
-    assert config.within_active_hours() is None
-    assert in_logs(logs, "Could not read the start-stop time values")
-
-
-@freeze_time("2021-01-01 12:00:00")
-def test_within_active_hours_start_and_stop_handle_typos_5(logs):
-    """
-        Either start or stop is not a valid time
-    """
-    config = Configuration.create_from_dictionary(
-                {'time': {
-                    "start_activity": "wrong", 
                     "stop_activity": "also wrong", 
                 }})
-    assert config.within_active_hours() is None
+    assert config.within_active_hours()
+    assert len(logs) == 1
     assert in_logs(logs, "Could not read the start-stop time values")
 
 
@@ -391,33 +373,34 @@ def test_restore_backup_fail(tmpdir, logs):
     assert "Cannot restore the configuration file from its backup"
 
 
-def test_list_overlays_no_overlays(logs):
+def test_overlays_to_download_no_overlays(logs):
     """
         If the overlays block is not present or empty,
-        list_overlays returns an empty list
+        overlays_to_download returns an empty list
     """
     config = Configuration.create_from_dictionary({})
-    assert config.list_overlays() == []
-    assert len(logs) == 1
+    assert config.overlays_to_download() == []
+    assert len(logs) == 0
 
     config = Configuration.create_from_dictionary({'overlays': {}},
                 path = Path(webcam.configuration.CONFIGURATION_FILE))
-    assert config.list_overlays() == []
-    assert len(logs) == 2
+    assert config.overlays_to_download() == []
+    assert len(logs) == 0
 
 
-def test_list_overlays_wrong_overlays_block(logs):
+def test_overlays_to_download_wrong_overlays_block(logs):
     """
         If the overlays key dows not contain a dict,
         log the exception and return an empty list
     """
     config = Configuration.create_from_dictionary({'overlays': "wrong!"})
-    assert config.list_overlays() == []
-    assert len(logs) == 2
-    assert in_logs(logs, "dictionary")
+    assert config.overlays_to_download() == []
+    assert len(logs) == 1
+    assert in_logs(logs, "The 'overlays' entry in the configuration file " \
+           "does not correspond to a dictionary")
 
 
-def test_list_overlays_one_overlay_with_path(logs):
+def test_overlays_to_download_one_overlay_with_path(logs):
     """
         Test with some overlays
     """
@@ -426,11 +409,11 @@ def test_list_overlays_one_overlay_with_path(logs):
                         'path': "image.jpg"
                     }
                 }})
-    assert config.list_overlays() == ["image.jpg"]
-    assert len(logs) == 2
+    assert config.overlays_to_download() == ["image.jpg"]
+    assert len(logs) == 0
 
 
-def test_list_overlays_one_overlay_with_path_and_other_attrs(logs):
+def test_overlays_to_download_one_overlay_with_path_and_other_attrs(logs):
     """
         Test with some overlays
     """
@@ -441,11 +424,11 @@ def test_list_overlays_one_overlay_with_path_and_other_attrs(logs):
                         "text": "shouldn't be here"
                     }
                 }})
-    assert config.list_overlays() == ["image.jpg"]
-    assert len(logs) == 2
+    assert config.overlays_to_download() == ["image.jpg"]
+    assert len(logs) == 0
 
 
-def test_list_overlays_two_overlays_with_path(logs):
+def test_overlays_to_download_two_overlays_with_path(logs):
     """
         Test with some overlays
     """
@@ -457,11 +440,11 @@ def test_list_overlays_two_overlays_with_path(logs):
                         "path": "image2.txt"  # extension not checked
                     }
                 }})
-    assert config.list_overlays() == ["image.jpg", 'image2.txt']
-    assert len(logs) == 3
+    assert config.overlays_to_download() == ["image.jpg", 'image2.txt']
+    assert len(logs) == 0
 
 
-def test_list_overlays_one_overlay_with_path_one_without(logs):
+def test_overlays_to_download_one_overlay_with_path_one_without(logs):
     """
         Test with some overlays
     """
@@ -473,11 +456,11 @@ def test_list_overlays_one_overlay_with_path_one_without(logs):
                         "text": "hello!"
                     }
                 }})
-    assert config.list_overlays() == ["image.jpg"]
-    assert len(logs) == 2
+    assert config.overlays_to_download() == ["image.jpg"]
+    assert len(logs) == 0
 
 
-def test_list_overlays_one_overlay_without_path(logs):
+def test_overlays_to_download_one_overlay_without_path(logs):
     """
         Test with some overlays
     """
@@ -487,11 +470,11 @@ def test_list_overlays_one_overlay_without_path(logs):
                         "peth": "wrong.gif"
                     }
                 }})
-    assert config.list_overlays() == []
-    assert len(logs) == 1
+    assert config.overlays_to_download() == []
+    assert len(logs) == 0
 
 
-def test_list_overlays_two_overlays_without_path(logs):
+def test_overlays_to_download_two_overlays_without_path(logs):
     """
         Test with some overlays
     """
@@ -503,5 +486,5 @@ def test_list_overlays_two_overlays_without_path(logs):
                         "path2": "image.png"
                     }
                 }})
-    assert config.list_overlays() == []
-    assert len(logs) == 1
+    assert config.overlays_to_download() == []
+    assert len(logs) == 0

@@ -7,55 +7,22 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from zanzocam.constants import CONFIGURATION_FILE
+from zanzocam.constants import *
 from zanzocam.webcam.utils import log, log_error, AllStringEncoder
-
-
-def load_configuration_from_disk(
-    path = str(CONFIGURATION_FILE),
-    backup_path = str(CONFIGURATION_FILE) + ".bak"
-) -> Optional["Configuration"]:
-    """
-    Load current configuration from disk, 
-    or try with its backup if the file is not found.
-
-    Returns None if some error occurred.
-    """
-    try:
-        log(f"Loading configuration from {path}...")
-        return Configuration(path=path)
-
-    except Exception as e:
-        if isinstance(e, FileNotFoundError):
-            log_error(str(e))  # Avoid stacktrace
-        else:
-            log_error("Failed to load configuration from "
-                        f"'{CONFIGURATION_FILE}'.", e)
-
-    try:
-        log("Trying to load backup configuration...")
-        return Configuration(path=backup_path)
-
-    except Exception as e:
-        if isinstance(e, FileNotFoundError):
-            log_error(f"No backup configuration found under "
-                        f"'{backup_path}'.")
-        else:
-            log_error(f"Failed to load the backup configuration from "
-                        f"'{backup_path}'.", e)
-    return None
-
 
 
 class Configuration:
     """
     Manages the configurations.
     """
-    def __init__(self, path: Path = CONFIGURATION_FILE):
+    def __init__(self, path: Path = None):
         """
         Loads the data stored in the configuration file as object attributes
         for this instance.
         """
+        if not path:
+            path = CONFIGURATION_FILE
+
         if not os.path.exists(path):
             raise FileNotFoundError(
                 f"No configuration file found under {path}. "
@@ -148,27 +115,20 @@ class Configuration:
         """
         Return all the information relative to the settings 
         that should be applied to the system.
-
-        For now is just the time settings.
         """
         time_data = getattr(self, "time", {})
         return {
             'time': time_data
         }
 
-    def within_active_hours(self) -> Optional[bool]:
+    def within_active_hours(self):
         """
-        Compares the current time with the start-stop times.
+        Compares the current time with the start-stop times and 
+        return True if inside the interval, False if outside.
+        """
+        time_data = getattr(self, "time", {})
 
-        Returns True if inside the interval, False if outside, 
-        None if an error occured.
-        """
         try:
-            log(f"Checking if {datetime.now().strftime('%H:%M')} "
-                f"is into active interval "
-                f"({self.get_start_time()} to "
-                f"{self.get_stop_time()}).")
-
             current_time = datetime.strptime(
                             datetime.now().strftime("%H:%M"), 
                             "%H:%M") # remove date info
@@ -177,22 +137,15 @@ class Configuration:
 
             # Extremes are included: it's intended
             if current_time >= start_time and current_time <= stop_time:
-                log("The current time is inside active hours.")
                 return True
-
-            log("The current time is outside active hours.")
             return False
 
         except ValueError as e:
             log_error(f"Could not read the start-stop time values "
                       f"(start: {self.get_start_time()}, "
-                      f"stop: {self.get_stop_time()}) as valid hours.")
-        except Exception as e:
-            log_error(f"Something unexpected has occured trying to find out "
-                       "if this is active time for the ZanzoCam. "
-                       "Check the stacktrace!", e)
-        return None
-
+                      f"stop: {self.get_stop_time()}) as valid hours. "
+                      f"We now assume this is an active time")
+        return True
 
 
     def backup(self, path: str = None):
@@ -222,12 +175,9 @@ class Configuration:
                       "please fix this error before a failure occurs", e)
 
 
-    def restore_backup(self) -> bool:
+    def restore_backup(self):
         """
         Restores the configuration file from its backup copy.
-        Does not try to reload the old config.
-
-        Returns True in case of no errors, False otherwise.
         """
         try:
             shutil.copy2(self._backup_path, self._path)
@@ -236,23 +186,21 @@ class Configuration:
                       "The current situation is dangerous, "
                       "please fix this error before a failure occurs " 
                       "(if it haven't happened already)", e)
-            return False
-        return True
 
 
-    def list_overlays(self) -> List[str]:
+    def overlays_to_download(self) -> List[str]:
         """
         List all the overlay images that should be downloaded from the server
         """
-        log("Scanning the configuration for overlays...")
-
         overlays_block = getattr(self, "overlays", {})
-        if not isinstance(overlays_block, dict):
-            log_error("The 'overlays' entry in the configuration "
-                      "is not a dictionary! Ignoring it.")
+        try:
+            items = overlays_block.items()
+        except AttributeError as e:
+            log_error("The 'overlays' entry in the configuration file "
+                      "does not correspond to a dictionary! Ignoring it.", e)
             return []
 
-        paths = []
+        to_download = []
         for position, data in getattr(self, "overlays", {}).items():
             if "path" in data.keys():
                 
@@ -262,10 +210,8 @@ class Configuration:
                               f"no path! Ignoring it.")
                     continue
 
-                log(f"Found image overlay: {path}")
-                paths.append(path)
-
-        return paths
+                to_download.append(path)
+        return to_download
 
 
     @staticmethod

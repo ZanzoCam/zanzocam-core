@@ -1,18 +1,21 @@
 import os
 import sys
+import stat
 import math
+import shutil
 import pytest
 import requests
 import builtins
+import subprocess
 from unittest import mock
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
 import zanzocam.webcam as webcam
 import zanzocam.constants as constants
-from zanzocam.webcam import system
+from zanzocam.webcam.system import System
 
-from tests.conftest import in_logs
+from tests.conftest import meminfo, in_logs
 
 
 def test_get_last_reboot_time_success(fake_process, logs):
@@ -23,7 +26,7 @@ def test_get_last_reboot_time_success(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/bin/uptime', '-s'], stdout=mock_time
     )
-    last_reboot_time = system.get_last_reboot_time()
+    last_reboot_time = System.get_last_reboot_time()
     date_format = "%Y-%m-%d %H:%M:%S"
     expected_time = datetime.strptime(mock_time.decode('utf-8'), date_format)
     assert last_reboot_time == expected_time
@@ -38,7 +41,7 @@ def test_get_last_reboot_time_exception(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/bin/uptime', '-s'], returncode=2
     )
-    last_reboot_time = system.get_last_reboot_time()
+    last_reboot_time = System.get_last_reboot_time()
     assert last_reboot_time == None
     assert len(logs) == 1
     assert in_logs(logs, "Could not get last reboot time information")
@@ -53,7 +56,7 @@ def test_get_uptime_success(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/bin/uptime', '-s'], stdout=mock_time
     )
-    uptime = system.get_uptime()
+    uptime = System.get_uptime()
     assert uptime == timedelta(hours=12)
     assert len(logs) == 0
 
@@ -66,7 +69,7 @@ def test_get_uptime_exception(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/bin/uptime', '-s'], returncode=2
     )
-    uptime = system.get_uptime()
+    uptime = System.get_uptime()
     assert uptime == None
     assert len(logs) == 2
     assert in_logs(logs, "Could not get uptime information")
@@ -79,7 +82,7 @@ def test_check_hotspot_allowed_flag_set_to_yes(logs):
     """
     with open(constants.HOTSPOT_FLAG, 'w') as f:
         f.write("yes")
-    allowed = system.check_hotspot_allowed()
+    allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 0
 
@@ -90,7 +93,7 @@ def test_check_hotspot_allowed_flag_set_to_no(logs):
     """
     with open(constants.HOTSPOT_FLAG, 'w') as f:
         f.write("no")
-    allowed = system.check_hotspot_allowed()
+    allowed = System.check_hotspot_allowed()
     assert not allowed
     assert len(logs) == 0 
 
@@ -101,7 +104,7 @@ def test_check_hotspot_allowed_flag_set_to_other(logs):
     """
     with open(constants.HOTSPOT_FLAG, 'w') as f:
         f.write("Other")
-    allowed = system.check_hotspot_allowed()
+    allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
     assert in_logs(logs, "The hostpot flag contains neither YES nor NO")
@@ -114,7 +117,7 @@ def test_check_hotspot_allowed_permission_error(logs):
     with open(constants.HOTSPOT_FLAG, 'w') as f:
         f.write("no")
     os.chmod(constants.HOTSPOT_FLAG, 0o222)
-    allowed = system.check_hotspot_allowed()
+    allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
     assert in_logs(logs, "Failed to check if the hotspot is allowed")
@@ -125,7 +128,7 @@ def test_check_hotspot_allowed_no_file(logs):
         Check if the hotspot is allowed, no file
     """
     assert not os.path.exists(constants.HOTSPOT_FLAG)
-    allowed = system.check_hotspot_allowed()
+    allowed = System.check_hotspot_allowed()
     assert allowed
     assert len(logs) == 1
     assert in_logs(logs, "Hotspot flag file not found")
@@ -141,7 +144,7 @@ def test_run_hotspot_on_wifi_1(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="Wifi already connected to a network"
     )
-    assert system.run_autohotspot()
+    assert System.run_autohotspot()
     assert len(logs) == 0
 
 
@@ -153,7 +156,7 @@ def test_run_hotspot_on_wifi_2(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="Hotspot Deactivated, Bringing Wifi Up"
     )
-    assert system.run_autohotspot()
+    assert System.run_autohotspot()
     assert len(logs) == 0
 
 
@@ -165,7 +168,7 @@ def test_run_hotspot_on_wifi_3(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="Connecting to the WiFi Network"
     )
-    assert system.run_autohotspot()
+    assert System.run_autohotspot()
     assert len(logs) == 0
 
 
@@ -177,7 +180,7 @@ def test_run_hotspot_on_hotspot_1(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="Hostspot already active"
     )
-    result = system.run_autohotspot()
+    result = System.run_autohotspot()
     assert result is not None
     assert not result
     assert len(logs) == 0
@@ -191,7 +194,7 @@ def test_run_hotspot_on_hotspot_2(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="Cleaning wifi files and Activating Hotspot"
     )
-    result = system.run_autohotspot()
+    result = System.run_autohotspot()
     assert result is not None
     assert not result
     assert len(logs) == 0
@@ -205,7 +208,7 @@ def test_run_hotspot_on_hotspot_3(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         stdout="No SSID, activating Hotspot"
     )
-    result = system.run_autohotspot()
+    result = System.run_autohotspot()
     assert result is not None
     assert not result
     assert len(logs) == 0
@@ -219,7 +222,7 @@ def test_run_hotspot_script_failure(fake_process, logs):
         ["/usr/bin/sudo", constants.AUTOHOTSPOT_BINARY_PATH], 
         returncode=2
     )
-    assert system.run_autohotspot() is None
+    assert System.run_autohotspot() is None
     assert len(logs) == 1
     assert in_logs(logs, "The hotspot script failed to run")
 
@@ -232,7 +235,7 @@ def test_get_wifi_ssid_success(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/sbin/iwgetid', '-r'], stdout=ssid
     )
-    assert system.get_wifi_ssid() == ssid
+    assert System.get_wifi_ssid() == ssid
     assert len(logs) == 0
 
 
@@ -244,7 +247,7 @@ def test_get_wifi_ssid_no_wifi(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/sbin/iwgetid', '-r'],
     )
-    assert system.get_wifi_ssid() == ""
+    assert System.get_wifi_ssid() == ""
     assert len(logs) == 0
 
 
@@ -255,7 +258,7 @@ def test_get_wifi_ssid_exception(fake_process, logs):
     fake_process.register_subprocess(
         ['/usr/sbin/iwgetid', '-r'], returncode=2
     )
-    assert system.get_wifi_ssid() is None
+    assert System.get_wifi_ssid() is None
     assert len(logs) == 1
     assert in_logs(logs, "Could not retrieve WiFi information")
 
@@ -268,7 +271,7 @@ def test_check_internet_connectivity_success(monkeypatch, logs):
         pass
 
     monkeypatch.setattr(webcam.system.requests, "head", alright)
-    assert system.check_internet_connectivity()
+    assert System.check_internet_connectivity()
     assert len(logs) == 0
 
 
@@ -280,7 +283,7 @@ def test_check_internet_connectivity_timeout(monkeypatch, logs):
         raise requests.ConnectionError()
 
     monkeypatch.setattr(webcam.system.requests, "head", timeout)
-    assert not system.check_internet_connectivity()
+    assert not System.check_internet_connectivity()
     assert len(logs) == 0
 
 
@@ -292,7 +295,7 @@ def test_check_internet_connectivity_exception(monkeypatch, logs):
         raise ValueError()
 
     monkeypatch.setattr(webcam.system.requests, "head", generic_error)
-    assert not system.check_internet_connectivity()
+    assert not System.check_internet_connectivity()
     assert len(logs) == 1
     assert in_logs(logs, "Could not check if there is Internet access")
 
@@ -305,7 +308,7 @@ def test_get_filesystem_size_success(monkeypatch, logs):
         return 5*(1024**3), 0, 0
 
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", alright)
-    assert system.get_filesystem_size() == "5.00 GB"
+    assert System.get_filesystem_size() == "5.00 GB"
     assert len(logs) == 0
 
 
@@ -317,7 +320,7 @@ def test_get_filesystem_size_exception(monkeypatch, logs):
         raise PermissionError()
 
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", generic_exception)
-    assert system.get_filesystem_size() is None
+    assert System.get_filesystem_size() is None
     assert len(logs) == 1
     assert in_logs(logs, "Could not retrieve the size of the filesystem")
 
@@ -330,7 +333,7 @@ def test_get_free_space_on_disk_success(monkeypatch, logs):
         return 0, 0, 900*(1024**2)
 
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", alright)
-    assert system.get_free_space_on_disk() == "900.00 MB"
+    assert System.get_free_space_on_disk() == "900.00 MB"
     assert len(logs) == 0
 
 
@@ -342,7 +345,7 @@ def test_get_free_space_on_disk_exception(monkeypatch, logs):
         raise PermissionError()
 
     monkeypatch.setattr(webcam.system.shutil, "disk_usage", generic_exception)
-    assert system.get_free_space_on_disk() is None
+    assert System.get_free_space_on_disk() is None
     assert len(logs) == 1
     assert in_logs(logs, "Could not get the amount of free space on the filesystem")
 
@@ -358,7 +361,7 @@ def test_get_ram_stats_success(monkeypatch, meminfo, logs):
             "available: 160988 kB | " + \
             "total swap: 102396 kB | " + \
             "free swap: 61948 kB | "
-    assert system.get_ram_stats() == stats
+    assert System.get_ram_stats() == stats
     assert len(logs) == 0
 
 
@@ -370,7 +373,7 @@ def test_get_ram_stats_exception(monkeypatch, meminfo, logs):
         raise PermissionError()
 
     monkeypatch.setattr(builtins, 'open', fail_open)
-    assert system.get_ram_stats() is None
+    assert System.get_ram_stats() is None
     assert len(logs) == 1
     assert in_logs(logs, "Could not get RAM data")
 
@@ -379,14 +382,14 @@ def test_report_general_status(monkeypatch):
     """
         Stub test that the status is reported.
     """
-    original_system = webcam.system
+    original_System = webcam.system.System
 
     class Empty():
         def __getattr__(self, attr):
             return lambda *a, **k: None 
 
-    monkeypatch.setattr(webcam, "system", Empty())
-    status = original_system.report_general_status()
+    monkeypatch.setattr(webcam.system, "System", Empty())
+    status = original_System.report_general_status()
     assert "version" in status.keys()
     assert "last reboot" in status.keys()
     assert "uptime" in status.keys()
@@ -406,7 +409,7 @@ def test_copy_system_file_success(tmpdir, logs):
     pathto = tmpdir / "to"
     with open(pathfrom, 'w'):
         pass
-    system.copy_system_file(pathfrom, pathto)
+    System.copy_system_file(pathfrom, pathto)
     assert os.path.exists(pathfrom)
     assert os.path.exists(pathto)
     assert len(logs) == 0
@@ -419,7 +422,7 @@ def test_copy_system_file_exception(tmpdir, logs):
     pathfrom = tmpdir / "from"
     pathto = tmpdir / "to"
     with pytest.raises(RuntimeError):
-        system.copy_system_file(pathfrom, pathto)
+        System.copy_system_file(pathfrom, pathto)
     assert not os.path.exists(pathto)
     assert len(logs) == 0
 
@@ -431,7 +434,7 @@ def test_give_ownership_to_root_success(tmpdir, logs):
     path = tmpdir / "file"
     with open(path, 'w'):
         pass
-    system.give_ownership_to_root(path)
+    System.give_ownership_to_root(path)
     assert len(logs) == 0
 
 
@@ -441,7 +444,7 @@ def test_give_ownership_to_root_exception(tmpdir, logs):
     """
     path = tmpdir / "file"
     with pytest.raises(RuntimeError):
-        system.give_ownership_to_root(path)
+        System.give_ownership_to_root(path)
     assert len(logs) == 0
     
 
@@ -450,7 +453,7 @@ def test_prepare_crontab_string_no_frequency_no_cron(logs):
         Test crontab generation for an empty dict.
         Default frequency is a hour.
     """
-    crontab = system.prepare_crontab_string({})
+    crontab = System.prepare_crontab_string({})
     # range(24) because the last digit is out
     assert crontab == [f"0 {hour} * * *" for hour in range(24)]
     assert len(logs) == 0
@@ -460,7 +463,7 @@ def test_prepare_crontab_string_with_frequency_no_cron():
     """
         Test crontab generation for given frequency, nothing else given.
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "480",
     })
     assert crontab == ["0 0 * * *", "0 8 * * *", "0 16 * * *"]
@@ -470,7 +473,7 @@ def test_prepare_crontab_string_with_frequency_with_cron():
     """
         If frequency is given, crontab values are ignored
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "480",
         "minute": "1",
         "hour": "2",
@@ -486,7 +489,7 @@ def test_prepare_crontab_string_no_frequency_some_cron(logs):
         Test that crontab does not override frequency
         unless it's explicitly set to 0
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "minute": "1",
         "hour": "2",
         "day": "3",
@@ -504,7 +507,7 @@ def test_prepare_crontab_string_frequency_zero_some_cron(logs):
         switches to the manual crontab mode even if no
         crontab value is given
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "0",
     })
     assert crontab == ["* * * * *"]
@@ -516,7 +519,7 @@ def test_prepare_crontab_string_frequency_zero_all_cron(logs):
         Test that crontab does override the frequency
         if it's explicitly set to 0
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "0",
         "minute": "1",
         "hour": "2",
@@ -533,7 +536,7 @@ def test_prepare_crontab_string_frequency_zero_some_cron(logs):
         Test that crontab does override the frequency
         if it's explicitly set to 0. Missing entries default to *
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "0",
         "minute": "1",
         "month": "2",
@@ -547,7 +550,7 @@ def test_prepare_crontab_string_unreadable_frequency(logs):
         Test that a wrong frequency (i.e. a string)
         can be handled gracefully by defaulting.
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "wrong!"
     })
     # range(24) because the last digit is out
@@ -564,7 +567,7 @@ def test_prepare_crontab_string_unreadable_frequency_ignore_cron(logs):
         which means that eventual crontabs are going
         to be ignored
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "wrong!",
         "minute": "1",
         "month": "2",
@@ -581,7 +584,7 @@ def test_prepare_crontab_string_affects_frequency(logs):
         Test that start and stop times are considered
         when using the frequency
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "480",
         "start_activity": "01:10",
         "stop_activity": "12:23",
@@ -595,7 +598,7 @@ def test_prepare_crontab_string_dont_affect_crontab(logs):
         Test that start and stop times are not considered
         when using the crontab
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": '0',
         "minute": "*/5",
         "start_activity": "01:00",
@@ -609,7 +612,7 @@ def test_prepare_crontab_string_unreadable_start_time(logs):
     """
         Can handle a wrong start time by defaulting to midnight
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "480",
         "start_activity": "wrong time",
         "stop_activity": "12:23",
@@ -623,7 +626,7 @@ def test_prepare_crontab_string_unreadable_stop_time(logs):
     """
         Can handle a wrong stop time by defaulting to midnight
     """
-    crontab = system.prepare_crontab_string({
+    crontab = System.prepare_crontab_string({
         "frequency": "480",
         "start_activity": "12:23",
         "stop_activity": "wrong time",
@@ -640,7 +643,7 @@ def test_prepare_crontab_string_can_fail_1():
         crontab.
     """
     with pytest.raises(Exception):
-        crontab = system.prepare_crontab_string(None)
+        crontab = System.prepare_crontab_string(None)
     
 
 def test_prepare_crontab_string_can_fail_2():
@@ -650,7 +653,7 @@ def test_prepare_crontab_string_can_fail_2():
         crontab.
     """
     with pytest.raises(Exception):
-        crontab = system.prepare_crontab_string("wrong!")
+        crontab = System.prepare_crontab_string("wrong!")
 
 
 def test_prepare_crontab_string_can_fail_3():
@@ -660,7 +663,7 @@ def test_prepare_crontab_string_can_fail_3():
         crontab.
     """
     with pytest.raises(Exception):
-        crontab = system.prepare_crontab_string(10)
+        crontab = System.prepare_crontab_string(10)
 
 
 def test_update_crontab_success(tmpdir, logs):
@@ -670,7 +673,7 @@ def test_update_crontab_success(tmpdir, logs):
     assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
     with open(webcam.system.CRONJOB_FILE, 'w'):
         pass
-    system.update_crontab({})
+    System.update_crontab({})
     assert len(logs) == 1
     assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
@@ -688,7 +691,7 @@ def test_update_crontab_prepare_strings_fails(monkeypatch, tmpdir, logs):
     with open(webcam.system.CRONJOB_FILE, 'w') as c:
         c.write("crontab content")
 
-    system.update_crontab(None)  # Will make prepare_crontab_string fail
+    System.update_crontab(None)  # Will make prepare_crontab_string fail
     assert len(logs) == 1
     assert in_logs(logs, "Something happened assembling the crontab. " \
            "Aborting crontab update.")
@@ -701,7 +704,7 @@ def test_update_crontab_backup_fail(tmpdir, logs):
     """
     assert webcam.system.CRONJOB_FILE == tmpdir / "zanzocam"
     # Backup will fail because there is no file at this path
-    system.update_crontab({})
+    System.update_crontab({})  
     assert len(logs) == 2
     # Failed backup  
     assert in_logs(logs, "Failed to backup the previous crontab!")
@@ -724,7 +727,7 @@ def test_update_crontab_write_temp_file_fails(monkeypatch, tmpdir, logs):
     # update_crontab uses sys.argv[0], which is always present; but not now...
     monkeypatch.setattr(sys, 'argv', [])
 
-    system.update_crontab({})
+    System.update_crontab({})
     assert len(logs) == 1
     assert in_logs(logs, "Failed to generate the new crontab. " \
            "Aborting crontab update.")
@@ -743,9 +746,9 @@ def test_update_crontab_chown_fail(monkeypatch, tmpdir, logs):
     
     def fail(*a, **k):
         raise PermissionError()
-    monkeypatch.setattr(webcam.system, "give_ownership_to_root", fail)
+    monkeypatch.setattr(webcam.system.System, "give_ownership_to_root", fail)
 
-    system.update_crontab({})
+    System.update_crontab({})
     assert len(logs) == 1
     assert in_logs(logs, "Failed to assign the correct rights to the " \
            "new crontab file. Aborting crontab update.")
@@ -762,7 +765,7 @@ def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
     with open(webcam.system.CRONJOB_FILE, 'w') as c:
         c.write("crontab content")
     
-    actually_copy_the_file = webcam.system.copy_system_file
+    actually_copy_the_file = webcam.system.System.copy_system_file
 
     def fail(*a, **k):
         print(a)
@@ -772,9 +775,9 @@ def test_update_crontab_move_fail(monkeypatch, tmpdir, logs):
         else:
             actually_copy_the_file(*a, *k)
 
-    monkeypatch.setattr(webcam.system, "copy_system_file", fail)
+    monkeypatch.setattr(webcam.system.System, "copy_system_file", fail)
 
-    system.update_crontab({})
+    System.update_crontab({})
     assert len(logs) == 1
     assert in_logs(logs, "Failed to replace the old crontab with a new one. " \
            "Aborting crontab update.")
@@ -789,7 +792,7 @@ def test_apply_system_settings_success_no_time(logs):
     with open(webcam.system.CRONJOB_FILE, 'w'):
         pass
 
-    system.apply_system_settings({})
+    System.apply_system_settings({})
     assert len(logs) == 0
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == []
 
@@ -801,8 +804,8 @@ def test_apply_system_settings_success_with_time(logs):
     with open(webcam.system.CRONJOB_FILE, 'w'):
         pass
 
-    system.apply_system_settings({'time': {}})
-    assert len(logs) == 3
+    System.apply_system_settings({'time': {}})
+    assert len(logs) == 1
     assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
