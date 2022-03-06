@@ -1,19 +1,16 @@
 import sys
 import json
-import locale
 import logging
 import datetime
 from time import sleep
 
 from zanzocam.constants import (
+    UPLOAD_LOGS,
     CAMERA_LOG,
-    LOCALE,
-    CONFIGURATION_FILE,
-    IMAGE_OVERLAYS_PATH,
     WAIT_AFTER_CAMERA_FAIL
 )
-from zanzocam.webcam.system import System
-from zanzocam.webcam.configuration import Configuration
+from zanzocam.webcam import system
+from zanzocam.webcam import configuration
 from zanzocam.webcam.server import Server
 from zanzocam.webcam.camera import Camera
 from zanzocam.webcam.errors import ServerError
@@ -23,9 +20,6 @@ from zanzocam.webcam.utils import log, log_error, log_row
 def main():
     """
     Main script coordinating all operations.
-
-    Remember: catch all that is not essential and log it loudly,
-    let everything critical break and catch it at the end.
     """
     # Setup the logging
     logging.basicConfig(
@@ -40,286 +34,138 @@ def main():
     log("Start")
 
     try:
-        # Initial values
-        upload_logs = True
-        errors_were_raised = False
+        upload_logs = UPLOAD_LOGS
         restore_required = False
-        old_conf = None
-        conf = None
+        config = None
         server = None
         camera = None
 
-        # Check the system status
-        try:
-            start = datetime.datetime.now()
+        start = datetime.datetime.now()
 
-            log("Status report:")
-            system = System()
-            status = system.report_general_status()
-            for key, value in status.items():
-                log(f" - {key}: {value}")
-        except Exception as e:
-            errors_were_raised = True
-            log_error("Something unexpected happened during the system "
-                      "status check. Skipping this step. This might be "
-                      "a symptom of deeper issues, don't ignore this!", e)
-
-        # Setup locale
-        try:
-            locale.setlocale(locale.LC_ALL, LOCALE)
-        except Exception as e:
-            errors_were_raised = True
-            log_error("Could not set locale. Proceeding without it.", e)
-
-        # Load current configuration - or try with its backup if not found
-        backup_path = str(CONFIGURATION_FILE) + ".bak"
-        try:
-            try:
-                log("Loading last configuration file...")
-                old_conf = Configuration()
-
-            except Exception as e:
-                if isinstance(e, FileNotFoundError):
-                    log_error(str(e))  # Avoid stacktrace
-                else:
-                    log_error("Failed to load the initial configuration from "
-                              f"'{CONFIGURATION_FILE}'.", e)
-                log("Trying to load the backup configuration file...")
-                old_conf = Configuration(path=backup_path)
-
-        except Exception as e:
-            upload_logs = False  # Cannot do it without any server data
-            errors_were_raised = True
-            if isinstance(e, FileNotFoundError):
-                log_error(f"No backup configuration file found under "
-                          f"'{backup_path}'.",
-                          fatal="cannot proceed without any data. Exiting.")
-            else:
-                log_error(f"Failed to load the backup configuration from "
-                          f"'{backup_path}'.", e,
-                          fatal="cannot proceed without any data. Exiting.")
+        # System check
+        no_errors = system.log_general_status()
+ 
+        # Locale setup
+        no_errors = system.set_locale()
+ 
+        # Load the configuration from disk
+        config = configuration.load_configuration_from_disk()
+        if not config:
+            log_error("", fatal="cannot proceed without any data. Exiting.")
+            no_errors = False
+            upload_logs = False
             return
 
-        # Verify if we're into the active hours or not, if defined
-        try:
-            log(f"Checking if {datetime.datetime.now().strftime('%H:%M')} "
-                f"is into active interval "
-                f"({old_conf.get_start_time()} to "
-                f"{old_conf.get_stop_time()}).")
+        # Make sure configuration and system status match
+        no_errors = system.apply_system_settings(config.get_system_settings())
 
-            if not old_conf.within_active_hours():
-                upload_logs = False
-                log("The current time is outside active hours. Turning off.")
-                return  # Remember, the 'finally' block will run after this
+        # Check active time
+        is_active_time = config.within_active_hours()
+        if is_active_time is False:
+            log("Turning off.")
+            return
+        if is_active_time is None:  # In case of errors
+            log_error("Continuing the run.")
+            no_errors = True
 
-            log("The current time is inside active hours.")
+        # Create the server
+        server = Server(config.get_server_settings())
 
-        except Exception as e:
-            log_error("An error occurred trying to assess if the "
-                      "current time is within active hours. "
-                      "Assuming YES.", e)
-            errors_were_raised = True
+        # Update the configuration file
+        new_config = server.update_configuration(config)
+        if new_config:
+        
+            # Update the system to conform to the new configuration file
+            no_errors = system.apply_system_settings(new_config.get_system_settings())
+            config = new_config
 
-        # Creating the initial server and getting the new conf
-        # NOTE: This is critical, so don't catch locally unless
-        # you can do some form of recovery
-        server = Server(old_conf.get_server_settings())
-        endpoint = server.get_endpoint()
+        log(f"Configuration in use:\n{config}")
 
-        try:
-            log(f"Downloading the new configuration file from {endpoint}")
-            conf = server.update_configuration(old_conf)
-            log("Configuration updated successfully.")
+        # Recreate the server (might differ in the new configuration)
+        server = Server(config.get_server_settings())
 
-        except Exception as e:
-            log_error("Something went wrong fetching the new conf "
-                      "file from the server. Keeping the old conf.", e)
-            errors_were_raised = True
-            restore_required = True
-            conf = old_conf
+        # Download the overlays
+        overlays_list = config.list_overlays()
+        no_errors = server.download_overlay_images(overlays_list)
 
-        finally:
-            log(f"Configuration in use:\n{conf}")
-
-        try:
-            log("Scanning the new configuration for overlays to download.")
-            overlays_list = conf.overlays_to_download()
-            log(f"Overlays to download: {overlays_list}")
-
-            if overlays_list:
-                log(f"Downloading overlay images from '{endpoint}' "
-                    f"into '{IMAGE_OVERLAYS_PATH}'")
-                server.download_overlay_images(overlays_list)
-
-        except Exception as e:
-            log_error("Something went wrong fetching the new overlay "
-                      "images from the server. Ignoring them.", e)
-            errors_were_raised = True
-            restore_required = False
-
-        # Recreate the server from the new configuration
-        server = Server(conf.get_server_settings())
-
-        # Update the system to conform to the new configuration file
-        try:
-            if conf.get_system_settings() != old_conf.get_system_settings():
-                log("Applying new system settings.")
-                system.apply_system_settings(conf.get_system_settings())
-            else:
-                log("System settings didn't change: no action required.")
-
-        except Exception as e:
-            errors_were_raised = True
-            restore_required = False
-            log_error("Something happened while applying the system "
-                      "settings from the new configuration file. "
-                      "Most likely the system settings were not altered. "
-                      "This means the system is still using this system "
-                      "settings:\n" +
-                      json.dumps(old_conf.get_system_settings(), indent=4) +
-                      "\n", e)
-
-        # Create the picture
-        try:
-            log("Initializing camera")
-            camera = Camera(conf.get_camera_settings())
-            camera.take_picture()
-
-        except Exception as e:
-            # Try again using the old conf file
-            errors_were_raised = True
-            log_error("An error occurred while taking the picture.", e)
-            log(f"Waiting {WAIT_AFTER_CAMERA_FAIL}s and then trying again.")
-            sleep(WAIT_AFTER_CAMERA_FAIL)
-
+        # Take the picture
+        for _ in range(3):
+            log("Initializing camera...")
             try:
-                log_row(char="+")
-                log("Initializing camera")
-                camera = Camera(conf.get_camera_settings())
+                camera = Camera(config.get_camera_settings())
                 camera.take_picture()
-                log_row(char="+")
+                break
 
-            except Exception as ee:
-                # That's the second run that failed: give up.
-                errors_were_raised = True
-                restore_required = False
-                log_error("Something happened at the second attempt too!", ee,
-                          fatal="Exiting.")
-                return  # The 'finally' block will run after this
+            except Exception as e:
+                log_error("An exception occurred!", e)
+                log(f"Waiting for {WAIT_AFTER_CAMERA_FAIL} sec. "
+                    "and retrying...")
+                sleep(WAIT_AFTER_CAMERA_FAIL)
+
+        if not camera:
+            no_errors = False
+            return
 
         # Send the picture
-        try:
-            log(f"Uploading picture to {server.get_endpoint()}")
-            server.upload_picture(camera.processed_image_path,
-                                  camera.name,
-                                  camera.extension)
+        no_errors = server.upload_picture(camera.processed_image_path,
+                                          camera.name,
+                                          camera.extension)
 
-        except Exception as e:
-            errors_were_raised = True
-            restore_required = True
-            log_error("Something happened uploading the picture! "
-                      "It was probably not sent.", e,
-                      fatal="The error was unexpected, can't fix. "
-                            "The picture won't be uploaded.")
-            return  # The 'finally' block will run after this
+        # Cleanup the image files
+        no_errors = camera.cleanup_image_files()
+
 
     # Catch server errors: they block communication, so they are fatal anyway
-    except ServerError as se:
-        errors_were_raised = True
-        # If something went wrong with the server
-        # it's probably better to restore the old conf.
-        # If the server is not at fault, the old conf
-        # will point to the same server anyway
-        restore_required = True
-        log_error("An error occurred communicating with the server.",
-                  se,
-                  fatal="Restoring the old conf file and exiting.")
-
-    # Catch unexpected fatal errors
     except Exception as e:
-        errors_were_raised = True
+        no_errors = False
 
-        # If something really unexpected went wrong
-        # it's probably better to restore the old conf.
-        # If the server is not at fault, the old conf
-        # will point to the right server anyway
-        restore_required = True
-        log_error("Something unexpected occurred running the main procedure.",
-                  e, fatal="Restoring the old configuration file and exiting.")
+        if isinstance(e, ServerError):
+            log_error("An error occurred communicating with the server.",
+                      e, fatal="Restoring the old configuration and exiting.")
+        else:
+            log_error("Something unexpected occurred running the main procedure.",
+                      e, fatal="Restoring the old configuration and exiting.")
 
-    # Print the completion time (this block is called even after a return).
-    finally:
-
-        # Clean up image files if existing
-        try:
-            if camera:
-                log("Cleaning up image files.")
-                camera.cleanup_image_files()
-
-        except Exception as e:
-            errors_were_raised = True
-            restore_required = False
-            log_error("Failed to clean up image files. Note that the "
-                      "filesystem might fill up if the old pictures "
-                      "are not removed, which can cause ZANZOCAM to fail.", e)
-
-        # If we had trouble with the new conf, restore the old from the backup
-        # TODO assess the situation better! Maybe the failure is unrelated.
-        if restore_required and old_conf:
-            log("Restoring the old configuration file. Note that this "
+        log("Restoring the old configuration file. Note that this "
                 "operation affects the server settings only: system "
                 "settings might be still setup according to the newly "
                 "downloaded configuration file (if it was downloaded). "
                 "Check the above logs carefully to assess the situation.")
-            old_conf.restore_backup()
-            old_conf = Configuration()
-            server_conf = json.dumps(
-                old_conf.get_server_settings(), indent=4)
-            log(f"The next run will use the following server "
-                f"configuration:\n{server_conf}")
+ 
+        if config:
+            try:
+                no_errors = config.restore_backup()
+                old_config = configuration.load_configuration_from_disk()
+                server_config = json.dumps(old_config.get_server_settings(), indent=4)
+                log(f"The next run will use the following server "
+                    f"configuration:\n{server_config}")
 
-        errors_were_raised_str = "successfully"
-        if errors_were_raised or restore_required:
-            errors_were_raised_str = "with errors"
+            except Exception as e:
+                log_error("Failed to restore the backup config. "
+                          "ZanzoCam might have no valid config file for the next run.")
+
+    
+    # This block is called even after a return
+    finally:
+
+        errors_str = "successfully"
+        if not no_errors or restore_required:
+            errors_str = "with errors"
 
         end = datetime.datetime.now()
-        log(f"Execution completed {errors_were_raised_str} in: {end - start}")
+        log(f"Execution completed {errors_str} in: {end - start}")
         log_row()
+
 
         # Upload the logs
         if upload_logs:
             try:
-                endpoint = "[no server available]"
-                current_conf = Configuration()
+                current_conf = configuration.load_configuration_from_disk()
                 server = Server(current_conf.get_server_settings())
-                endpoint = server.get_endpoint()
-
                 server.upload_logs()
-                log(f"Logs uploaded successfully to {endpoint}")
-
             except Exception as e:
-                log_error(f"Something happened while uploading the logs "
-                          f"to {endpoint}", e,
-                          fatal="Logs won't be uploaded.")
-
-            # If restore was required, send a failure report to the old server
-            if restore_required and old_conf:
-                try:
-                    wrong_conf = '{"error": "no configuration found"}'
-                    if conf:
-                        wrong_conf = conf.get_server_settings()
-                    right_conf = old_conf.get_server_settings()
-
-                    if wrong_conf != right_conf:
-                        log(f"Sending failure report to "
-                            f"{server.get_endpoint()}")
-                        server.upload_failure_report(wrong_conf, right_conf)
-                        log("Failure report uploaded successfully.")
-
-                except Exception as e:
-                    log_error(f"Something happened while uploading the "
-                              f"failure report to {endpoint}", e,
-                              fatal="The report won't be uploaded.")
+                log_error("Something went wrong uploading the logs. "
+                          "Logs won't be uploaded.")
 
 
 if "__main__" == __name__:

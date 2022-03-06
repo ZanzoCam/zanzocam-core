@@ -3,12 +3,10 @@ from typing import Any, Dict, Tuple, Optional
 import os
 import math
 import piexif
-import datetime
-import textwrap
 from time import sleep
 from pathlib import Path
 from fractions import Fraction
-from PIL import Image, ImageFont, ImageDraw, ImageStat
+from PIL import Image, ImageStat
 
 try:
     from picamera import PiCamera
@@ -17,9 +15,8 @@ except ImportError:  # On the CI picamera is not installed
 
 from zanzocam.constants import *
 from zanzocam.webcam.utils import log, log_error
-from zanzocam.webcam.system import System
 from zanzocam.webcam.overlays import Overlay
-from zanzocam.webcam.configuration import Configuration 
+
 
 
 class Camera:
@@ -397,12 +394,24 @@ class Camera:
         image.save(self.processed_image_path, **save_arguments)
 
 
-    def cleanup_image_files(self):
+    def cleanup_image_files(self) -> bool:
         """
-        Delete all the image files that got created in the process
-        """
-        if os.path.exists(self.temp_photo_path):
-            os.remove(self.temp_photo_path)
+        Delete all the image files that got created in the process.
 
-        if os.path.exists(self.processed_image_path):
-            os.remove(self.processed_image_path)
+        Return True if no errors occurred, False otherwise
+        """
+        log("Cleaning up image files.")
+
+        try:
+            if os.path.exists(self.temp_photo_path):
+                os.remove(self.temp_photo_path)
+
+            if os.path.exists(self.processed_image_path):
+                os.remove(self.processed_image_path)
+
+        except Exception as e:
+            log_error("Failed to clean up image files. Note that the "
+                      "filesystem might fill up if the old pictures "
+                      "are not removed, which can cause ZANZOCAM to fail.", e)
+            return False
+        return True

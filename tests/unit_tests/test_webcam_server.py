@@ -1,18 +1,12 @@
 import os
 import pytest
-from pathlib import Path
-from textwrap import dedent
-from unittest.mock import Mock
-from freezegun import freeze_time
-from datetime import datetime, timedelta
+from tests.conftest import in_logs
 
 import zanzocam.webcam as webcam
-import zanzocam.constants as constants
 from zanzocam.webcam.utils import log
 from zanzocam.webcam.configuration import Configuration
 from zanzocam.webcam.server.server import Server
 from zanzocam.webcam.server.ftp_server import FtpServer
-from zanzocam.webcam.server.http_server import HttpServer
 
 
 class MockServerImplementation:
@@ -122,8 +116,9 @@ def test_update_config_works(logs):
     server = Server({'protocol': 'http'})
     new_config = server.update_configuration(old_config)
 
-    assert len(logs) == 0
-    
+    assert len(logs) == 2
+    assert not in_logs(logs, "ERROR")
+
     new_conf_content = open(webcam.server.server.CONFIGURATION_FILE, 'r').read()
     assert "".join(new_conf_content.split()) == '{"config":"new"}'
     
@@ -134,13 +129,15 @@ def test_update_config_works(logs):
 def test_download_overlay_images_works_with_empty_list(logs):
     server = Server({'protocol': 'http'})
     server.download_overlay_images([])
-    assert len(logs) == 0
+    assert len(logs) == 2
+    assert not in_logs(logs, "ERROR")
 
 
 def test_download_overlay_images_works_with_list(logs):
     server = Server({'protocol': 'http'})
     server.download_overlay_images(['test.jpg'])
-    assert len(logs) == 1
+    assert len(logs) == 3
+    assert not in_logs(logs, "ERROR")
     assert f"[TEST] Downloading overlay image 'test.jpg'" in logs[0]
 
 
@@ -157,7 +154,7 @@ def test_download_overlay_images_fail(monkeypatch, logs):
     )
     server = Server({'protocol': 'http'})
     server.download_overlay_images(['1.jpg', '2.jpg', '3.jpg'])
-    assert len(logs) == 3
+    assert not in_logs(logs, "ERROR")
     assert f"[TEST] Downloading overlay image '1.jpg'" in logs[0]
     assert f"New overlay image failed to download: '2.jpg'" in logs[1]
     assert f"[TEST] Downloading overlay image '3.jpg'" in logs[2]
@@ -170,8 +167,8 @@ def test_upload_logs_works(logs):
     server = Server({'protocol': 'http'})
     server.upload_logs()
 
-    assert len(logs) == 1
     assert f"[TEST - SENDING LOGS from {webcam.server.server.CAMERA_LOG}]" in logs[0]
+    assert not in_logs(logs, "ERROR")
     assert open(webcam.server.server.CAMERA_LOG, 'r').read() == ""
 
 
@@ -182,7 +179,7 @@ def test_upload_logs_with_path(tmpdir, logs):
     server = Server({'protocol': 'http'})
     server.upload_logs(path = tmpdir / 'random-file')
 
-    assert len(logs) == 1
+    assert not in_logs(logs, "ERROR")
     assert f"[TEST - SENDING LOGS from {tmpdir / 'random-file'}]" in logs[0]
     assert open(tmpdir / 'random-file', 'r').read() == ""
 
@@ -201,50 +198,8 @@ def test_upload_logs_fails(monkeypatch, logs):
     with pytest.raises(ZeroDivisionError):
         server.upload_logs()
 
-    assert len(logs) == 0
+    assert in_logs(logs, "ERROR")
     assert open(webcam.server.server.CAMERA_LOG, 'r').read() == "test logs"
-
-
-def test_upload_failure_report_works(monkeypatch, logs):
-    with open(webcam.server.server.CAMERA_LOG, 'w') as c:
-        c.write('test logs')
-    
-    server = Server({'protocol': 'http'})
-    server.upload_failure_report({'conf': 'wrong'}, {'conf': 'right'})
-    
-    assert len(logs) == 1
-    assert f"[TEST - SENDING LOGS from {webcam.server.server.FAILURE_REPORT_PATH}]" in logs[0]
-    assert open(webcam.server.server.CAMERA_LOG, 'r').read() == "test logs"
-    assert open(webcam.server.server.FAILURE_REPORT_PATH, 'r').read() == ""
-
-
-def test_upload_failure_report_finds_no_logs(monkeypatch, logs):
-    server = Server({'protocol': 'http'})
-    server.upload_failure_report({'conf': 'wrong'}, {'conf': 'right'})
-    
-    assert len(logs) == 1
-    assert f"[TEST - SENDING LOGS from {webcam.server.server.FAILURE_REPORT_PATH}]" in logs[0]
-    assert "==> No logs found <==" in logs[0]
-    assert open(webcam.server.server.FAILURE_REPORT_PATH, 'r').read() == ""
-
-
-def test_upload_failure_report_cant_read_logs(monkeypatch, logs):
-    with open(webcam.server.server.CAMERA_LOG, 'w') as c:
-        c.write('test logs')
-    os.chmod(webcam.server.server.CAMERA_LOG, 0o222)
-    
-    server = Server({'protocol': 'http'})
-    server.upload_failure_report({'conf': 'wrong'}, {'conf': 'right'})
-    
-    assert len(logs) == 2
-    assert f"[TEST - SENDING LOGS from {webcam.server.server.FAILURE_REPORT_PATH}]" in logs[1]
-    assert "An error occurred opening the logs file and the logs " \
-           "could not be read" in logs[1]
-    os.chmod(webcam.server.server.CAMERA_LOG, 0o777)
-    assert open(webcam.server.server.CAMERA_LOG, 'r').read() == "test logs"
-    assert open(webcam.server.server.FAILURE_REPORT_PATH, 'r').read() == ""
-
-
 
 
 def test_upload_picture_works(monkeypatch, tmpdir, logs):
@@ -265,7 +220,7 @@ def test_upload_picture_works(monkeypatch, tmpdir, logs):
     server = Server({'protocol': 'http'})
     server.upload_picture(tmpdir / ".temp.jpg", 'test-pic', 'jpg')
 
-    assert len(logs) == 2
+    assert not in_logs(logs, "ERROR")
     assert "Picture 'test-pic-3.jpg' uploaded successfully" in logs[0]
     assert "Pictures deleted successfully" in logs[1]
     assert not os.path.exists(tmpdir / ".temp.jpg")
@@ -289,7 +244,7 @@ def test_upload_picture_no_cleanup(monkeypatch, tmpdir, logs):
     server = Server({'protocol': 'http'})
     server.upload_picture(tmpdir / ".temp.jpg", 'test-pic', 'jpg', cleanup = False)
 
-    assert len(logs) == 1
+    assert not in_logs(logs, "ERROR")
     assert "Picture 'test-pic-3.jpg' uploaded successfully" in logs[0]
     assert os.path.exists(tmpdir / ".temp.jpg")
 
@@ -308,7 +263,7 @@ def test_upload_picture_does_not_catch_exceptions(monkeypatch, tmpdir, logs):
     with pytest.raises(ZeroDivisionError):
         server.upload_picture(tmpdir / ".temp.jpg", 'test-pic', 'jpg')
 
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
     assert os.path.exists(tmpdir / ".temp.jpg")
 
 
@@ -330,7 +285,7 @@ def test_upload_picture_needs_correct_path(monkeypatch, tmpdir, logs):
         server.upload_picture(tmpdir / ".temp.jpg", 'test-pic', 'jpg')
         assert "No picture to upload" in str(e)
 
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
     assert not os.path.exists(tmpdir / ".temp.jpg")
 
 
@@ -360,7 +315,7 @@ def test_upload_picture_needs_path_name_extension(monkeypatch, tmpdir, logs):
         server.upload_picture(tmpdir / ".temp.jpg", 'test-pic', '')
         assert "Cannot upload the picture" in str(e)
 
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
     assert not os.path.exists(tmpdir / ".temp.jpg")
 
 
@@ -384,7 +339,7 @@ def test_create_server_ftp(monkeypatch, logs):
     })
     assert server.protocol == "FTP"
     assert isinstance(server._server, FtpServer)
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
 
     server = Server({
         'protocol': 'FtP', 
@@ -394,7 +349,7 @@ def test_create_server_ftp(monkeypatch, logs):
     })
     assert server.protocol == "FTP"
     assert isinstance(server._server, FtpServer)
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
 
 
 def test_create_server_http(monkeypatch, logs):
@@ -408,4 +363,4 @@ def test_create_server_http(monkeypatch, logs):
     server = Server({'protocol': 'hTtP', 'url': 'test'})
     assert server.protocol == "HTTP"
     assert isinstance(server._server, MockHttpServer)
-    assert len(logs) == 0
+    assert not in_logs(logs, "ERROR")
