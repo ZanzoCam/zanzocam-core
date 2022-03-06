@@ -29,6 +29,9 @@ DATA_PATH = BASE_PATH / "data"
 # Log files
 # #########
 
+#: Whether to upload the logs to the server at the end of the run.
+UPLOAD_LOGS = True
+
 #: Logs of the local server (stay on disk and get rotated)
 SERVER_LOG = DATA_PATH / 'interface.log'
 

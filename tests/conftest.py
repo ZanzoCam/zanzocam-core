@@ -1,20 +1,21 @@
+from typing import Union
+
 import os
-import PIL
 import json
-import shutil
 import pytest
 import logging
 
+from PIL import Image
 from textwrap import dedent
 from fractions import Fraction
-from PIL import Image, ImageChops
 from collections import namedtuple
 from collections import defaultdict
 from pathlib import Path, PosixPath
+from inspect import getmembers, isfunction, isclass, ismethod
 
 from zanzocam import constants
 from zanzocam.webcam import main, system, server, camera, overlays, configuration, utils
-from zanzocam.webcam.utils import log, log_error
+from zanzocam.webcam.utils import log
 
 
 @pytest.fixture(autouse=True)
@@ -39,24 +40,46 @@ def point_to_tmpdir(monkeypatch, tmpdir):
 
     base_path = str(constants.BASE_PATH.absolute()).strip()
     test_path = str(tmpdir).strip()
+
     for const, value in vars(constants).items():
         if (not const.startswith("_") and
-                (isinstance(value, str) or 
-                isinstance(value, PosixPath)
-            )):
-            new_value = str(value).replace(base_path, test_path)
+            (isinstance(value, str) or 
+            isinstance(value, PosixPath)
+        )):
+            # Patch value of constant
+            new_value = _patch_path(value, base_path, test_path)
 
-            if isinstance(value, PosixPath):
-                new_value = Path(new_value)
-
+            # Patch actual constants
             monkeypatch.setattr(constants, const, new_value)
             for module in modules:
                 try:
                     monkeypatch.setattr(module, const, new_value)
-                except Exception:
+                except Exception as e:
                     pass
+                    
+                # Gaher all function signatures for each module
+                functions = [func for name, func in getmembers(module, isfunction)]
+                for clas in getmembers(module, isclass):
+                    functions += [func for name, func in getmembers(clas, ismethod)]
 
-    system.CRONJOB_FILE = tmpdir / "zanzocam"
+                # Mock function defaults
+                for function in functions:
+                    new_defaults = []
+                    if function.__defaults__:
+                        for value in function.__defaults__:
+                            if isinstance(value, Path) or isinstance(value, str):
+                                value = _patch_path(value, base_path, test_path)
+                            new_defaults.append(value)
+                        monkeypatch.setattr(function, "__defaults__", tuple(new_defaults))
+
+    monkeypatch.setattr(system, "CRONJOB_FILE", tmpdir / "zanzocam")
+
+
+def _patch_path(value: Union[Path, str], base_path: str, test_path: str) -> Union[Path, str]:
+    new_value = str(value).replace(base_path, test_path)
+    if isinstance(value, PosixPath):
+        new_value = Path(new_value)
+    return new_value
 
 
 @pytest.fixture()
@@ -196,7 +219,7 @@ class MockFTP:
 
 
 @pytest.fixture(autouse=True)
-def mock_ftplib(monkeypatch):
+def mock_ftplib(monkeypatch, point_to_tmpdir):
     try:
         monkeypatch.setattr(server.ftp_server, "FTP", MockFTP)
         monkeypatch.setattr(server.ftp_server, "FTP_TLS", MockFTP)
@@ -250,7 +273,7 @@ class MockPostRequest:
 
 
 @pytest.fixture(autouse=True)
-def mock_requests(monkeypatch):
+def mock_requests(monkeypatch, point_to_tmpdir):
     
     def default_get_behavior(url, auth=None, timeout=None, *a, **k):
         
@@ -310,7 +333,7 @@ class MockPiCamera:
 
 
 @pytest.fixture(autouse=True)
-def mock_piexif(monkeypatch):
+def mock_piexif(monkeypatch, point_to_tmpdir):
     """
         Used in the tests of camera.py to mock away PIEXIF
         Note: PIEXIF can be mocked, but the data need to be
