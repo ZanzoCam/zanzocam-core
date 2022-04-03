@@ -1,14 +1,15 @@
+# pylint: disable=missing-function-docstring
+
 import sys
 import logging
-from time import sleep
-from pathlib import Path
-from flask import Flask, Response, render_template, redirect, url_for, abort, request, flash
+from flask import Flask, render_template, redirect, url_for, abort, request
 
 import zanzocam.constants as constants
 from zanzocam.web_ui import pages, api, utils
 
 
 app = Flask(__name__)
+
 
 # Prevent caching: can break the logs fetching client-side
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -39,23 +40,27 @@ logging.basicConfig(
 
 @app.route("/", methods=["GET"])
 def home_endpoint():
-    return pages.home()
+    return pages.home_page()
 
 
 @app.route("/network", methods=["GET"])
 def network_endpoint():
-    return pages.network()
+    return pages.network_page()
 
 
 @app.route("/server", methods=["GET"])
 def server_endpoint():
-    return pages.server()
+    return pages.server_page()
 
 
 @app.route("/webcam", methods=["GET"])
 def webcam_endpoint():
-    return pages.webcam()
+    return pages.webcam_page()
 
+
+@app.route("/logs", methods=["GET"])
+def logs_endpoint():
+    return pages.logs_page()
 
 
 #

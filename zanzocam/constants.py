@@ -29,11 +29,15 @@ DATA_PATH = BASE_PATH / "data"
 # Log files
 # #########
 
+#: Whether to upload the logs to the server at the end of the run.
+UPLOAD_LOGS = True
+
 #: Logs of the local server (stay on disk and get rotated)
 SERVER_LOG = DATA_PATH / 'interface.log'
 
 #: Logs produced during the main procedure (will be sent to the server)
-CAMERA_LOG = DATA_PATH / 'camera.log'
+CAMERA_LOGS = DATA_PATH / 'camera' 
+CAMERA_LOG = CAMERA_LOGS / 'camera.log'
 
 #: Logs produced in case of issues with the server
 FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'

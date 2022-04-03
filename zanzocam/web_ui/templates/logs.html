@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div id="page">
+
+        {% if not logs %}
+
+        La cartella dei log non esiste.
+        <br />
+        Questa ZANZOCAM non e' stata configurata correttamente e potrebbe non funzionare.
+
+        {% else %}
+
+        Questa ZANZOCAM contiene {{ logs_count }} file di log per un totale di {{ logs_size }} KB.
+        <br />
+        Il log piu' vecchio risale al {{ oldest_log }}.
+
+        {% for log_name, log_content in logs.items() %}
+        
+        <details>
+            <summary style="padding:1rem;"><b>{{ log_name }}</b></summary>
+            <div>
+                <a class="button">Scarica</a>
+                <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:2rem;border-radius:1rem;">{{ log_content }}</p>               
+            </div>
+        </details>
+
+        {% endfor %}
+
+        {% endif %}
+    </div>
+    
+{% endblock %}
