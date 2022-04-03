@@ -1,19 +1,13 @@
 import os
-import json
 import pytest
-from pathlib import Path
-from textwrap import dedent
 from freezegun import freeze_time
 from PIL import Image, ImageChops
-from datetime import datetime, timedelta
 
 import zanzocam.webcam as webcam
 import zanzocam.constants as constants
 from zanzocam.webcam.errors import ServerError
-from zanzocam.webcam.server.server import Server
 from zanzocam.webcam.server.http_server import HttpServer
 
-import tests.conftest
 from tests.conftest import MockGetRequest, MockPostRequest
 
 

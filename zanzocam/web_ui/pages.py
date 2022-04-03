@@ -1,6 +1,5 @@
 import os
-import datetime
-from time import strftime
+from datetime import datetime
 
 from flask import render_template
 
@@ -48,17 +47,15 @@ def webcam_page():
 def logs_page():
     """ The page with the logs browser """
     logs = {}
-    oldest_log_date = None
-
     if CAMERA_LOGS.is_dir():
         for logfile in os.listdir(CAMERA_LOGS):
-            
-            logs[Path(logfile).name] = read_log_file(CAMERA_LOGS / logfile)
+            if logfile.startswith("logs"):
 
-            edited_time = os.path.getmtime(CAMERA_LOGS / logfile)
-            if not oldest_log_date or edited_time < oldest_log_date:
-                oldest_log_date = edited_time
-
+                edited_time = os.path.getmtime(CAMERA_LOGS / logfile)
+                logs[Path(logfile).name] = {
+                    "date": datetime.strftime(datetime.fromtimestamp(edited_time), "%d-%m-%Y %H:%M:%S"),
+                    "content": read_log_file(CAMERA_LOGS / logfile)
+                }
         total_logs_size = sum(file.stat().st_size for file in Path(CAMERA_LOGS).rglob('*')) / 1024
 
     return render_template("logs.html",
@@ -66,6 +63,4 @@ def logs_page():
                             version=VERSION,
                             logs=logs,
                             logs_count=len(logs.keys()),
-                            logs_size=f"{total_logs_size:.2f}",
-                            oldest_log=datetime.datetime.strftime(datetime.datetime.fromtimestamp(oldest_log_date), "%d-%m-%Y %H:%M:%S")
-            )
+                            logs_size=f"{total_logs_size:.2f}")

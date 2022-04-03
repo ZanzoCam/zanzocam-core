@@ -1,9 +1,8 @@
-import sys
 from pathlib import Path
 
 
 #: ZanzoCam version
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 
 # Executables constants
@@ -30,13 +29,13 @@ DATA_PATH = BASE_PATH / "data"
 # #########
 
 #: Whether to upload the logs to the server at the end of the run.
-UPLOAD_LOGS = True
+UPLOAD_LOGS = False
 
 #: Logs of the local server (stay on disk and get rotated)
 SERVER_LOG = DATA_PATH / 'interface.log'
 
 #: Logs produced during the main procedure (will be sent to the server)
-CAMERA_LOGS = DATA_PATH / 'camera' 
+CAMERA_LOGS = DATA_PATH / 'camera'
 CAMERA_LOG = CAMERA_LOGS / 'camera.log'
 
 #: Logs produced in case of issues with the server
@@ -94,6 +93,9 @@ CRONJOB_FILE = "/etc/cron.d/zanzocam"
 
 #: Timeout for HTTP requests
 REQUEST_TIMEOUT = 60
+
+#: Randomization interval for uploads (in seconds, 0 to disable)
+RANDOM_UPLOAD_INTERVAL: int = 5
 
 #: URL to check to ensure Internet is reachable
 CHECK_UPLINK_URL = "http://www.google.com"

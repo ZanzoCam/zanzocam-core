@@ -1,12 +1,14 @@
-# pylint: disable=broad-except
+# pylint: disable
 
 import sys
 import json
+import shutil
 import logging
 import datetime
 from time import sleep
 
 from zanzocam.constants import (
+    CAMERA_LOGS,
     UPLOAD_LOGS,
     CAMERA_LOG,
     WAIT_AFTER_CAMERA_FAIL
@@ -24,6 +26,8 @@ def main():
     Main script coordinating all operations.
     """
     # Setup the logging
+    with open(CAMERA_LOG, "w") as _:
+        pass
     logging.basicConfig(
         level=logging.INFO,
         format='%(message)s',
@@ -130,14 +134,13 @@ def main():
                       exception, fatal="Restoring the old configuration and exiting.")
 
         log("Restoring the old configuration file.")
-        log("Note that this operation affects the server settings only:"
-            "system settings might be still setup according to the newly "
-            "downloaded configuration file (if it was downloaded).")
+        log("Note that this operation affects the server settings only: "
+            "system settings might have updated properly.")
         log("Check the above logs carefully to assess the situation.")
  
         if config:
             try:
-                no_errors = config.restore_backup()
+                config.restore_backup()
                 old_config = configuration.load_configuration_from_disk()
                 server_config = json.dumps(old_config.get_server_settings(), indent=4)
                 log(f"The next run will use the following server "
@@ -148,17 +151,19 @@ def main():
                           "ZanzoCam might have no valid config file for the next run.", 
                           config_exception)
 
-    
     # This block is called even after a return
     finally:
 
         errors_str = "successfully"
-        if not no_errors or restore_required:
+        if (not no_errors) or restore_required:
             errors_str = "with errors"
 
         end = datetime.datetime.now()
         log(f"Execution completed {errors_str} in: {end - start}")
         log_row()
+
+        # Store the logs
+        shutil.copy2(CAMERA_LOG, CAMERA_LOGS / f"logs {datetime.datetime.now()}.log")
 
         # Upload the logs
         if upload_logs:

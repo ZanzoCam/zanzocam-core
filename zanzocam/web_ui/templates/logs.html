@@ -12,17 +12,17 @@
 
         {% else %}
 
-        Questa ZANZOCAM contiene {{ logs_count }} file di log per un totale di {{ logs_size }} KB.
-        <br />
-        Il log piu' vecchio risale al {{ oldest_log }}.
+        Questa ZANZOCAM contiene <b>{{ logs_count }}</b> file di log per un totale di <b>{{ logs_size }} KB</b>.
 
+        <h3>Logs:</h3>
+        
         {% for log_name, log_content in logs.items() %}
         
         <details>
-            <summary style="padding:1rem;"><b>{{ log_name }}</b></summary>
+            <summary style="padding:0.5rem;"><b>{{ log_content.date }}</b></summary>
             <div>
                 <a class="button">Scarica</a>
-                <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:2rem;border-radius:1rem;">{{ log_content }}</p>               
+                <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:2rem;border-radius:1rem;">{{ log_content.content }}</p>               
             </div>
         </details>
 

@@ -1,16 +1,15 @@
 from typing import Any, List, Dict
 
 import os
-import json
+import random
 from time import sleep
 from pathlib import Path
-from functools import wraps
 
 from zanzocam.constants import (
     CONFIGURATION_FILE,
-    FAILURE_REPORT_PATH,
     CAMERA_LOG,
-    IMAGE_OVERLAYS_PATH
+    IMAGE_OVERLAYS_PATH,
+    RANDOM_UPLOAD_INTERVAL
 )
 from zanzocam.webcam.utils import log, log_error, retry
 from zanzocam.webcam.configuration import Configuration
@@ -151,6 +150,12 @@ class Server:
         """
         Uploads the new picture to the server.
         """
+        # Wait a random time, if enabled
+        if RANDOM_UPLOAD_INTERVAL > 0:
+            interval = random.randrange(0, RANDOM_UPLOAD_INTERVAL*10) / 10
+            log(f"Waiting a random interval of {interval} sec to avoid server congestions.")
+            sleep(interval)
+
         log(f"Uploading picture to {self.get_endpoint()}")
         try:
             if not image_name or not image_path or not image_extension:
