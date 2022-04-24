@@ -9,6 +9,7 @@ from time import sleep
 
 from zanzocam.constants import (
     CAMERA_LOGS,
+    LOG_NAME_FORMAT,
     UPLOAD_LOGS,
     CAMERA_LOG,
     WAIT_AFTER_CAMERA_FAIL
@@ -163,7 +164,7 @@ def main():
         log_row()
 
         # Store the logs
-        shutil.copy2(CAMERA_LOG, CAMERA_LOGS / f"logs {datetime.datetime.now()}.log")
+        shutil.copy2(CAMERA_LOG, CAMERA_LOGS / datetime.datetime.now().strftime(LOG_NAME_FORMAT))
 
         # Upload the logs
         if upload_logs:

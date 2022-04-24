@@ -48,6 +48,7 @@ def webcam_page():
                            version=VERSION,
                            preview_url=PREVIEW_PICTURE_URL)
 
+
 def logs_page():
     """ The page with the logs browser """
     logs = OrderedDict()
@@ -55,12 +56,13 @@ def logs_page():
     if CAMERA_LOGS.is_dir():
         
         # Sort by edit time
-        sorted_logs = sorted([(name, os.path.getmtime(CAMERA_LOGS / name)) for name in os.listdir(CAMERA_LOGS)], key=lambda x:x[1], reverse=True)
+        log_files = [name for name in os.listdir(CAMERA_LOGS) if "camera" not in name]
+        sorted_logs = sorted(log_files, key=lambda name:datetime.strptime(name, LOG_NAME_FORMAT), reverse=True)
 
-        for logfile, edit_time in sorted_logs:
+        for logfile in sorted_logs:
             if logfile.startswith("logs"):
                 logs[Path(logfile).name] = {
-                    "date": datetime.strftime(datetime.fromtimestamp(edit_time), "%d-%m-%Y %H:%M:%S"),
+                    "date": datetime.strptime(logfile, LOG_NAME_FORMAT),
                     "content": read_log_file(CAMERA_LOGS / logfile)
                 }
         total_logs_size = sum(file.stat().st_size for file in Path(CAMERA_LOGS).rglob('*')) 

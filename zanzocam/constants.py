@@ -38,6 +38,9 @@ SERVER_LOG = DATA_PATH / 'interface.log'
 CAMERA_LOGS = DATA_PATH / 'camera'
 CAMERA_LOG = CAMERA_LOGS / 'camera.log'
 
+#: Used with datetime to format the log name
+LOG_NAME_FORMAT = "logs %d-%m-%Y %H:%M:%S.log"
+
 #: Logs produced in case of issues with the server
 FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 
