@@ -36,8 +36,9 @@
                 Tipo di connessione: <b>{{ network_data.type or "[non configurato]"}}</b><br>
                 {% if network_data.type == "WiFi"%}
                 Nome della rete (SSID): <b>{{ network_data.ssid or "[non configurato]"}}</b><br>
-                Password: <b id="wifi_pwd"></b><a id="wifi_pwd_button" onclick="toggle_wifi_password()" style="margin-left:1rem;">Mostra</a>
-                
+                Password: <b id="wifi_pwd"></b><a id="wifi_pwd_button" onclick="toggle_wifi_password()" style="margin-left:1rem;">Mostra</a><br>
+                Segnale: <b><span id="wifi-signal">{{ network_data.wifi_data["signal level"] }}</span></b>
+
                 {% elif network_data.type == "Ethernet"%}
                 
                 {% elif network_data.type == "SIM"%}

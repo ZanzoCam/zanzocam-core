@@ -1,9 +1,12 @@
 import os
+import shutil
 from datetime import datetime
+from typing import OrderedDict
 
 from flask import render_template
 
 from zanzocam.web_ui.utils import read_setup_data_file, read_flag_file, read_log_file, clear_logs
+from zanzocam.webcam.system import get_wifi_data
 from zanzocam.constants import *
 
 
@@ -12,6 +15,7 @@ def home_page():
     """ The initial page with the summary """
     hotspot_value = read_flag_file(HOTSPOT_FLAG, "YES")
     network_data = read_setup_data_file(NETWORK_DATA)
+    network_data["wifi_data"] = get_wifi_data()
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 
                             title="Setup", 
@@ -46,21 +50,40 @@ def webcam_page():
 
 def logs_page():
     """ The page with the logs browser """
-    logs = {}
-    if CAMERA_LOGS.is_dir():
-        for logfile in os.listdir(CAMERA_LOGS):
-            if logfile.startswith("logs"):
+    logs = OrderedDict()
 
-                edited_time = os.path.getmtime(CAMERA_LOGS / logfile)
+    if CAMERA_LOGS.is_dir():
+        
+        # Sort by edit time
+        sorted_logs = sorted([(name, os.path.getmtime(CAMERA_LOGS / name)) for name in os.listdir(CAMERA_LOGS)], key=lambda x:x[1], reverse=True)
+
+        for logfile, edit_time in sorted_logs:
+            if logfile.startswith("logs"):
                 logs[Path(logfile).name] = {
-                    "date": datetime.strftime(datetime.fromtimestamp(edited_time), "%d-%m-%Y %H:%M:%S"),
+                    "date": datetime.strftime(datetime.fromtimestamp(edit_time), "%d-%m-%Y %H:%M:%S"),
                     "content": read_log_file(CAMERA_LOGS / logfile)
                 }
-        total_logs_size = sum(file.stat().st_size for file in Path(CAMERA_LOGS).rglob('*')) / 1024
+        total_logs_size = sum(file.stat().st_size for file in Path(CAMERA_LOGS).rglob('*')) 
+        _, _, free_disk_space = shutil.disk_usage(__file__)
+        percentage_occupancy = (total_logs_size / (total_logs_size + free_disk_space)) * 100
+
+        no_logs_dir = False
+        logs_count=len(logs.keys())
+        logs_size=f"{(total_logs_size / 1024):.2f} KB"
+        log_disk_occupancy=f"{percentage_occupancy:.4f}%"
+
+    else:
+        no_logs_dir = True
+        logs=[]
+        logs_count=0
+        logs_size="0 KB"
+        log_disk_occupancy="0.0000%"
 
     return render_template("logs.html",
                             title="Logs Browser",
                             version=VERSION,
+                            no_logs_dir=no_logs_dir,
                             logs=logs,
-                            logs_count=len(logs.keys()),
-                            logs_size=f"{total_logs_size:.2f}")
+                            logs_count=logs_count,
+                            logs_size=logs_size,
+                            log_disk_occupancy=log_disk_occupancy)

@@ -1,7 +1,7 @@
 from typing import Dict
 
 import os
-import json
+import shutil
 import picamera
 import subprocess
 from flask import send_from_directory, abort, flash
@@ -126,36 +126,52 @@ def toggle_hotspot(value: str) -> int:
     abort(404)
     
 
-def get_logs(kind: str, name: str):
+def get_logs(kind: str, filename: str):
     """ 
     Endpoint for fetching the latest logs 
     """
-    # Figure out which log has been requested
-    if name == "hotspot":
-        logs_path = HOTSPOT_LOGS
-    elif name == "picture":
-        logs_path = PICTURE_LOGS
+    # Validate the log name
+    if filename.lower() == "picture":
+        path = PICTURE_LOGS
     else:
-        return f"Logs name {name} not understood", 500
+        path = CAMERA_LOGS / filename
+        if not os.path.isfile(path):
+            raise ValueError(f"'{filename}' not found under '{CAMERA_LOG}'.")
 
     # Return the log as a JSON file
     if kind == "json":
         logs = {"content": ""}
         try:
-            logs["content"] = read_log_file(logs_path)
+            logs["content"] = read_log_file(path)
         except FileNotFoundError:
-            with open(logs_path, "w"):
+            with open(path, "w"):
                 pass
         return logs, 200
 
     # Return the log as a text file
     elif kind == "text":
-        if not os.path.exists(logs_path):
-            with open(logs_path, "w"):
+        if not os.path.exists(path):
+            with open(path, "w"):
                 pass
-        return send_from_path(logs_path)
+        return send_from_path(path)
     else:
         return f"Logs type {kind} not understood", 500
+
+
+def get_all_logs():
+    """ 
+    Endpoint for fetching all the logs as a zip file
+    """
+    tmp_dir = "/tmp/camera_logs"
+    if not os.path.isdir(tmp_dir):
+        os.mkdir(tmp_dir)
+    
+    for file in os.listdir(CAMERA_LOGS):
+        if "logs" in str(file):
+            shutil.copy2(CAMERA_LOGS / file, tmp_dir)
+
+    zip_name = shutil.make_archive(base_name="/tmp/zanzocam-logs", format="zip", root_dir=tmp_dir)
+    return send_from_path(zip_name)
 
 
 def get_preview():

@@ -224,38 +224,63 @@ def test_run_hotspot_script_failure(fake_process, logs):
     assert in_logs(logs, "The hotspot script failed to run")
 
 
-def test_get_wifi_ssid_success(fake_process, logs):
+def test_get_wifi_data_success(fake_process, logs):
     """
         Check if we can get wifi information under normal conditions
     """
-    ssid = "TEST WIFI"
+    ssid = """
+    wlan0       IEEE 802.11  ESSID:"TestWifi"  
+                Mode:Managed  Frequency:2.472 GHz  Access Point: 80:16:05:06:8D:61   
+                Bit Rate=28.8 Mb/s   Tx-Power=31 dBm   
+                Retry short limit:7   RTS thr:off   Fragment thr:off
+                Power Management:on
+                Link Quality=48/70  Signal level=-62 dBm  
+                Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+                Tx excessive retries:1015  Invalid misc:0   Missed beacon:0
+    """
     fake_process.register_subprocess(
-        ['/usr/sbin/iwgetid', '-r'], stdout=ssid
+        ['/usr/sbin/iwconfig', 'wlan0'], stdout=ssid
     )
-    assert system.get_wifi_ssid() == ssid
+    assert system.get_wifi_data() == {
+        "ssid": "TestWifi",
+        "frequency": "2.472 GHz",
+        "access point": "80:16:05:06:8D:61",
+        "bit rate": "28.8 Mb/s",
+        "tx-power": "31 dBm",
+        "link quality": "48/70",
+        "signal level": "-62 dBm"
+    }
     assert len(logs) == 0
 
 
-def test_get_wifi_ssid_no_wifi(fake_process, logs):
+def test_get_wifi_data_no_wifi(fake_process, logs):
     """
         Check if we can get wifi information when the device
         is not connected to any wifi (iwgetid returns nothing)
     """
     fake_process.register_subprocess(
-        ['/usr/sbin/iwgetid', '-r'],
+        ['/usr/sbin/iwconfig', 'wlan0'],
     )
-    assert system.get_wifi_ssid() == ""
+    assert system.get_wifi_data() == {
+        "ssid": "n/a",
+        "frequency": "n/a",
+        "access point": "n/a",
+        "bit rate": "n/a",
+        "tx-power": "n/a",
+        "link quality": "n/a",
+        "signal level": "n/a"
+    }
     assert len(logs) == 0
 
 
-def test_get_wifi_ssid_exception(fake_process, logs):
+def test_get_wifi_data_exception(fake_process, logs):
     """
         Check if we can get wifi information, behavior on exception.
     """
     fake_process.register_subprocess(
         ['/usr/sbin/iwgetid', '-r'], returncode=2
     )
-    assert system.get_wifi_ssid() is None
+    assert system.get_wifi_data() is None
     assert len(logs) == 1
     assert in_logs(logs, "Could not retrieve WiFi information")
 
@@ -353,11 +378,11 @@ def test_get_ram_stats_success(monkeypatch, meminfo, logs):
     """
     mock_open = mock.mock_open(read_data=meminfo)
     monkeypatch.setattr(builtins, 'open', mock_open)
-    stats = "total: 245724 kB | " + \
-            "free: 146968 kB | " + \
-            "available: 160988 kB | " + \
-            "total swap: 102396 kB | " + \
-            "free swap: 61948 kB | "
+    stats = {
+        "total": "245724 kB",
+        "free": "146968 kB",
+        "available": "160988 kB",
+    }
     assert system.get_ram_stats() == stats
     assert len(logs) == 0
 
@@ -395,7 +420,7 @@ def test_report_general_status(monkeypatch):
     assert "internet access" in status.keys()
     assert "disk size" in status.keys()
     assert "free disk space" in status.keys()
-    assert "RAM status" in status.keys()
+    assert "RAM" in status.keys()
 
 
 def test_copy_system_file_success(tmpdir, logs):

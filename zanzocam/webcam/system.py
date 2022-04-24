@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
 import os
+import re
 import sys
 import math
 import shutil
@@ -19,19 +20,30 @@ def log_general_status() -> bool:
     """
     Returns True if the execution was successful, False in case of errors
     """
+    return_value = True
     try:
-        log("Status report:")
+        report = "Status report:\n"
         status = report_general_status()
+
+        col_width = 16
         for key, value in status.items():
-            log(f" - {key}: {value}")
-        
+            if isinstance(value, dict):
+                report += f"- {key}:\n"
+                for inner_key, inner_value in value.items():
+                    report += f"  - {inner_key}: {' ' * (col_width - len(inner_key) - 2)}{inner_value}\n"
+                continue
+            report += f"- {key}: {' ' * (col_width - len(key))}{value}\n"
+
     except Exception as e:
         log_error("Something unexpected happened during the system "
-                  "status check. Skipping it. This might be "
+                  "status check. This might be "
                   "a symptom of deeper issues, don't ignore this!", e)
-        return False
+        return_value = False
+
+    finally:
+        log(report)
     
-    return True
+    return return_value
         
 
 def report_general_status() -> Dict:
@@ -62,12 +74,12 @@ def report_general_status() -> Dict:
             else: 
                 status["hotspot status"] = "ON (no known WiFi in range)"
 
-    status['wifi ssid'] = get_wifi_ssid()
+    status['wifi status'] = get_wifi_data()
     status['internet access'] = check_internet_connectivity()
 
     status['disk size'] = get_filesystem_size()
     status['free disk space'] = get_free_space_on_disk()
-    status['RAM status'] = get_ram_stats()
+    status['RAM'] = get_ram_stats()
     
     return status
 
@@ -190,30 +202,47 @@ def run_autohotspot() -> Optional[bool]:
 
 
 
-def get_wifi_ssid() -> Optional[str]:
+def get_wifi_data() -> Optional[Dict[str, str]]:
     """
     Get the SSID of the WiFi it is connected to.
     Returns None if an error occurs and "" if the device is not connected
     to any WiFi network.
     """
     try:
-        wifi_proc = subprocess.Popen(['/usr/sbin/iwgetid', '-r'],
+        iwconfig_proc = subprocess.Popen(['/usr/sbin/iwconfig', 'wlan0'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        stdout, stderr = wifi_proc.communicate()
+        stdout, stderr = iwconfig_proc.communicate()
+        
+        if iwconfig_proc.returncode > 0:
+            raise Exception(f"Process failed with return code "
+                            f"{iwconfig_proc.returncode}. "
+                            f"Stdout: {stdout}"
+                            f"Stderr: {stderr}")
 
-        if wifi_proc.returncode > 0:
-            raise RuntimeError("iwgetid failed with code "
-                                f"{wifi_proc.returncode}")
-        # If the device is offline, iwgetid will return nothing.
-        if not stdout:
-            return ""
-        return stdout.decode('utf-8').strip()
+        wifi_stats_raw = stdout.decode('utf-8').strip()
+        wifi_stats = {}
+        for key, regex in [
+            ("ssid", r"ESSID:\"(.*)\""),
+            ("frequency", r"Frequency:(\S+\s?\S*)"),
+            ("access point", r"Access Point: (\S*)"),
+            ("bit rate", r"Bit Rate=(\S+\s?\S*)"),
+            ("tx power", r"Tx-Power=(\S+\s?\S*)"),
+            ("link quality", r"Link Quality=(\S+)"),
+            ("signal level", r"Signal level=(\S+\s?\S*)")
+        ]:
+            value = re.findall(regex, wifi_stats_raw)
+            if value:
+                value = value[0].strip()
+            else:
+                value = "n/a"
+            wifi_stats[key] = value
+    
+        return wifi_stats
 
     except Exception as e:
         log_error("Could not retrieve WiFi information", e)
     return None
-
 
 
 def check_internet_connectivity() -> Optional[bool]:
@@ -232,7 +261,6 @@ def check_internet_connectivity() -> Optional[bool]:
     return None
     
     
-
 def get_filesystem_size() -> Optional[str]:
     """
     Returns a string with the size of the filesystem where the OS is running.
@@ -261,29 +289,24 @@ def get_free_space_on_disk() -> Optional[str]:
 
     
 
-def get_ram_stats() -> Optional[str]:
+def get_ram_stats() -> Optional[Dict[str, str]]:
     """
-    Returns a string with some stats about the RAM and swap usage.
+    Returns a string with some stats about RAM usage.
     Returns None if an error occurs.
     """
     try:
-        mem_stats = ""
+        mem_stats = {}
         with open("/proc/meminfo", 'r') as meminfo:
             for line in meminfo.readlines():
                 if line.startswith("MemTotal:"):
-                    mem_stats += "total: " + line.replace("MemTotal:", "").strip() + " | "
+                    mem_stats["total"] = line.replace("MemTotal:", "").strip()
 
                 elif line.startswith("MemFree:"):
-                    mem_stats += "free: " + line.replace("MemFree:", "").strip() + " | "
+                    mem_stats["free"] = line.replace("MemFree:", "").strip()
 
                 elif line.startswith("MemAvailable:"):
-                    mem_stats += "available: " + line.replace("MemAvailable:", "").strip() + " | "
+                    mem_stats["available"] = line.replace("MemAvailable:", "").strip()
 
-                elif line.startswith("SwapTotal:"):
-                    mem_stats += "total swap: " + line.replace("SwapTotal:", "").strip() + " | "
-
-                elif line.startswith("SwapFree:"):
-                    mem_stats += "free swap: " + line.replace("SwapFree:", "").strip() + " | "
         return mem_stats
 
     except Exception as e:

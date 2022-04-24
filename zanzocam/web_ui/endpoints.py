@@ -1,5 +1,6 @@
 # pylint: disable=missing-function-docstring
 
+import os
 import sys
 import logging
 from flask import Flask, render_template, redirect, url_for, abort, request
@@ -115,9 +116,21 @@ def get_preview_endpoint():
 
 @app.route("/logs/<kind>/<name>", methods=["GET"])
 def get_logs_endpoint(kind: str, name: str):
-    if kind in ["json", "text"] and name in ["hotspot", "picture"]:
+    if kind in ["json", "text"]:
         return api.get_logs(kind, name)
     abort(404)
+
+
+@app.route("/logs/all", methods=["GET"])
+def get_all_logs_endpoint():
+    return api.get_all_logs()
+
+
+@app.route("/logs/cleanup", methods=["GET"])
+def delete_all_logs_endpoint():
+    for logfile in os.listdir(constants.CAMERA_LOGS):
+        os.remove(constants.CAMERA_LOGS / logfile)
+    return redirect(url_for("logs_endpoint"))
 
 
 #

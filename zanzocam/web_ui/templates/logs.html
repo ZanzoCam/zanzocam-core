@@ -4,25 +4,26 @@
 
     <div id="page">
 
-        {% if not logs %}
-
+        {% if no_logs_dir  %}
         La cartella dei log non esiste.
         <br />
         Questa ZANZOCAM non e' stata configurata correttamente e potrebbe non funzionare.
-
         {% else %}
 
-        Questa ZANZOCAM contiene <b>{{ logs_count }}</b> file di log per un totale di <b>{{ logs_size }} KB</b>.
+        Questa ZANZOCAM contiene <b>{{ logs_count }}</b> file di log per un totale di <b>{{ logs_size }} ({{ log_disk_occupancy }} dello spazio disponibile)</b>.
 
         <h3>Logs:</h3>
+        
+        <a class="button" href="/logs/all">Scarica Tutti</a>
+        <a class="button" href="/logs/cleanup" style="background-color:#bb0000;" onclick="return confirm('Sei sicuro di voler cancellare TUTTI i logs?');">Cancella Tutti</a>
         
         {% for log_name, log_content in logs.items() %}
         
         <details>
             <summary style="padding:0.5rem;"><b>{{ log_content.date }}</b></summary>
             <div>
-                <a class="button">Scarica</a>
-                <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:2rem;border-radius:1rem;">{{ log_content.content }}</p>               
+                <a class="button" href="/logs/text/{{ log_name }}">Scarica</a>
+                <p id="logs" style="white-space: pre-wrap;color:#eee;background-color:#222;padding:2rem;border-radius:1rem;font-family:monospace;">{{ log_content.content }}</p>               
             </div>
         </details>
 

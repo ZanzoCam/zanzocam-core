@@ -47,11 +47,8 @@ CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 #: Information about the Internet connection
 NETWORK_DATA = DATA_PATH / "network_data.json"
 
-#: (probably unused, TO CHECK)
+#: Temporary camera logs for the web UI
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
-
-#: (probably unused, TO CHECK)
-HOTSPOT_LOGS = DATA_PATH / "hotspot_logs.txt"
 
 #: Whether the hotspot is allowed
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
