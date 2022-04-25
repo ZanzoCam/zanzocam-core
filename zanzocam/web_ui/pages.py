@@ -82,7 +82,7 @@ def logs_page():
         log_disk_occupancy="0.0000%"
 
     return render_template("logs.html",
-                            title="Logs Browser",
+                            title="Logs",
                             version=VERSION,
                             no_logs_dir=no_logs_dir,
                             logs=logs,

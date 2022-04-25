@@ -6,7 +6,7 @@ import logging
 from flask import Flask, render_template, redirect, url_for, abort, request
 
 import zanzocam.constants as constants
-from zanzocam.web_ui import pages, api, utils
+from zanzocam.web_ui import pages, api
 
 
 app = Flask(__name__)
@@ -85,6 +85,11 @@ def toggle_hotspot_endpoint(value):
     return api.toggle_hotspot(value)
 
 
+@app.route("/configure/send-logs/<value>", methods=["POST"])
+def toggle_send_logs_endpoint(value):
+    return api.toggle_send_logs(value)
+
+
 #
 # API to take actions
 #
@@ -97,12 +102,6 @@ def reboot_endpoint():
 @app.route("/shoot-picture", methods=["POST"])
 def shoot_picture_endpoint():
     return "", api.shoot_picture()
-
-
-@app.route("/clean-data", methods=["GET"])
-def clean_data_endpoint():
-    api.clean_data()
-    return redirect(url_for('home_endpoint'))
 
 
 #

@@ -13,7 +13,8 @@ from zanzocam.webcam.utils import log, log_error, AllStringEncoder
 
 def load_configuration_from_disk(
     path = str(CONFIGURATION_FILE),
-    backup_path = str(CONFIGURATION_FILE) + ".bak"
+    backup_path = str(CONFIGURATION_FILE) + ".bak",
+    quiet: bool = False
 ) -> Optional["Configuration"]:
     """
     Load current configuration from disk, 
@@ -22,7 +23,7 @@ def load_configuration_from_disk(
     Returns None if some error occurred.
     """
     try:
-        log(f"Loading configuration from {path}...")
+        if not quiet: log(f"Loading configuration from {path}...")
         return Configuration(path=path)
 
     except Exception as e:

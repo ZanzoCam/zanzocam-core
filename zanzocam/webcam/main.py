@@ -1,5 +1,6 @@
 # pylint: disable
 
+import os
 import sys
 import json
 import shutil
@@ -10,7 +11,7 @@ from time import sleep
 from zanzocam.constants import (
     CAMERA_LOGS,
     LOG_NAME_FORMAT,
-    UPLOAD_LOGS,
+    SEND_LOGS_FLAG,
     CAMERA_LOG,
     WAIT_AFTER_CAMERA_FAIL
 )
@@ -19,7 +20,7 @@ from zanzocam.webcam import configuration
 from zanzocam.webcam.server import Server
 from zanzocam.webcam.camera import Camera
 from zanzocam.webcam.errors import ServerError
-from zanzocam.webcam.utils import log, log_error, log_row
+from zanzocam.webcam.utils import log, log_error, log_row, read_flag_file
 
 
 def main():
@@ -27,6 +28,8 @@ def main():
     Main script coordinating all operations.
     """
     # Setup the logging
+    if not os.path.isdir(CAMERA_LOGS):
+        os.mkdir(CAMERA_LOGS)
     with open(CAMERA_LOG, "w") as _:
         pass
     logging.basicConfig(
@@ -38,9 +41,9 @@ def main():
         ]
     )
     log_row()
-    log("Start")
+    log(f"Starting at {datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S')}")
 
-    upload_logs = UPLOAD_LOGS
+    upload_logs = read_flag_file(SEND_LOGS_FLAG)
     restore_required = False
     no_errors = True
     config = None
@@ -169,12 +172,15 @@ def main():
         # Upload the logs
         if upload_logs:
             try:
-                current_conf = configuration.load_configuration_from_disk()
+                log("Uploading the logs...")
+                current_conf = configuration.load_configuration_from_disk(quiet=True)
                 server = Server(current_conf.get_server_settings())
                 server.upload_logs()
             except Exception as log_exception:
                 log_error("Something went wrong uploading the logs. "
                           "Logs won't be uploaded.", log_exception)
+        else:
+            log("Logs are not sent to the server.")
 
 
 if "__main__" == __name__:

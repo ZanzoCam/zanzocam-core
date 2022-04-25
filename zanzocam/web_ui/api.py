@@ -116,13 +116,23 @@ def configure_server(form_data: Dict[str, str]):
     return ""
 
 
-def toggle_hotspot(value: str) -> int:
+def toggle_hotspot(value: str) -> str:
     """ 
     Allow the initial hotspot to turn on in case no known wifi network is detected.
     """
     value = value.upper().strip()
     if value == "YES" or value == "NO":
         return "", toggle_flag(HOTSPOT_FLAG, value)
+    abort(404)
+    
+
+def toggle_send_logs(value: str) -> str:
+    """ 
+    Send the logs to the server or not
+    """
+    value = value.upper().strip()
+    if value == "YES" or value == "NO":
+        return "", toggle_flag(SEND_LOGS_FLAG, value)
     abort(404)
     
 
@@ -208,25 +218,6 @@ def reboot():
     try:
         reboot = subprocess.run(['/usr/bin/sudo', 'reboot'])
     except subprocess.CalledProcessError as e:
-        flash(str(e))
-        return 500
-    return 200
-
-
-def clean_data():
-    """ 
-    Deletes all overlays and logs.
-    """
-    try:
-        if os.path.exists(SERVER_LOG):
-            os.remove(SERVER_LOG)
-        if os.path.exists(CAMERA_LOG):
-            os.remove(CAMERA_LOG)
-        if os.path.exists(PREVIEW_PICTURE):
-            os.remove(PREVIEW_PICTURE)
-        for overlay in os.listdir(IMAGE_OVERLAYS_PATH):
-            os.remove(IMAGE_OVERLAYS_PATH / overlay)
-    except Exception as e:
         flash(str(e))
         return 500
     return 200

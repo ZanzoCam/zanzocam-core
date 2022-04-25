@@ -12,7 +12,19 @@
 
         Questa ZANZOCAM contiene <b>{{ logs_count }}</b> file di log per un totale di <b>{{ logs_size }} ({{ log_disk_occupancy }} dello spazio disponibile)</b>.
 
-        <h3>Logs:</h3>
+        <div class="row">
+            <h5>Invio dei log al server:</h5>
+            <label class="toggle">
+                <input type="radio" value="YES" name="hotspot_value" {% if not hotspot_value or hotspot_value=="YES" %}checked{%endif%} onchange="javascript:logs('yes');">
+                <span class="label">SI</span>
+            </label>
+            <label class="toggle">
+                <input type="radio" value="NO" name="hotspot_value" {% if hotspot_value=="NO" %}checked{%endif%} onchange="javascript:logs('no');">
+                <span class="label">NO</span>
+            </label>
+        </div>
+
+        <h3 style="margin-top:0;">Logs:</h3>
         
         <a class="button" href="/logs/all">Scarica Tutti</a>
         <a class="button" href="/logs/cleanup" style="background-color:#bb0000;" onclick="return confirm('Sei sicuro di voler cancellare TUTTI i logs?');">Cancella Tutti</a>
@@ -31,5 +43,24 @@
 
         {% endif %}
     </div>
+
+    <script>
+        function logs(value) {
+            fetch("/configure/send-logs/"+value, {
+                method:'POST',
+            })
+            .then(r => {
+                if (r.status === 200){
+                    alert("Modifica completata con successo.");
+                } else {
+                    alert("Qualcosa è andato storto! " +
+                        "ZanzoCam ha risposto con un codice "+ r.status +".");
+                }
+            }).catch(r => {
+                alert("Qualcosa è andato storto! " +
+                      "ZanzoCam non è raggiungibile.");
+            })   
+        }
+        </script>
     
 {% endblock %}

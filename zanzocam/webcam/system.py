@@ -416,6 +416,11 @@ def apply_time_settings(time_settings: Dict) -> bool:
     try:
         # Compares the expected content of the crontab with its actual content.
         new_crontab = prepare_crontab_string(time_settings)
+
+        if not os.path.isfile(CRONJOB_FILE):
+            log("The crontab file did not exist. Creating it.")
+            return update_crontab(time_settings, backup=False)
+
         with open(CRONJOB_FILE, "r") as current_cron:
 
             no_errors = None
@@ -445,7 +450,7 @@ def apply_time_settings(time_settings: Dict) -> bool:
     return True
 
     
-def update_crontab(time: Dict) -> bool:
+def update_crontab(time: Dict, backup: bool = True) -> bool:
     """ 
     Updates the crontab and tries to recover for potential issues.
     Might refuse to update it in case of misconfigurations, in which case it
@@ -462,13 +467,14 @@ def update_crontab(time: Dict) -> bool:
         return False
 
     # Backup the old file
-    try:
-        copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
-    except Exception as e:
-        # Do not add a return here, this issue is secondary
-        log_error("Failed to backup the previous crontab! "
-                  "In case of further errors it will be impossible to "
-                  "restore it.", e)
+    if backup:
+        try:
+            copy_system_file(CRONJOB_FILE, BACKUP_CRONJOB)   
+        except Exception as e:
+            # Do not add a return here, this issue is secondary
+            log_error("Failed to backup the previous crontab! "
+                    "In case of further errors it will be impossible to "
+                    "restore it.", e)
         
     # Creates a file with the right content
     try:

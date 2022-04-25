@@ -28,9 +28,6 @@ DATA_PATH = BASE_PATH / "data"
 # Log files
 # #########
 
-#: Whether to upload the logs to the server at the end of the run.
-UPLOAD_LOGS = False
-
 #: Logs of the local server (stay on disk and get rotated)
 SERVER_LOG = DATA_PATH / 'interface.log'
 
@@ -55,6 +52,9 @@ PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 
 #: Whether the hotspot is allowed
 HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
+
+#: Whether to send the logs to the server
+SEND_LOGS_FLAG = DATA_PATH / "send-logs.flag"
 
 #: URL to the preview picture in the web UI
 PREVIEW_PICTURE_URL = "static/previews/zanzocam-preview.jpg"

@@ -4,6 +4,7 @@ import logging
 import datetime
 import traceback
 from time import sleep
+from pathlib import Path
 from functools import wraps
 
 
@@ -49,7 +50,7 @@ def log(msg: str) -> None:
     """ 
     Logs the message to the console
     """
-    logging.info(f"{datetime.datetime.now()} -> {msg}")
+    logging.info(f"{datetime.datetime.now().strftime('%H:%M:%S')} -> {msg}")
 
 
 def log_error(msg: str, e: Exception=None, fatal: str=None) -> None:
@@ -67,8 +68,7 @@ def log_error(msg: str, e: Exception=None, fatal: str=None) -> None:
     if e is not None:
         stacktrace += f"The exception is:\n\n{traceback.format_exc()}\n"
 
-    log(f"{msg}{fatal_msg} {stacktrace}")
-    
+    log(f"{msg}{fatal_msg} {stacktrace}")    
     
 
 def log_row(char: str = "=") -> None:
@@ -76,3 +76,19 @@ def log_row(char: str = "=") -> None:
     Logs a row to the console
     """
     logging.info(f"\n{char*50}\n")
+
+
+def read_flag_file(path: Path):
+    """ 
+    Reads the value of a flag file (text file containing either 'YES' or 'NO')
+    """
+    try:
+        with open(path, 'r') as d:
+            value = d.read()
+            if value.strip().upper() == "YES":
+                return True
+            else:
+                return False
+    except Exception as e:
+        logging.error(e)
+        return True

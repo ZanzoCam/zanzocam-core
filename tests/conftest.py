@@ -87,7 +87,7 @@ def mock_modules(monkeypatch, tmpdir):
     """
         Used in tests of main.py to mock all submodules
     """
-    monkeypatch.setattr(main, 'System', MockSystem)
+    monkeypatch.setattr(main, 'system', MockSystem)
     monkeypatch.setattr(main, 'Server', MockServer)    
     monkeypatch.setattr(main, 'Camera', MockCamera)
     monkeypatch.setattr(main, 'Configuration', MockConfig)
@@ -101,7 +101,7 @@ def mock_modules_apart_config(monkeypatch):
         apart from Configuration, which is very simple and
         deeply used
     """
-    monkeypatch.setattr(main, 'System', MockSystem)
+    monkeypatch.setattr(main, 'system', MockSystem)
     monkeypatch.setattr(main, 'Server', MockServer)    
     monkeypatch.setattr(main, 'Camera', MockCamera)
     monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
