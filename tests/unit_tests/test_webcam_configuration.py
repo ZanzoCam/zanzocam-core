@@ -316,6 +316,21 @@ def test_within_active_hours_start_and_stop_handle_typos_5(logs):
     assert in_logs(logs, "Could not read the start-stop time values")
 
 
+@freeze_time("2021-01-01 12:00:00")
+def test_within_active_hours_unexpected_exception(logs, monkeypatch):
+    """
+        Either start or stop is not a valid time
+    """
+    monkeypatch.setattr(
+        webcam.configuration.Configuration,
+        "get_stop_time", 
+        lambda *a, **k: int("a")
+    )
+    config = Configuration.create_from_dictionary({})
+    assert config.within_active_hours() is None
+    assert in_logs(logs, "Could not read the start-stop time values")
+
+
 def test_backup_success(tmpdir, logs):
     """
         Configuration can backup its own file 

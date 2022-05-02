@@ -99,7 +99,6 @@ class Server:
         return None
 
 
-    @retry(times=3, wait_for=10)
     def download_overlay_images(self, images_list: List[str]) -> bool:
         """
         Download all the overlay images that should be re-downloaded.

@@ -9,7 +9,7 @@ from ftplib import FTP, FTP_TLS, error_perm
 from json import JSONDecodeError
 
 from zanzocam.constants import *
-from zanzocam.webcam.utils import log, log_error, log_row
+from zanzocam.webcam.utils import log, log_error, retry
 from zanzocam.webcam.configuration import Configuration
 from zanzocam.webcam.errors import ServerError
 
@@ -83,7 +83,7 @@ class FtpServer:
             
         raise ServerError("The server replied with an error code: " + response)
             
-
+    @retry(times=3, wait_for=10)
     def download_overlay_image(self, image_name: str) -> None:
         """ 
         Download an overlay image.

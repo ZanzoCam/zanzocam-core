@@ -185,9 +185,7 @@ class Configuration:
             return False
 
         except ValueError as e:
-            log_error(f"Could not read the start-stop time values "
-                      f"(start: {self.get_start_time()}, "
-                      f"stop: {self.get_stop_time()}) as valid hours.")
+            log_error(f"Could not read the start-stop time values as valid hours.")
         except Exception as e:
             log_error(f"Something unexpected has occured trying to find out "
                        "if this is active time for the ZanzoCam. "

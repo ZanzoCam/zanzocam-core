@@ -246,7 +246,7 @@ def test_get_wifi_data_success(fake_process, logs):
         "frequency": "2.472 GHz",
         "access point": "80:16:05:06:8D:61",
         "bit rate": "28.8 Mb/s",
-        "tx-power": "31 dBm",
+        "tx power": "31 dBm",
         "link quality": "48/70",
         "signal level": "-62 dBm"
     }
@@ -266,7 +266,7 @@ def test_get_wifi_data_no_wifi(fake_process, logs):
         "frequency": "n/a",
         "access point": "n/a",
         "bit rate": "n/a",
-        "tx-power": "n/a",
+        "tx power": "n/a",
         "link quality": "n/a",
         "signal level": "n/a"
     }
@@ -416,7 +416,7 @@ def test_report_general_status(monkeypatch):
     assert "last reboot" in status.keys()
     assert "uptime" in status.keys()
     assert "hotspot allowed" in status.keys()
-    assert "wifi ssid" in status.keys()
+    assert "wifi data" in status.keys()
     assert "internet access" in status.keys()
     assert "disk size" in status.keys()
     assert "free disk space" in status.keys()

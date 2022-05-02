@@ -16,7 +16,7 @@ from zanzocam.constants import (
     WAIT_AFTER_CAMERA_FAIL
 )
 from zanzocam.webcam import system
-from zanzocam.webcam import configuration
+from zanzocam.webcam.configuration import load_configuration_from_disk
 from zanzocam.webcam.server import Server
 from zanzocam.webcam.camera import Camera
 from zanzocam.webcam.errors import ServerError
@@ -41,9 +41,9 @@ def main():
         ]
     )
     log_row()
-    log(f"Starting at {datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S')}")
+    log(f"Starting...")
 
-    upload_logs = read_flag_file(SEND_LOGS_FLAG)
+    upload_logs = read_flag_file(SEND_LOGS_FLAG) if os.path.isfile(SEND_LOGS_FLAG) else True
     restore_required = False
     no_errors = True
     config = None
@@ -60,7 +60,7 @@ def main():
         no_errors = system.set_locale()
  
         # Load the configuration from disk
-        config = configuration.load_configuration_from_disk()
+        config = load_configuration_from_disk()
         if not config:
             log_error("", fatal="cannot proceed without any data. Exiting.")
             no_errors = False
@@ -108,6 +108,7 @@ def main():
                 break
 
             except Exception as exception:
+                no_errors = False
                 log_error("An exception occurred!", exception)
                 log(f"Waiting for {WAIT_AFTER_CAMERA_FAIL} sec. "
                     "and retrying...")
@@ -118,12 +119,12 @@ def main():
             return
 
         # Send the picture
-        no_errors = server.upload_picture(camera.processed_image_path,
+        no_errors = no_errors and server.upload_picture(camera.processed_image_path,
                                           camera.name,
                                           camera.extension)
 
         # Cleanup the image files
-        no_errors = camera.cleanup_image_files()
+        no_errors = no_errors and camera.cleanup_image_files()
 
 
     # Catch server errors: they block communication, so they are fatal anyway
@@ -145,7 +146,7 @@ def main():
         if config:
             try:
                 config.restore_backup()
-                old_config = configuration.load_configuration_from_disk()
+                old_config = load_configuration_from_disk()
                 server_config = json.dumps(old_config.get_server_settings(), indent=4)
                 log(f"The next run will use the following server "
                     f"configuration:\n{server_config}")
@@ -173,7 +174,7 @@ def main():
         if upload_logs:
             try:
                 log("Uploading the logs...")
-                current_conf = configuration.load_configuration_from_disk(quiet=True)
+                current_conf = load_configuration_from_disk(quiet=True)
                 server = Server(current_conf.get_server_settings())
                 server.upload_logs()
             except Exception as log_exception:

@@ -1110,4 +1110,4 @@ def test_cleanup_image_files_no_files(tmpdir, logs):
     assert not os.path.exists(camera.temp_photo_path)
     assert not os.path.exists(camera.processed_image_path)
     assert len(logs) == 1
-    assert in_logs("Failed to clean up")
+    assert in_logs(logs, "Cleaning up image files")

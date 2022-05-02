@@ -90,7 +90,7 @@ def mock_modules(monkeypatch, tmpdir):
     monkeypatch.setattr(main, 'system', MockSystem)
     monkeypatch.setattr(main, 'Server', MockServer)    
     monkeypatch.setattr(main, 'Camera', MockCamera)
-    monkeypatch.setattr(main, 'Configuration', MockConfig)
+    monkeypatch.setattr(configuration, 'load_configuration_from_disk', load_mock_config)
     monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
 
 
@@ -116,7 +116,17 @@ class MockSystem:
     @staticmethod
     def apply_system_settings(settings):
         log("[TEST] applying system settings - mocked")
-        return
+        return True
+
+    @staticmethod
+    def log_general_status() -> bool:
+        log("[TEST] Status report - mocked")
+        return True
+
+    @staticmethod
+    def set_locale() -> bool:
+        log("[TEST] set locale - mocked")
+        return True
 
 
 class MockServer:
@@ -124,25 +134,30 @@ class MockServer:
         log("[TEST] init Server - mocked")
 
     def __getattr__(self, *a, **k):
-        return
+        return True
 
     def get_endpoint(self, *a, **k):
         return "[MOCKED TEST ENDPOINT]"
 
     def download_overlay_images(self, *a, **k):
         log("[TEST] downloading overlays images - mocked")
+        return True
     
     def upload_logs(self, *a, **k):
         log("[TEST] uploading logs - mocked")
+        return True
 
     def upload_diagnostics(self, *a, **k):
         log("[TEST] uploading diagnostics - mocked")
+        return True
     
     def upload_failure_report(self, *a, **k):
         log("[TEST] uploading failure report - mocked")
+        return True
 
     def upload_picture(self, *a, **k):
         log("[TEST] uploading picture - mocked")
+        return True
 
     def update_configuration(self, *a, **k):
         return configuration.Configuration.create_from_dictionary({
@@ -157,13 +172,19 @@ class MockCamera:
             self.fail = bool(getattr(config, 'camera_will_fail', False))
 
     def __getattr__(self, *a, **k):
-        return None
+        return True
 
     def take_picture(self, *a, **k):
         log("[TEST] taking picture - mocked")
+        return True
 
     def cleanup_image_files(self, *a, **k):
         log("[TEST] cleanup image files - mocked")
+        return True
+
+
+def load_mock_config():
+    return MockConfig()
 
 
 class MockConfig:

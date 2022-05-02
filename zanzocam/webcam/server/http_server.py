@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict
 
 import os
 import json
@@ -6,13 +6,10 @@ import shutil
 import datetime
 import requests
 import traceback
-from ftplib import FTP, FTP_TLS, error_perm
-from json import JSONDecodeError
 
 from zanzocam.constants import *
 from zanzocam.webcam.errors import ServerError
-from zanzocam.webcam.utils import log, log_error, AllStringEncoder
-from zanzocam.webcam.configuration import Configuration
+from zanzocam.webcam.utils import log, log_error, retry, AllStringEncoder
 
 
 class HttpServer:
@@ -88,6 +85,7 @@ class HttpServer:
             raise err.with_traceback(e.__traceback__)
 
 
+    @retry(times=3, wait_for=10)
     def download_overlay_image(self, image_name: str) -> None:
         """ 
         Download an overlay image.

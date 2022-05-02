@@ -46,6 +46,7 @@ def log_general_status() -> bool:
     return return_value
         
 
+
 def report_general_status() -> Dict:
     """ 
     Collect general system data like version, uptime, internet connectivity. 
@@ -55,6 +56,7 @@ def report_general_status() -> Dict:
     """
     status = {}
     status["version"] = VERSION
+    status["current time"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     status["last reboot"] = get_last_reboot_time()
     status["uptime"] = get_uptime()
 
@@ -245,6 +247,7 @@ def get_wifi_data() -> Optional[Dict[str, str]]:
     return None
 
 
+
 def check_internet_connectivity() -> Optional[bool]:
     """
     Verifies that there is Internet connection to the outside.
@@ -261,6 +264,7 @@ def check_internet_connectivity() -> Optional[bool]:
     return None
     
     
+
 def get_filesystem_size() -> Optional[str]:
     """
     Returns a string with the size of the filesystem where the OS is running.
@@ -381,6 +385,7 @@ def give_ownership_to_root(path: Path):
                             f"to replicate the issue")
 
 
+
 def remove_root_owned_file(path: Path):
     """
     Executes 'sudo rm <path>'
@@ -448,6 +453,7 @@ def apply_time_settings(time_settings: Dict) -> bool:
         return False
     
     return True
+
 
     
 def update_crontab(time: Dict, backup: bool = True) -> bool:
