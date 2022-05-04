@@ -827,7 +827,6 @@ def test_apply_system_settings_success_with_time(logs):
         pass
 
     system.apply_system_settings({'time': {}})
-    assert len(logs) == 3
     assert in_logs(logs, "Crontab updated successfully")
     assert open(webcam.system.CRONJOB_FILE, 'r').readlines() == \
         ["# ZANZOCAM - shoot picture\n"] + \
