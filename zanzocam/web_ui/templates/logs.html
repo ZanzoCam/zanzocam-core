@@ -15,11 +15,11 @@
         <div class="row">
             <h3>Invio dei log al server:</h3>
             <label class="toggle">
-                <input type="radio" value="YES" name="hotspot_value" {% if not hotspot_value or hotspot_value=="YES" %}checked{%endif%} onchange="javascript:logs('yes');">
+                <input type="radio" value="YES" name="send_logs" {% if not send_logs or send_logs=="YES" %}checked{%endif%} onchange="javascript:logs('yes');">
                 <span class="label">SI</span>
             </label>
             <label class="toggle">
-                <input type="radio" value="NO" name="hotspot_value" {% if hotspot_value=="NO" %}checked{%endif%} onchange="javascript:logs('no');">
+                <input type="radio" value="NO" name="send_logs" {% if send_logs=="NO" %}checked{%endif%} onchange="javascript:logs('no');">
                 <span class="label">NO</span>
             </label>
         </div>
