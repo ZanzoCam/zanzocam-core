@@ -10,6 +10,7 @@ with (Path(__file__).parent.absolute() / 'zanzocam' / 'constants.py').open('r') 
         if line.startswith("VERSION"):
             VERSION = line.replace("VERSION", "").replace("=", "").replace('"', "").replace(" ", "").replace("\n", "")
             break
+            
 REQUIREMENTS: dict = {
     'deploy': [
         "picamera",
