@@ -120,7 +120,7 @@
         const button_wifi = document.getElementById("wifi_pwd_button");
         if( button_wifi.innerHTML == 'Mostra' ) {
             button_wifi.innerHTML = 'Nascondi';
-            field_wifi.innerHTML="{{ network_data.password  or '[non configurato]' }}";
+            field_wifi.innerHTML="{{ network_data.password  or '[nessuna]' }}";
         } else {
             button_wifi.innerHTML = 'Mostra';
             field_wifi.innerHTML="";
@@ -132,7 +132,7 @@
         const button = document.getElementById("server_pwd_button");
         if( button.innerHTML == 'Mostra' ) {
             button.innerHTML = 'Nascondi';
-            field.innerHTML="{{ server_data.password  or '[non configurato]'}}";
+            field.innerHTML="{{ server_data.password  or '[nessuna]'}}";
         } else {
             button.innerHTML = 'Mostra';
             field.innerHTML="";
