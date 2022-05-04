@@ -66,9 +66,6 @@ def main():
             upload_logs = False
             return
 
-        # Make sure configuration and system status match
-        no_errors = system.apply_system_settings(config.get_system_settings())
-
         # Check active time
         is_active_time = config.within_active_hours()
         if is_active_time is False:
