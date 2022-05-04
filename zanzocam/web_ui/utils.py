@@ -24,11 +24,11 @@ def read_network_data():
 
     with open("/etc/wpa_supplicant/wpa_supplicant.conf", 'r') as conf:
         for line in conf.readlines():
-            if ssid != "":
+            if ssid == "":
                 match = re.findall(r'ssid="(.*)"', line)
                 if match:
                     ssid = match[0]
-            if ssid != "":
+            if password == "":
                 match = re.findall(r'psk="(.*)"', line)
                 if match:
                     password = match[0]
