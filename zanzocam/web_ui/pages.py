@@ -70,7 +70,7 @@ def logs_page():
         percentage_occupancy = (total_logs_size / (total_logs_size + free_disk_space)) * 100
 
         no_logs_dir = False
-        send_logs = read_flag_file(path=SEND_LOGS_FLAG, default=YES, catch_errors=True)
+        send_logs = read_flag_file(path=SEND_LOGS_FLAG, default="YES", catch_errors=True)
         logs_count=len(logs.keys())
         logs_size=f"{(total_logs_size / 1024):.2f} KB"
         log_disk_occupancy=f"{percentage_occupancy:.4f}%"
