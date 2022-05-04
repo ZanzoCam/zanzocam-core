@@ -44,9 +44,6 @@ FAILURE_REPORT_PATH = DATA_PATH / 'failure_report.txt'
 #: Main configuration file
 CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 
-#: Information about the Internet connection
-NETWORK_DATA = DATA_PATH / "network_data.json"
-
 #: Temporary camera logs for the web UI
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
 

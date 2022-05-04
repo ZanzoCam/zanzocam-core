@@ -11,6 +11,10 @@ from zanzocam.webcam.server.http_server import HttpServer
 from tests.conftest import MockGetRequest, MockPostRequest
 
 
+@pytest.fixture(autouse=True)
+def mock_sleep(monkeypatch):
+    monkeypatch.setattr(webcam.utils, "sleep", lambda *a, **k: None)
+
 
 def test_create_httpserver_no_dict(logs):
     with pytest.raises(ValueError) as e:
@@ -61,28 +65,8 @@ def test_download_new_configuration_request_fails(monkeypatch, logs):
 
     server = HttpServer({'url': 'test'})
 
-    with pytest.raises(ServerError) as e:
+    with pytest.raises(ServerError, match="Something went wrong downloading the new configuration"):
         server.download_new_configuration()
-        assert "Something went wrong downloading the new configuration" in str(e)
-        assert "Full server response" in str(e)
-        assert "[no response from server]" in str(e)
-    assert len(logs) == 0
-
-
-def test_download_new_configuration_request_404(monkeypatch, logs):
-    monkeypatch.setattr(
-        webcam.server.http_server.requests,
-        'get',
-        lambda *a, **k: MockGetRequest(status=404))
-
-    server = HttpServer({'url': 'test'})
-
-    with pytest.raises(ServerError) as e:
-        server.download_new_configuration()
-        assert "The server replied with status code 404 (TEST REASON)" in str(e)
-        assert "Full server response" in str(e)
-        assert not "[no response from server]" in str(e)
-    assert len(logs) == 0
 
 
 def test_download_new_configuration_json_fails(monkeypatch, logs):
@@ -98,7 +82,6 @@ def test_download_new_configuration_json_fails(monkeypatch, logs):
         assert "The server did not reply valid JSON" in str(e)
         assert "Full server response" in str(e)
         assert '{"configuration: {"test": "data"}}' in str(e)
-    assert len(logs) == 0
 
 
 def test_download_new_configuration_no_config_key(monkeypatch, logs):
@@ -152,7 +135,6 @@ def test_download_overlay_image_request_fail(monkeypatch, tmpdir, logs):
         server.download_overlay_image('test.jpg')
         assert "Something went wrong downloading the overlay image 'test.jpg'" in str(e)
         assert "Full server response" in str(e)
-    assert len(logs) == 0
 
 
 def test_download_overlay_image_request_404(monkeypatch, tmpdir, logs):
@@ -171,7 +153,6 @@ def test_download_overlay_image_request_404(monkeypatch, tmpdir, logs):
         assert "Something went wrong downloading the overlay image 'test.jpg'" in str(e)
         assert "The server replied with status code 404 (TEST REASON)" in str(e)
         assert "Full server response" in str(e)
-    assert len(logs) == 0
 
 
 def test_download_overlay_image_stream_fail(monkeypatch, tmpdir, logs):
@@ -185,11 +166,8 @@ def test_download_overlay_image_stream_fail(monkeypatch, tmpdir, logs):
     )
     server = HttpServer({'url': 'test'})
 
-    with pytest.raises(ServerError) as e:
+    with pytest.raises(ServerError, match="Something went wrong downloading the overlay image 'test.jpg'"):
         server.download_overlay_image('test.jpg')
-        assert "Something went wrong downloading the overlay image 'test.jpg'" in str(e)
-        assert "Full server response" in str(e)
-    assert len(logs) == 0
 
 
 def test_send_logs_succeed(monkeypatch, tmpdir, logs):

@@ -4,7 +4,7 @@ import os
 import shutil
 import picamera
 import subprocess
-from flask import send_from_directory, abort, flash
+from flask import abort, flash
 
 from zanzocam.web_ui.utils import read_log_file, write_json_file, write_text_file, toggle_flag, send_from_path, clear_logs
 from zanzocam.constants import *
@@ -19,35 +19,19 @@ def configure_network(form_data: Dict[str, str]):
     # Gather network data
     network_type = form_data.get("network_type", "WiFi").lower()
 
-    if network_type == "wifi":
-        config = {
-                "type": "WiFi",
-                "ssid": form_data.get("network_ssid", None),
-                "password": form_data.get("network_password", None)
-            }
-    elif network_type == "ethernet":
-        config = {
-                "type": "Ethernet"
-            }
-    elif network_type == "sim":
-        config = {
-                "type": "SIM",
-                "apn": form_data.get("network_apn", None)
-            }
-    
-    # Save network data
-    write_json_file(path=NETWORK_DATA, content=config)
-    
     # If the network is a WiFi network, 
     # save the wpa_supplicant file and run the hotspot
     if network_type == "wifi":
-        _configure_wifi(config['ssid'], config['password'])
+        _configure_wifi(form_data.get("network_ssid", None), form_data.get("network_password", None))
 
-    elif network_type == "sim":
-        _configure_modem(config['apn'])
-        
 
 def _configure_wifi(ssid, password):
+    # Support passwordless wifi
+    if not password or password == "":
+        password_field = "key_mgmt=NONE"
+    else:
+        password_field = f'psk="{password}"'
+
     # Write wpa_supplicant.conf
     write_text_file(path=".tmp-wpa_supplicant",
                     content=f"""
@@ -56,7 +40,7 @@ def _configure_wifi(ssid, password):
 
                             network={{
                                 ssid="{ssid}"
-                                psk="{password}"
+                                {password_field}
                             }}
                             """)
     # Move wpa_supplicant.conf to its directory

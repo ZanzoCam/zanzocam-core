@@ -44,7 +44,6 @@ def main():
     log(f"Starting...")
 
     upload_logs = read_flag_file(SEND_LOGS_FLAG) if os.path.isfile(SEND_LOGS_FLAG) else True
-    restore_required = False
     no_errors = True
     config = None
     server = None
@@ -119,9 +118,7 @@ def main():
             return
 
         # Send the picture
-        no_errors = no_errors and server.upload_picture(camera.processed_image_path,
-                                          camera.name,
-                                          camera.extension)
+        server.upload_picture(camera.processed_image_path, camera.name, camera.extension)
 
         # Cleanup the image files
         no_errors = no_errors and camera.cleanup_image_files()
@@ -159,8 +156,9 @@ def main():
     # This block is called even after a return
     finally:
 
-        errors_str = "successfully"
-        if (not no_errors) or restore_required:
+        if no_errors:
+            errors_str = "successfully"
+        else:
             errors_str = "with errors"
 
         end = datetime.datetime.now()

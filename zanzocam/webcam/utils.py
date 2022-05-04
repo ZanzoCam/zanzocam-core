@@ -22,18 +22,21 @@ def retry(times: int, wait_for: float):
     def retry_decorator(func):
         @wraps(func)
         def retry_wrapper(*args, **kwargs) -> None:
-
-            for i in range(times):
+            loops = 0
+            while True:
                 try:
                     return func(*args, **kwargs)
 
                 except Exception as e:
+                    if loops >= times:
+                        raise e
+
+                    loops += 1
                     log_error("An exception occurred!", e)
                     log(f"Waiting for {wait_for} sec. "
-                        "and retrying...")
+                        f"and retrying ({loops}/{times})")
                     sleep(wait_for)
 
-            return None
         return retry_wrapper
     return retry_decorator
 

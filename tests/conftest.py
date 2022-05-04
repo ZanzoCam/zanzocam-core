@@ -2,6 +2,7 @@ from typing import Union
 
 import os
 import json
+import time
 import pytest
 import logging
 
@@ -83,18 +84,6 @@ def _patch_path(value: Union[Path, str], base_path: str, test_path: str) -> Unio
 
 
 @pytest.fixture()
-def mock_modules(monkeypatch, tmpdir):
-    """
-        Used in tests of main.py to mock all submodules
-    """
-    monkeypatch.setattr(main, 'system', MockSystem)
-    monkeypatch.setattr(main, 'Server', MockServer)    
-    monkeypatch.setattr(main, 'Camera', MockCamera)
-    monkeypatch.setattr(configuration, 'load_configuration_from_disk', load_mock_config)
-    monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
-
-
-@pytest.fixture()
 def mock_modules_apart_config(monkeypatch):
     """
         Used in tests of main.py to mock all submodules,
@@ -105,6 +94,16 @@ def mock_modules_apart_config(monkeypatch):
     monkeypatch.setattr(main, 'Server', MockServer)    
     monkeypatch.setattr(main, 'Camera', MockCamera)
     monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
+    monkeypatch.setattr(server.server, 'RANDOM_UPLOAD_INTERVAL', 0)
+    monkeypatch.setattr(utils, "sleep", lambda *a, **k: None)
+
+
+@pytest.fixture()
+def mock_modules(monkeypatch, mock_modules_apart_config, tmpdir):
+    """
+        Used in tests of main.py to mock all submodules
+    """
+    monkeypatch.setattr(configuration, 'load_configuration_from_disk', load_mock_config)
 
 
 class MockSystem:

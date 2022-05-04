@@ -1,4 +1,4 @@
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 
 import os
 import random
@@ -66,7 +66,7 @@ class Server:
     def update_configuration(
         self, 
         old_configuration: Configuration,
-        new_conf_path: Path = CONFIGURATION_FILE
+        new_conf_path: Optional[Path] = None
     ) -> Configuration:
         """
         Download the new configuration file from the server and updates it
@@ -74,6 +74,9 @@ class Server:
 
         Returns either the new configuration or None in case of errors.
         """
+        if not new_conf_path:
+            new_conf_path = CONFIGURATION_FILE
+
         endpoint = self.get_endpoint()
 
         try:
@@ -156,36 +159,27 @@ class Server:
             sleep(interval)
 
         log(f"Uploading picture to {self.get_endpoint()}")
-        try:
-            if not image_name or not image_path or not image_extension:
-                raise ValueError("Cannot upload the picture: "
-                                f"picture name ({image_name}) "
-                                f"or location ({image_path}) "
-                                f"or extension ({image_extension}) "
-                                f"not given.")
+        if not image_name or not image_path or not image_extension:
+            raise ValueError("Cannot upload the picture: "
+                            f"picture name ({image_name}) "
+                            f"or location ({image_path}) "
+                            f"or extension ({image_extension}) "
+                            f"not given.")
 
-            # Make sure the file in question exists
-            if not os.path.exists(image_path):
-                raise ValueError("No picture to upload: "
-                                f"{image_path} does not exist")
+        # Make sure the file in question exists
+        if not os.path.exists(image_path):
+            raise ValueError("No picture to upload: "
+                            f"{image_path} does not exist")
 
-            # Upload the picture
-            self.final_image_path = Path(
-                self._server.upload_picture(
-                    image_path, image_name, image_extension))
-            log(f"Picture '{self.final_image_path.name}' uploaded successfully.")
+        # Upload the picture
+        self.final_image_path = Path(
+            self._server.upload_picture(
+                image_path, image_name, image_extension))
+        log(f"Picture '{self.final_image_path.name}' uploaded successfully.")
 
-            if cleanup:
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-                if os.path.exists(self.final_image_path):
-                    os.remove(self.final_image_path)
-                log("Pictures deleted successfully.")
-
-        except Exception as e:
-            log_error("Something happened uploading the picture! "
-                      "It was probably not sent.", e,
-                      fatal="The error was unexpected, can't fix. "
-                      "The picture won't be uploaded.")
-
-
+        if cleanup:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            if os.path.exists(self.final_image_path):
+                os.remove(self.final_image_path)
+            log("Pictures deleted successfully.")

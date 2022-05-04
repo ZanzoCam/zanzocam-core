@@ -1,13 +1,19 @@
 import os
+import time
 import pytest
 from freezegun import freeze_time
 from PIL import Image, ImageChops
+
 
 import zanzocam.webcam as webcam
 import zanzocam.constants as constants
 from zanzocam.webcam.errors import ServerError
 from zanzocam.webcam.server.ftp_server import FtpServer
 
+
+@pytest.fixture(autouse=True)
+def mock_sleep(monkeypatch):
+    monkeypatch.setattr(webcam.utils, "sleep", lambda *a, **k: None)
 
 
 def test_create_ftpserver_no_dict(logs):
@@ -105,10 +111,8 @@ def test_download_new_configuration_ftp_error_code(monkeypatch, logs):
     )
     server = FtpServer({'hostname': 'me.it', 
                         'username': 'me'})
-    with pytest.raises(ServerError) as e:
+    with pytest.raises(ServerError, match="The server replied with an error code: 550 FAIL"):
         server.download_new_configuration()
-        assert "The server replied with an error code: 550 FAIL" in str(e)
-    assert len(logs) == 0
 
 
 def test_download_new_configuration_python_error(monkeypatch, logs):
@@ -121,7 +125,6 @@ def test_download_new_configuration_python_error(monkeypatch, logs):
                         'username': 'me'})
     with pytest.raises(ZeroDivisionError) as e:
         server.download_new_configuration()
-    assert len(logs) == 0
         
 
 def test_download_overlay_image_succeed(monkeypatch, tmpdir, logs):
@@ -153,11 +156,9 @@ def test_download_overlay_image_ftp_error_code(monkeypatch, logs):
     )
     server = FtpServer({'hostname': 'me.it', 
                         'username': 'me'})
-    with pytest.raises(ServerError) as e:
+    with pytest.raises(ServerError, match="The server replied with an error code for 'test.png': 550 FAIL"):
         server.download_overlay_image('test.png')
-        assert "The server replied with an error code for 'test.png': 550 FAIL" in str(e)
-    assert len(logs) == 0
-
+    
 
 def test_download_overlay_image_python_error(monkeypatch, logs):
     monkeypatch.setattr(
@@ -169,7 +170,6 @@ def test_download_overlay_image_python_error(monkeypatch, logs):
                         'username': 'me'})
     with pytest.raises(ZeroDivisionError) as e:
         server.download_overlay_image('test.png')
-    assert len(logs) == 0
         
 
 def test_send_logs_no_log_file_to_send(monkeypatch, tmpdir, logs):

@@ -52,11 +52,14 @@ class Configuration:
     """
     Manages the configurations.
     """
-    def __init__(self, path: Path = CONFIGURATION_FILE):
+    def __init__(self, path: Optional[Path] = None):
         """
         Loads the data stored in the configuration file as object attributes
         for this instance.
         """
+        if not path:
+            path = CONFIGURATION_FILE
+            
         if not os.path.exists(path):
             raise FileNotFoundError(
                 f"No configuration file found under {path}. "

@@ -76,7 +76,7 @@ def report_general_status() -> Dict:
             else: 
                 status["hotspot status"] = "ON (no known WiFi in range)"
 
-    status['wifi status'] = get_wifi_data()
+    status['wifi data'] = get_wifi_data()
     status['internet access'] = check_internet_connectivity()
 
     status['disk size'] = get_filesystem_size()
