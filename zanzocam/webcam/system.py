@@ -414,33 +414,15 @@ def apply_system_settings(settings: Dict) -> bool:
 
 def apply_time_settings(time_settings: Dict) -> bool:
     """
-    Checks if the time settings need to be updated and if so, updates them.
+    Updates the time settings (i.e. the crontab)
     Returns True in case of errors.
     """
-    log("Check if crontab needs to be updated...")
     try:
-        # Compares the expected content of the crontab with its actual content.
-        new_crontab = prepare_crontab_string(time_settings)
-
         if not os.path.isfile(CRONJOB_FILE):
             log("The crontab file did not exist. Creating it.")
             return update_crontab(time_settings, backup=False)
 
-        with open(CRONJOB_FILE, "r") as current_cron:
-
-            no_errors = None
-            for line in [0, 1, -1]:  # to check start time, frequency and stop time
-                if new_crontab[line] != current_cron.readline():
-
-                    log("The crontab content does not match the configuration. Updating it.")
-                    no_errors = update_crontab(time_settings)
-                    break
-        
-        if no_errors is None:
-            log("The crontab matches the configuration.")
-            no_errors = True
-
-        return no_errors
+        return update_crontab(time_settings)
 
     except Exception as e:
         log_error("Could not update the crontab. The wake-up frequency "
