@@ -92,7 +92,7 @@ class Server:
             configuration = Configuration.create_from_dictionary(
                 configuration_data, path=new_conf_path)
 
-            log("Configuration updated successfully.")
+            log("Configuration updated successfully")
             return configuration
 
         except Exception as e:
