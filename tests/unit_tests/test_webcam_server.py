@@ -25,7 +25,7 @@ class MockServerImplementation:
         log(f"[TEST] Downloading overlay image '{image}' - mocked")
 
     def send_logs(self, path):
-        log(f"[TEST - SENDING LOGS from {path}]\n{open(path, 'r').read()}")
+        log(f"[TEST - SENDING LOGS from {path}]")
 
     def upload_picture(self, *a, **k):
         pass

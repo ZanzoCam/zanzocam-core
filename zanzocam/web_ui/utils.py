@@ -33,7 +33,6 @@ def read_network_data():
                     match = re.findall(r'psk="(.*)"', line)
                     if match:
                         password = match[0]
-
     return {"type": "WiFi", "ssid": ssid, "password": password}
 
 
