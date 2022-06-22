@@ -35,8 +35,13 @@ def network_page():
 def server_page():
     """ The page with the server data forms """
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
-    return render_template("server.html", 
-                            title="Setup Server", 
+    try:
+        server_data["random_upload_interval"] = int(read_flag_file(DATA_PATH / "upload_interval.txt", default="5"))
+    except Exception as e:
+        logging.exception("data/upload_interval.txt does not contain an integer value. Overwriting its value with 5 seconds.")
+        server_data["random_upload_interval"] = 5
+    return render_template("server.html",
+                            title="Setup Server",
                             version=VERSION,
                             server_data=server_data)
 
@@ -70,6 +75,7 @@ def logs_page():
         percentage_occupancy = (total_logs_size / (total_logs_size + free_disk_space)) * 100
 
         no_logs_dir = False
+        send_logs = read_flag_file(path=SEND_LOGS_FLAG, default="YES", catch_errors=True)
         logs_count=len(logs.keys())
         logs_size=f"{(total_logs_size / 1024):.2f} KB"
         log_disk_occupancy=f"{percentage_occupancy:.4f}%"
@@ -79,6 +85,7 @@ def logs_page():
         logs=[]
         logs_count=0
         logs_size="0 KB"
+        send_logs=True
         log_disk_occupancy="0.0000%"
 
     return render_template("logs.html",
@@ -87,5 +94,6 @@ def logs_page():
                             no_logs_dir=no_logs_dir,
                             logs=logs,
                             logs_count=logs_count,
+                            send_logs=send_logs,
                             logs_size=logs_size,
                             log_disk_occupancy=log_disk_occupancy)

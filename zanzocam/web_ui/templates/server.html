@@ -56,12 +56,21 @@
                     <input type="password" name="server_password" value="{{ server_data.password }}"> 
                     <button onclick="toggle_password(this)" type="button">Mostra</button> 
                 </div>
+
+
+                <label for="random_upload_interval">Intervallo massimo di attesa per l'upload:</label>
+                <div class="row">
+                    <input id="random_upload_interval" type="text" name="random_upload_interval" value="{{ server_data.random_upload_interval }}"> 
+                    <button onclick="setRandomUploadInterval();" type="button">Salva</button> 
+                </div>
+
             
                 <div class="center">
                     <button id="configure-server" class="button setup-button">Configura Dati Server</button> 
                     <a href="/" class="button button-outline setup-button">Indietro</a> 
                 </div>
             </form>        
+
 
     </div>
     
@@ -85,6 +94,25 @@
         ftp_block.style.display = value==="FTP" ? "block" : "none";
     }
     toggle_server_protocol("{{ server_data.protocol }}");
+
+    function setRandomUploadInterval() {
+            var value = document.getElementById("random_upload_interval").value;
+	    fetch("/configure/upload-interval/"+value, {
+	        method:'POST',
+	    })
+            .then(r => {
+                if (r.status === 200){
+                    alert("Modifica completata con successo.");
+                } else {
+                    alert("Qualcosa è andato storto! " +
+                      "ZanzoCam ha risposto con un codice "+ r.status +".");
+                    console.log(r);
+                }
+            }).catch(r => {
+                alert("Qualcosa è andato storto! " +
+                      "ZanzoCam non è raggiungibile.");
+            })   
+    }
 
     </script>
     

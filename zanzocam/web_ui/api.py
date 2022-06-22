@@ -100,6 +100,16 @@ def configure_server(form_data: Dict[str, str]):
     return ""
 
 
+def set_upload_interval(value: int) -> str:
+    """ 
+    Set the random upload interval value
+    """
+    try:
+        int(value)
+        return "", write_text_file(Path(__file__).parent.parent / "data" / "upload_interval.txt", value)
+    except ValueError as e:
+        abort(500, f"invalid value for the random interval field: {value}")
+
 def toggle_hotspot(value: str) -> str:
     """ 
     Allow the initial hotspot to turn on in case no known wifi network is detected.

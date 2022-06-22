@@ -20,7 +20,8 @@ from zanzocam.webcam.configuration import load_configuration_from_disk
 from zanzocam.webcam.server import Server
 from zanzocam.webcam.camera import Camera
 from zanzocam.webcam.errors import ServerError
-from zanzocam.webcam.utils import log, log_error, log_row, read_flag_file
+from zanzocam.webcam.utils import log, log_error, log_row
+from zanzocam.web_ui.utils import read_flag_file
 
 
 def main():
@@ -43,7 +44,7 @@ def main():
     log_row()
     log(f"Starting...")
 
-    upload_logs = read_flag_file(SEND_LOGS_FLAG) if os.path.isfile(SEND_LOGS_FLAG) else True
+    upload_logs = True if read_flag_file(SEND_LOGS_FLAG, default="YES").upper() == "YES" else False
     no_errors = True
     config = None
     server = None
@@ -65,9 +66,6 @@ def main():
             no_errors = False
             upload_logs = False
             return
-
-        # Make sure configuration and system status match
-        no_errors = system.apply_system_settings(config.get_system_settings())
 
         # Check active time
         is_active_time = config.within_active_hours()

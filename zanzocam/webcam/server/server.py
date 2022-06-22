@@ -9,8 +9,9 @@ from zanzocam.constants import (
     CONFIGURATION_FILE,
     CAMERA_LOG,
     IMAGE_OVERLAYS_PATH,
-    RANDOM_UPLOAD_INTERVAL
+    DATA_PATH,
 )
+from zanzocam.web_ui.utils import read_flag_file
 from zanzocam.webcam.utils import log, log_error, retry
 from zanzocam.webcam.configuration import Configuration
 from zanzocam.webcam.server.http_server import HttpServer
@@ -92,7 +93,7 @@ class Server:
             configuration = Configuration.create_from_dictionary(
                 configuration_data, path=new_conf_path)
 
-            log("Configuration updated successfully.")
+            log("Configuration updated successfully")
             return configuration
 
         except Exception as e:
@@ -153,8 +154,13 @@ class Server:
         Uploads the new picture to the server.
         """
         # Wait a random time, if enabled
-        if RANDOM_UPLOAD_INTERVAL > 0:
-            interval = random.randrange(0, RANDOM_UPLOAD_INTERVAL*10) / 10
+        try:
+            random_upload_interval = int(read_flag_file(DATA_PATH / "upload_interval.txt", default="5"))
+        except Exception as e:
+            log_error("Can't read the upload interval value. Defaulting to 5 seconds.", e)
+            random_upload_interval = 5
+        if random_upload_interval > 0:
+            interval = random.randrange(0, random_upload_interval*10) / 10
             log(f"Waiting a random interval of {interval} sec to avoid server congestions.")
             sleep(interval)
 

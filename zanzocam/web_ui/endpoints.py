@@ -90,6 +90,11 @@ def toggle_send_logs_endpoint(value):
     return api.toggle_send_logs(value)
 
 
+@app.route("/configure/upload-interval/<value>", methods=["POST"])
+def set_upload_interval__endpoint(value):
+    return api.set_upload_interval(value)
+
+
 #
 # API to take actions
 #

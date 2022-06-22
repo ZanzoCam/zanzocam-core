@@ -81,17 +81,17 @@ def log_row(char: str = "=") -> None:
     logging.info(f"\n{char*50}\n")
 
 
-def read_flag_file(path: Path):
-    """ 
-    Reads the value of a flag file (text file containing either 'YES' or 'NO')
-    """
-    try:
-        with open(path, 'r') as d:
-            value = d.read()
-            if value.strip().upper() == "YES":
-                return True
-            else:
-                return False
-    except Exception as e:
-        logging.error(e)
-        return True
+#def read_flag_file(path: Path):
+#    """ 
+#    Reads the value of a flag file (text file containing either 'YES' or 'NO')
+#    """
+#    try:
+#        with open(path, 'r') as d:
+#            value = d.read()
+#            if value.strip().upper() == "YES":
+#                return True
+#            else:
+#                return False
+#    except Exception as e:
+#        logging.error(e)
+#        return True
