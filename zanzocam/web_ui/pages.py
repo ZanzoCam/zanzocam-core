@@ -13,14 +13,12 @@ from zanzocam.constants import *
 
 def home_page():
     """ The initial page with the summary """
-    hotspot_value = read_flag_file(HOTSPOT_FLAG, "YES")
     network_data = read_network_data()
     network_data["wifi_data"] = get_wifi_data()
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 
                             title="Setup", 
-                            version=VERSION, 
-                            hotspot_value=hotspot_value,
+                            version=VERSION,
                             network_data=network_data,
                             server_data=server_data)
 
