@@ -23,8 +23,8 @@ def log_general_status() -> bool:
     Returns True if the execution was successful, False in case of errors
     """
     return_value = True
+    report = "Status report:\n"
     try:
-        report = "Status report:\n"
         status = report_general_status()
 
         col_width = 16
@@ -45,6 +45,9 @@ def log_general_status() -> bool:
 
     finally:
         log(report)
+        if status and not not status.get('internet access', False):
+            log_error("No Internet access detected on this WiFi network. Skipping this photo.")
+            raise RuntimeError("No Internet access detected on this WiFi network.")
     
     return return_value
         
