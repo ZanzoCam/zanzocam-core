@@ -85,24 +85,6 @@
 
         <div class="sheet">
             <div class="row">
-                <h3>Hotspot:</h3>
-                <label class="toggle">
-                    <input type="radio" value="YES" name="hotspot_value" {% if not hotspot_value or hotspot_value=="YES" %}checked{%endif%} onchange="javascript:hotspotYES();">
-                    <span class="label">SI</span>
-                </label>
-                <label class="toggle">
-                    <input type="radio" value="NO" name="hotspot_value" {% if hotspot_value=="NO" %}checked{%endif%} onchange="javascript:hotspotNO();">
-                    <span class="label">NO</span>
-                </label>
-                <br>
-            </div>
-            <p><b>NOTA BENE:</b> Questo switch serve per permettere a ZanzoCam di generare o meno un hotspot quando perde contatto
-            con qualunque rete WiFi nota. Questo switch NON attiva l'hotspot se ZanzoCam è gia' in grado di collegarsi
-            con un'altra rete WiFi o è collegata via rete Ethernet.<br>
-        </div>
-
-        <div class="sheet">
-            <div class="row">
                 <h3>Riavvia ZanzoCam:</h3>
                 <a href="/reboot" class="button" type="button" style="margin: auto 0; background-color:#bb0000; border:0px;">Riavvia</a>
             </div>
@@ -136,51 +118,6 @@
         } else {
             button.innerHTML = 'Mostra';
             field.innerHTML="";
-        }
-    }
-    
-    function hotspotNO() {
-        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
-              "ZanzoCam smettera' di produrre il suo hotspot in caso di " +
-              "assenza di WiFi.\n\n" +
-              "Sei sicuro\a di voler proseguire?");
-        if(confirmation){
-            fetch("/configure/hotspot/NO", {
-                method:'POST',
-            })
-            .then(r => {
-                if (r.status === 200){
-                    alert("Modifica completata con successo.");
-                } else {
-                    alert("Qualcosa è andato storto! " +
-                      "ZanzoCam ha risposto con un codice "+ r.status +".");
-                }
-            }).catch(r => {
-                alert("Qualcosa è andato storto! " +
-                      "ZanzoCam non è raggiungibile.");
-            })   
-        }
-    }
-    function hotspotYES() {
-        confirmation = confirm("ATTENZIONE! Una volta premuto questo bottone, " +
-              "ZanzoCam comincera' a produrre il suo hotspot in caso di " +
-              "assenza di WiFi.\n\n" +
-              "Sei sicuro\a di voler proseguire?");
-        if(confirmation){
-            fetch("/configure/hotspot/YES", {
-                method:'POST',
-            })
-            .then(r => {
-                if (r.status === 200){
-                    alert("Modifica completata con successo.");
-                } else {
-                    alert("Qualcosa è andato storto! " +
-                      "ZanzoCam ha risposto con un codice "+ r.status +".");
-                }
-            }).catch(r => {
-                alert("Qualcosa è andato storto! " +
-                      "ZanzoCam non è raggiungibile.");
-            })   
         }
     }
     </script>

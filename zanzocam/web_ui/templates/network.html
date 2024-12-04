@@ -2,52 +2,21 @@
 
 {% block content %}
     <div id="page">
-
         <form id="config" method="POST" action="/configure/network">
-            <!--div class="row">
-                <p style="margin-top: 1rem; margin-bottom: 1rem; margin-right:3rem;">Tipo di connessione:</p>
-                <label class="toggle">
-                    <input type="radio" value="WiFi" name="network_type" {% if network_data.type=="WiFI" %}checked{%endif%} onclick="javascript:toggle_network_type('wifi')" style="display:none;">
-                    <span class="label">WiFI</span>
-                </label>
-                <label class="toggle">
-                    <input type="radio" value="Ethernet" name="network_type" {% if network_data.type=="Ethernet" %}checked{%endif%} onclick="javascript:toggle_network_type('ethernet')" style="display:none;">
-                    <span class="label">Ethernet</span>
-                </label>
-                <label class="toggle">
-                    <input type="radio" value="SIM" name="network_type" {% if network_data.type=="SIM" %}checked{%endif%} onclick="javascript:toggle_network_type('sim')" style="display:none;">
-                    <span class="label">SIM</span>
-                </label>
-            </div>    
-
-            <div id="wifi-vars" style="display: none; flex-direction:column!important;"-->
-                <label for="network_ssid">Nome della rete (SSID):</label>
-                <input type="text" name="network_ssid" value="{{ network_data.ssid }}">
-                
-                <label for="network_password">Password:</label>
-                <div class="row">
-                    <input type="password" name="network_password" value="{{ network_data.password }}"> 
-                    <button onclick="toggle_password(this)" type="button">Mostra</button> 
-                </div>
-            <!--/div>
+            <label for="network_ssid">Nome della rete (SSID):</label>
+            <input type="text" name="network_ssid" value="{{ network_data.ssid }}">
             
-            <div id="ethernet-vars" style="display: none;">
+            <label for="network_password">Password:</label>
+            <div class="row">
+                <input type="password" name="network_password" value="{{ network_data.password }}"> 
+                <button onclick="toggle_password(this)" type="button">Mostra</button> 
             </div>
-
-            <div id="sim-vars" style="display: none;">
-                <label for="network_apn">APN:</label>
-                <input type="text" name="network_apn" value="{{ network_data.apn }}">
-            </div-->
-        
             <div class="center">
                 <button id="configure-network" class="button setup-button">Configura la rete</button> 
                 <a href="/" class="button button-outline setup-button">Indietro</a> 
             </div>
-
         </form>
-
     </div>
-    
     
     <script>
     function toggle_password(button) {
@@ -59,20 +28,6 @@
             button.previousElementSibling.type="password";
         }
     }
-
-    function toggle_network_type(value){
-        // Toggle wifi, ethernet or sim blocks on the page
-        var wifi_block = document.getElementById("wifi-vars");
-        var ethernet_block = document.getElementById("ethernet-vars");
-        var sim_block = document.getElementById("sim-vars");
-
-        value = value.toLowerCase()
-        wifi_block.style.display = value==="wifi" ? "block" : "none";
-        ethernet_block.style.display = value==="ethernet" ? "block" : "none";
-        sim_block.style.display = value==="sim" ? "block" : "none";
-    }
-    toggle_network_type("{{ network_data.type }}");
-
     </script>
     
 {% endblock %}
