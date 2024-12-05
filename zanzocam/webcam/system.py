@@ -45,7 +45,7 @@ def log_general_status() -> bool:
 
     finally:
         log(report)
-        if status and not not status.get('internet access', False):
+        if status and not status.get('internet access', False):
             log_error("No Internet access detected on this WiFi network. Skipping this photo.")
             raise RuntimeError("No Internet access detected on this WiFi network.")
     
@@ -104,7 +104,7 @@ def check_race_condition():
     try:
         ps_proc = subprocess.Popen(['/bin/ps', 'aux'], stdout=subprocess.PIPE)
         ps_output, _ = ps_proc.communicate()
-        return "z-webcam" in ps_output.decode('utf-8')
+        return ps_output.decode('utf-8').count("z-webcam") > 1
     except Exception as e:
         log_error("Could not check for other processes. Something is wrong, aborting the script.", e)
 
