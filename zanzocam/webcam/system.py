@@ -18,10 +18,15 @@ from zanzocam.webcam.utils import log, log_error
 from zanzocam.web_ui.utils import read_flag_file
 
 
+class RaceConditionError(Exception):
+    pass
+
+
 def log_general_status() -> bool:
     """
     Returns True if the execution was successful, False in case of errors
     """
+    status = None
     return_value = True
     report = "Status report:\n"
     try:
@@ -35,6 +40,10 @@ def log_general_status() -> bool:
                     report += f"  - {inner_key}: {' ' * (col_width - len(inner_key) - 2)}{inner_value}\n"
                 continue
             report += f"- {key}: {' ' * (col_width - len(key))}{value}\n"
+
+    except RaceConditionError as e:
+        log_error("Another Zanzocam is running.", e)
+        raise e
 
     except Exception as e:
         log_error(
@@ -52,7 +61,6 @@ def log_general_status() -> bool:
     return return_value
         
 
-
 def report_general_status() -> Dict:
     """ 
     Collect general system data like version, uptime, internet connectivity. 
@@ -69,10 +77,10 @@ def report_general_status() -> Dict:
     race_condition = check_race_condition()
     if race_condition:
         log_error("Another Zanzocam process is running (probably waiting for WiFi). Skipping this photo.")
-        raise RuntimeError("Another Zanzocam process is running.")
+        raise RaceConditionError()
 
     status['wifi data'] = get_wifi_data()
-    if status['wifi data'] == "":
+    if status['wifi data']["ssid"] == "n/a":
             
         autohotspot_status = run_autohotspot()
         if autohotspot_status is None:
@@ -104,7 +112,7 @@ def check_race_condition():
     try:
         ps_proc = subprocess.Popen(['/bin/ps', 'aux'], stdout=subprocess.PIPE)
         ps_output, _ = ps_proc.communicate()
-        return ps_output.decode('utf-8').count("z-webcam") > 1
+        return ps_output.decode('utf-8').count("z-webcam") > 2
     except Exception as e:
         log_error("Could not check for other processes. Something is wrong, aborting the script.", e)
 
@@ -551,5 +559,3 @@ def prepare_crontab_string(time: Dict, length: Optional[int] = None) -> List[str
         start_total_minutes += frequency
 
     return cron_strings
-
-    
