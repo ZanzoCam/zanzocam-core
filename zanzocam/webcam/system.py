@@ -80,7 +80,7 @@ def report_general_status() -> Dict:
         raise RaceConditionError()
 
     status['wifi data'] = get_wifi_data()
-    if status['wifi data']["ssid"] == "n/a":
+    if status['wifi data'] and "ssid" in status['wifi data'] and status['wifi data']["ssid"] == "n/a":
             
         autohotspot_status = run_autohotspot()
         if autohotspot_status is None:

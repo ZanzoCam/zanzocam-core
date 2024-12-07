@@ -348,7 +348,7 @@ def test_report_general_status(monkeypatch):
 
     class Empty():
         def __getattr__(self, attr):
-            return lambda *a, **k: {"ssid": "mock network"}  # wifi data needs this key 
+            return lambda *a, **k: None
 
     monkeypatch.setattr(webcam, "system", Empty())
     status = original_system.report_general_status()
