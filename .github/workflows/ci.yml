@@ -22,7 +22,7 @@ jobs:
       - name: Install ZanzoCam
         run: |
           sudo apt-get install language-pack-it wireless-tools
-          pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun coveralls
+          pip install Pillow requests piexif pytest pytest-coverage pytest-subprocess freezegun coveralls flask
           pip install --no-deps -e .
 
       - name: Unit tests

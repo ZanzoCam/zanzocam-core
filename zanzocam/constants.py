@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 #: ZanzoCam version
-VERSION = "1.3.4"
+VERSION = "1.3.2"
 
 
 # Executables constants
@@ -49,6 +49,9 @@ CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 
 #: Temporary camera logs for the web UI
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
+
+#: Whether the hotspot is allowed
+HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
 
 #: Whether to send the logs to the server
 SEND_LOGS_FLAG = DATA_PATH / "send-logs.flag"
@@ -96,9 +99,6 @@ CHECK_UPLINK_URL = "http://www.google.com"
 
 #: Path to the autohotspot script
 AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
-
-#: Interval to wait before retrying the autohotspot script
-AUTOHOTSPOT_RETRY_TIME = 5 * 60 # 5 minutes
 
 #: Ecoding of the FTP server files
 FTP_CONFIG_FILE_ENCODING = 'utf-8'

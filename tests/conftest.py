@@ -94,6 +94,7 @@ def mock_modules_apart_config(monkeypatch):
     monkeypatch.setattr(main, 'Server', MockServer)    
     monkeypatch.setattr(main, 'Camera', MockCamera)
     monkeypatch.setattr(main, 'WAIT_AFTER_CAMERA_FAIL', 1)
+    monkeypatch.setattr(server.server, 'RANDOM_UPLOAD_INTERVAL', 0)
     monkeypatch.setattr(utils, "sleep", lambda *a, **k: None)
 
 

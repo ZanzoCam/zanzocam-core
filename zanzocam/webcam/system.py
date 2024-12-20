@@ -9,7 +9,6 @@ import locale
 import requests
 import datetime
 import subprocess
-from time import sleep
 from pathlib import Path
 from textwrap import dedent
 
@@ -18,18 +17,13 @@ from zanzocam.webcam.utils import log, log_error
 from zanzocam.web_ui.utils import read_flag_file
 
 
-class RaceConditionError(Exception):
-    pass
-
-
 def log_general_status() -> bool:
     """
     Returns True if the execution was successful, False in case of errors
     """
-    status = None
     return_value = True
-    report = "Status report:\n"
     try:
+        report = "Status report:\n"
         status = report_general_status()
 
         col_width = 16
@@ -41,25 +35,18 @@ def log_general_status() -> bool:
                 continue
             report += f"- {key}: {' ' * (col_width - len(key))}{value}\n"
 
-    except RaceConditionError as e:
-        log_error("Another Zanzocam is running.", e)
-        raise e
-
     except Exception as e:
-        log_error(
-            "Something unexpected happened during the system status check. "
-            "This might be a symptom of deeper issues, don't ignore this!", e
-        )
+        log_error("Something unexpected happened during the system "
+                  "status check. This might be "
+                  "a symptom of deeper issues, don't ignore this!", e)
         return_value = False
 
     finally:
         log(report)
-        if status and not status.get('internet access', False):
-            log_error("No Internet access detected on this WiFi network. Skipping this photo.")
-            raise RuntimeError("No Internet access detected on this WiFi network.")
     
     return return_value
         
+
 
 def report_general_status() -> Dict:
     """ 
@@ -74,27 +61,23 @@ def report_general_status() -> Dict:
     status["last reboot"] = get_last_reboot_time()
     status["uptime"] = get_uptime()
 
-    race_condition = check_race_condition()
-    if race_condition:
-        log_error("Another Zanzocam process is running (probably waiting for WiFi). Skipping this photo.")
-        raise RaceConditionError()
+    hotspot_allowed = check_hotspot_allowed()
+    if hotspot_allowed:
+        status["hotspot allowed"] = "YES"
+    else:        
+        status["hotspot allowed"] = "NO"
 
-    status['wifi data'] = get_wifi_data()
-    if status['wifi data'] and "ssid" in status['wifi data'] and status['wifi data']["ssid"] == "n/a":
-            
+    if status["hotspot allowed"] != "NO":
         autohotspot_status = run_autohotspot()
         if autohotspot_status is None:
             status["hotspot status"] = "FAILED (see stacktrace)"
         else:
-            while not autohotspot_status:
-                log(f"Hotspot is active. Waiting for {AUTOHOTSPOT_RETRY_TIME} minutes and retrying to connect to WiFi.")
-                sleep(AUTOHOTSPOT_RETRY_TIME)
-                autohotspot_status = run_autohotspot()
+            if autohotspot_status:
+                status["hotspot status"] = "OFF (connected to WiFi)"
+            else: 
+                status["hotspot status"] = "ON (no known WiFi in range)"
 
-            # Once we connect, let's collect the WiFi data again.
-            status["hotspot status"] = "OFF (connected to WiFi)"
-            status['wifi data'] = get_wifi_data()
-
+    status['wifi data'] = get_wifi_data()
     status['internet access'] = check_internet_connectivity()
     status['max upload wait'] = get_max_random_upload_interval()
 
@@ -103,18 +86,6 @@ def report_general_status() -> Dict:
     status['RAM'] = get_ram_stats()
     
     return status
-
-
-def check_race_condition():
-    """
-    Check whether there's any other Zanzocam process already running.
-    """
-    try:
-        ps_proc = subprocess.Popen(['/bin/ps', 'aux'], stdout=subprocess.PIPE)
-        ps_output, _ = ps_proc.communicate()
-        return ps_output.decode('utf-8').count("z-webcam") > 2
-    except Exception as e:
-        log_error("Could not check for other processes. Something is wrong, aborting the script.", e)
 
 
 def get_max_random_upload_interval():
@@ -165,6 +136,41 @@ def get_uptime() -> Optional[datetime.timedelta]:
     except Exception as e:
         log_error("Could not get uptime information", e)
     return None
+    
+
+
+def check_hotspot_allowed() -> Optional[str]:
+    """ 
+    Checks whether ZANZOCAM can turn on its hotspot at need.
+    True if it can, False otherwise. 
+    If the file was not found, it creates it with a value YES.
+    In case of exceptions, defaults to True.
+    """
+    if os.path.exists(HOTSPOT_FLAG):
+        try:
+            with open(HOTSPOT_FLAG, "r+") as h:
+                content = h.read().strip()
+                if content.upper() == "YES":
+                    return True
+                elif content.upper() == "NO":
+                    return False
+                else:
+                    log("The hostpot flag contains neither YES nor NO "
+                        f"(it contains '{content}'). Please fix. "
+                        "Assuming YES.")
+                    return True
+
+        except Exception as e:
+            log_error("Failed to check if the hotspot is allowed. "
+                    "Assuming YES", e)
+            return True
+    
+    log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG}"
+        f" with value YES")
+    with open(HOTSPOT_FLAG, "w") as h:
+        h.write("YES")
+    return True
+
 
 
 def run_autohotspot() -> Optional[bool]:
@@ -559,3 +565,5 @@ def prepare_crontab_string(time: Dict, length: Optional[int] = None) -> List[str
         start_total_minutes += frequency
 
     return cron_strings
+
+    

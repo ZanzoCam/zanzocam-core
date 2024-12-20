@@ -4,8 +4,6 @@
 **/wpa_supplicant.conf
 zanzocam/web_ui/static/previews/*
 zanzocam/data/*
-!zanzocam/data/send-logs.flag
-!zanzocam/data/upload_interval.txt
 
 **/build/*.*
 
