@@ -1,12 +1,7 @@
-import logging
 from pathlib import Path
 
-#from zanzocam.web_ui.utils import read_flag_file, write_text_file
-
-
 #: ZanzoCam version
-VERSION = "1.3.4"
-
+VERSION = "1.3.5"
 
 # Executables constants
 # #####################
@@ -96,9 +91,6 @@ CHECK_UPLINK_URL = "http://www.google.com"
 
 #: Path to the autohotspot script
 AUTOHOTSPOT_BINARY_PATH = "/usr/bin/autohotspot"
-
-#: Interval to wait before retrying the autohotspot script
-AUTOHOTSPOT_RETRY_TIME = 5 * 60 # 5 minutes
 
 #: Ecoding of the FTP server files
 FTP_CONFIG_FILE_ENCODING = 'utf-8'

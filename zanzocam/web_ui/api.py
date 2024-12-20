@@ -106,7 +106,7 @@ def set_upload_interval(value: int) -> str:
     """
     try:
         int(value)
-        return "", write_text_file(Path(__file__).parent.parent / "data" / "upload_interval.txt", value)
+        return "", write_text_file(Path(__file__).parent.parent / "data" / "upload-interval.txt", value)
     except ValueError as e:
         abort(500, f"invalid value for the random interval field: {value}")
 

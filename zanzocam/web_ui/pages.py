@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 from datetime import datetime
 from typing import OrderedDict
 
@@ -18,7 +19,7 @@ def home_page():
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 
                             title="Setup", 
-                            version=VERSION,
+                            version=VERSION, 
                             network_data=network_data,
                             server_data=server_data)
 
@@ -34,9 +35,9 @@ def server_page():
     """ The page with the server data forms """
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     try:
-        server_data["random_upload_interval"] = int(read_flag_file(DATA_PATH / "upload_interval.txt", default="5"))
+        server_data["random_upload_interval"] = int(read_flag_file(DATA_PATH / "upload-interval.txt", default="5"))
     except Exception as e:
-        logging.exception("data/upload_interval.txt does not contain an integer value. Overwriting its value with 5 seconds.")
+        logging.exception("data/upload-interval.txt does not contain an integer value. Overwriting its value with 5 seconds.")
         server_data["random_upload_interval"] = 5
     return render_template("server.html",
                             title="Setup Server",

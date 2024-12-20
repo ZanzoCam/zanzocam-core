@@ -72,7 +72,6 @@ def test_get_uptime_exception(fake_process, logs):
     assert in_logs(logs, "Could not get uptime information")
     assert in_logs(logs, "Could not get last reboot time information")
 
-
 def test_run_hotspot_on_wifi_1(fake_process, logs):
     """
         Check if the hotspot runs, normal behavior on wifi.
@@ -348,7 +347,7 @@ def test_report_general_status(monkeypatch):
 
     class Empty():
         def __getattr__(self, attr):
-            return lambda *a, **k: None
+            return lambda *a, **k: None 
 
     monkeypatch.setattr(webcam, "system", Empty())
     status = original_system.report_general_status()
