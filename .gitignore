@@ -5,7 +5,7 @@
 zanzocam/web_ui/static/previews/*
 zanzocam/data/*
 !zanzocam/data/send-logs.flag
-!zanzocam/data/upload_interval.txt
+!zanzocam/data/upload-interval.txt
 
 **/build/*.*
 

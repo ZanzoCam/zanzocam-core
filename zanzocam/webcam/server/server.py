@@ -155,7 +155,7 @@ class Server:
         """
         # Wait a random time, if enabled
         try:
-            random_upload_interval = int(read_flag_file(DATA_PATH / "upload_interval.txt", default="5"))
+            random_upload_interval = int(read_flag_file(DATA_PATH / "upload-interval.txt", default="5"))
         except Exception as e:
             log_error("Can't read the upload interval value. Defaulting to 5 seconds.", e)
             random_upload_interval = 5
