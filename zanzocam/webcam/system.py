@@ -61,21 +61,14 @@ def report_general_status() -> Dict:
     status["last reboot"] = get_last_reboot_time()
     status["uptime"] = get_uptime()
 
-    hotspot_allowed = check_hotspot_allowed()
-    if hotspot_allowed:
-        status["hotspot allowed"] = "YES"
-    else:        
-        status["hotspot allowed"] = "NO"
-
-    if status["hotspot allowed"] != "NO":
-        autohotspot_status = run_autohotspot()
-        if autohotspot_status is None:
-            status["hotspot status"] = "FAILED (see stacktrace)"
-        else:
-            if autohotspot_status:
-                status["hotspot status"] = "OFF (connected to WiFi)"
-            else: 
-                status["hotspot status"] = "ON (no known WiFi in range)"
+    autohotspot_status = run_autohotspot()
+    if autohotspot_status is None:
+        status["hotspot status"] = "FAILED (see stacktrace)"
+    else:
+        if autohotspot_status:
+            status["hotspot status"] = "OFF (connected to WiFi)"
+        else: 
+            status["hotspot status"] = "ON (no known WiFi in range)"
 
     status['wifi data'] = get_wifi_data()
     status['internet access'] = check_internet_connectivity()
@@ -136,41 +129,6 @@ def get_uptime() -> Optional[datetime.timedelta]:
     except Exception as e:
         log_error("Could not get uptime information", e)
     return None
-    
-
-
-def check_hotspot_allowed() -> Optional[str]:
-    """ 
-    Checks whether ZANZOCAM can turn on its hotspot at need.
-    True if it can, False otherwise. 
-    If the file was not found, it creates it with a value YES.
-    In case of exceptions, defaults to True.
-    """
-    if os.path.exists(HOTSPOT_FLAG):
-        try:
-            with open(HOTSPOT_FLAG, "r+") as h:
-                content = h.read().strip()
-                if content.upper() == "YES":
-                    return True
-                elif content.upper() == "NO":
-                    return False
-                else:
-                    log("The hostpot flag contains neither YES nor NO "
-                        f"(it contains '{content}'). Please fix. "
-                        "Assuming YES.")
-                    return True
-
-        except Exception as e:
-            log_error("Failed to check if the hotspot is allowed. "
-                    "Assuming YES", e)
-            return True
-    
-    log(f"Hotspot flag file not found. Creating it under {HOTSPOT_FLAG}"
-        f" with value YES")
-    with open(HOTSPOT_FLAG, "w") as h:
-        h.write("YES")
-    return True
-
 
 
 def run_autohotspot() -> Optional[bool]:

@@ -1,12 +1,7 @@
-import logging
 from pathlib import Path
 
-#from zanzocam.web_ui.utils import read_flag_file, write_text_file
-
-
 #: ZanzoCam version
-VERSION = "1.3.2"
-
+VERSION = "1.3.5"
 
 # Executables constants
 # #####################
@@ -49,9 +44,6 @@ CONFIGURATION_FILE = DATA_PATH / "configuration.json"
 
 #: Temporary camera logs for the web UI
 PICTURE_LOGS = DATA_PATH / "picture_logs.txt"
-
-#: Whether the hotspot is allowed
-HOTSPOT_FLAG = DATA_PATH / "hotspot.flag"
 
 #: Whether to send the logs to the server
 SEND_LOGS_FLAG = DATA_PATH / "send-logs.flag"

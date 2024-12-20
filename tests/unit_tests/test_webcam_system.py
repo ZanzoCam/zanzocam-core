@@ -72,67 +72,6 @@ def test_get_uptime_exception(fake_process, logs):
     assert in_logs(logs, "Could not get uptime information")
     assert in_logs(logs, "Could not get last reboot time information")
 
-
-def test_check_hotspot_allowed_flag_set_to_yes(logs):
-    """
-        Check if the hotspot is allowed, test YES flag
-    """
-    with open(constants.HOTSPOT_FLAG, 'w') as f:
-        f.write("yes")
-    allowed = system.check_hotspot_allowed()
-    assert allowed
-    assert len(logs) == 0
-
-
-def test_check_hotspot_allowed_flag_set_to_no(logs):
-    """
-        Check if the hotspot is allowed, test NO flag
-    """
-    with open(constants.HOTSPOT_FLAG, 'w') as f:
-        f.write("no")
-    allowed = system.check_hotspot_allowed()
-    assert not allowed
-    assert len(logs) == 0 
-
-
-def test_check_hotspot_allowed_flag_set_to_other(logs):
-    """
-        Check if the hotspot is allowed, test unexpected flag
-    """
-    with open(constants.HOTSPOT_FLAG, 'w') as f:
-        f.write("Other")
-    allowed = system.check_hotspot_allowed()
-    assert allowed
-    assert len(logs) == 1
-    assert in_logs(logs, "The hostpot flag contains neither YES nor NO")
-
-
-def test_check_hotspot_allowed_permission_error(logs):
-    """
-        Check if the hotspot is allowed, test permission errors
-    """
-    with open(constants.HOTSPOT_FLAG, 'w') as f:
-        f.write("no")
-    os.chmod(constants.HOTSPOT_FLAG, 0o222)
-    allowed = system.check_hotspot_allowed()
-    assert allowed
-    assert len(logs) == 1
-    assert in_logs(logs, "Failed to check if the hotspot is allowed")
-
-
-def test_check_hotspot_allowed_no_file(logs):
-    """
-        Check if the hotspot is allowed, no file
-    """
-    assert not os.path.exists(constants.HOTSPOT_FLAG)
-    allowed = system.check_hotspot_allowed()
-    assert allowed
-    assert len(logs) == 1
-    assert in_logs(logs, "Hotspot flag file not found")
-    assert os.path.exists(constants.HOTSPOT_FLAG)
-    assert open(constants.HOTSPOT_FLAG, 'r').read() == "YES"
-
-
 def test_run_hotspot_on_wifi_1(fake_process, logs):
     """
         Check if the hotspot runs, normal behavior on wifi.
@@ -415,7 +354,6 @@ def test_report_general_status(monkeypatch):
     assert "version" in status.keys()
     assert "last reboot" in status.keys()
     assert "uptime" in status.keys()
-    assert "hotspot allowed" in status.keys()
     assert "wifi data" in status.keys()
     assert "internet access" in status.keys()
     assert "disk size" in status.keys()

@@ -110,15 +110,6 @@ def set_upload_interval(value: int) -> str:
     except ValueError as e:
         abort(500, f"invalid value for the random interval field: {value}")
 
-def toggle_hotspot(value: str) -> str:
-    """ 
-    Allow the initial hotspot to turn on in case no known wifi network is detected.
-    """
-    value = value.upper().strip()
-    if value == "YES" or value == "NO":
-        return "", toggle_flag(HOTSPOT_FLAG, value)
-    abort(404)
-    
 
 def toggle_send_logs(value: str) -> str:
     """ 
