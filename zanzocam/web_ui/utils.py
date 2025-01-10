@@ -57,8 +57,15 @@ def get_available_wifis():
             output
         )
         available_wifis = [
-            f"Quality={quality} Signal level={signal} ESSID:{ssid}" for quality, signal, _, ssid in available_wifis_data
+            {
+                "quality": quality,
+                "signal": signal,
+                "ssid": ssid
+            }
+            for quality, signal, _, ssid in available_wifis_data
         ]
+        # Sort by signal strength
+        available_wifis.sort(key=lambda x: int(x["signal"]))
         return available_wifis
 
     except Exception as e:
