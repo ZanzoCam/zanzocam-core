@@ -4,9 +4,11 @@ import os
 import re
 import json
 import logging
+import subprocess
 from pathlib import Path
 from textwrap import dedent
 from flask import send_from_directory
+from zanzocam.webcam.utils import log_error
 
 
 def clear_logs(logs_path: Path):
@@ -37,18 +39,31 @@ def read_network_data():
 
 
 def get_available_wifis():
-    return [
-        'Quality=31/70  Signal level=-79 dBm ESSID:"MEO-4FD250"',
-        'Quality=33/70  Signal level=-77 dBm ESSID:"MEO-WiFi"',
-        'Quality=41/70  Signal level=-69 dBm ESSID:"TP-Link_773C"',
-        'Quality=26/70  Signal level=-84 dBm ESSID:"ROCHA_SANTOS"',
-        'Quality=26/70  Signal level=-84 dBm ESSID:"MEO-WiFi"',
-        'Quality=69/70  Signal level=-41 dBm ESSID:"Tarallini"',
-        'Quality=34/70  Signal level=-76 dBm ESSID:"NOS-3280"',
-        'Quality=24/70  Signal level=-86 dBm ESSID:"DIRECT-BD-HP DeskJet 2700 series"',
-        'Quality=18/70  Signal level=-92 dBm ESSID:"Extender-WiFi-8d8f"',
-        'Quality=26/70  Signal level=-84 dBm ESSID:"NOWO-97E5B"'
-    ]
+    try:
+        uptime_proc = subprocess.Popen(["/usr/bin/sudo", "iwlist wlan0 scan"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        stdout, stderr = uptime_proc.communicate()
+        
+        if uptime_proc.returncode > 0:
+            raise Exception(f"Process failed with return code "
+                            f"{uptime_proc.returncode}. "
+                            f"Stdout: {stdout}"
+                            f"Stderr: {stderr}")
+        
+        output = re.sub(r'\s+', ' ', stdout.decode('utf-8'))
+        available_wifis_data = re.findall(
+            r'Quality=(\d+/\d+) Signal level=(-\d+ dBm) Encryption key:(on|off) ESSID:"([^"]*)"', 
+            output
+        )
+        available_wifis = [
+            f"Quality={quality} Signal level={signal} ESSID:{ssid}" for quality, signal, _, ssid in available_wifis_data
+        ]
+        return available_wifis
+
+    except Exception as e:
+        log_error("Could not get the list of available WiFi networks", e)
+    return []
 
 
 def _read_data_file(path: Path, default: str, action: Callable, catch_errors: bool=True):
