@@ -40,7 +40,7 @@ def read_network_data():
 
 def get_available_wifis():
     try:
-        uptime_proc = subprocess.Popen(["/usr/bin/sudo", "iwlist wlan0 scan"],
+        uptime_proc = subprocess.Popen(["/usr/bin/sudo", "/usr/sbin/iwlist", "wlan0", "scan"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         stdout, stderr = uptime_proc.communicate()
@@ -53,19 +53,19 @@ def get_available_wifis():
         
         output = re.sub(r'\s+', ' ', stdout.decode('utf-8'))
         available_wifis_data = re.findall(
-            r'Quality=(\d+/\d+) Signal level=(-\d+ dBm) Encryption key:(on|off) ESSID:"([^"]*)"', 
+            r'Frequency:([\d.]+ GHz) \(Channel (\d+)\) Quality=(\d+/\d+) Signal level=(-\d+ dBm) Encryption key:(on|off) ESSID:"([^"]*)"', 
             output
         )
         available_wifis = [
             {
+                "frequency": frequency,
+                "channel": channel,
                 "quality": quality,
                 "signal": signal,
                 "ssid": ssid
             }
-            for quality, signal, _, ssid in available_wifis_data
+            for frequency, channel, quality, signal, _, ssid in available_wifis_data
         ]
-        # Sort by signal strength
-        available_wifis.sort(key=lambda x: int(x["signal"]))
         return available_wifis
 
     except Exception as e:
