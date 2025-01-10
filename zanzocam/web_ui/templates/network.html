@@ -27,18 +27,16 @@
             <h2>Reti Wifi Disponibili</h2>
             <p>Ricarica la pagina per aggiornare la lista</p>
             {% if wifi_list %}
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; grid-gap: 8px; max-width: 100%; overflow-x: scroll;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; grid-gap: 8px; max-width: 100%; overflow-x: scroll;">
                     <p style="font-weight: bold; margin-bottom:0.5rem;">SSID</p>
                     <p style="font-weight: bold; margin-bottom:0.5rem;">Livello</p>
                     <p style="font-weight: bold; margin-bottom:0.5rem;">Qualità</p>
                     <p style="font-weight: bold; margin-bottom:0.5rem;">Canale</p>
-                    <p style="font-weight: bold; margin-bottom:0.5rem;">Frequenza</p>
                 {% for wifi in wifi_list %}
                     <p style="margin-bottom:0.5rem;">"{{ wifi.ssid }}"</p>
                     <p style="margin-bottom:0.5rem;">{{ wifi.signal }}</p>
                     <p style="margin-bottom:0.5rem;">{{ wifi.quality }}</p>
                     <p style="margin-bottom:0.5rem;">{{ wifi.channel }}</p>
-                    <p style="margin-bottom:0.5rem;">{{ wifi.frequency }}</p>
                 {% endfor %}
                 </div>
             {% else %}
