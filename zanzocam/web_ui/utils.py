@@ -35,42 +35,8 @@ def read_network_data():
                     match = re.findall(r'psk="(.*)"', line)
                     if match:
                         password = match[0]
-    return {"type": "WiFi", "ssid": ssid, "password": password}
-
-
-def get_available_wifis():
-    try:
-        uptime_proc = subprocess.Popen(["/usr/bin/sudo", "/usr/sbin/iwlist", "wlan0", "scan"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        stdout, stderr = uptime_proc.communicate()
-        
-        if uptime_proc.returncode > 0:
-            raise Exception(f"Process failed with return code "
-                            f"{uptime_proc.returncode}. "
-                            f"Stdout: {stdout}"
-                            f"Stderr: {stderr}")
-        
-        output = re.sub(r'\s+', ' ', stdout.decode('utf-8'))
-        available_wifis_data = re.findall(
-            r'Frequency:([\d.]+ GHz) \(Channel (\d+)\) Quality=(\d+/\d+) Signal level=(-\d+ dBm) Encryption key:(on|off) ESSID:"([^"]*)"', 
-            output
-        )
-        available_wifis = [
-            {
-                "frequency": frequency,
-                "channel": channel,
-                "quality": quality,
-                "signal": signal,
-                "ssid": ssid
-            }
-            for frequency, channel, quality, signal, _, ssid in available_wifis_data
-        ]
-        return available_wifis
-
-    except Exception as e:
-        log_error("Could not get the list of available WiFi networks", e)
-    return []
+        return {"type": "WiFi", "ssid": ssid, "password": password}
+    return {"type": "Ethernet"}
 
 
 def _read_data_file(path: Path, default: str, action: Callable, catch_errors: bool=True):

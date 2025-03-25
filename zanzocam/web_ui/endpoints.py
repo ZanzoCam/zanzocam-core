@@ -44,11 +44,6 @@ def home_endpoint():
     return pages.home_page()
 
 
-@app.route("/network", methods=["GET"])
-def network_endpoint():
-    return pages.network_page()
-
-
 @app.route("/server", methods=["GET"])
 def server_endpoint():
     return pages.server_page()
@@ -68,22 +63,11 @@ def logs_endpoint():
 # API for setting configuration values
 #
 
-@app.route("/configure/network", methods=["POST"])
-def configure_wifi_endpoint():
-    api.configure_network(request.form)
-    return redirect(url_for('home_endpoint'))
-    
-
 @app.route("/configure/server", methods=["POST"])
 def configure_server_endpoint():
     api.configure_server(request.form)
     return redirect(url_for('home_endpoint'))
     
-
-@app.route("/configure/hotspot/<value>", methods=["POST"])
-def toggle_hotspot_endpoint(value):
-    return api.toggle_hotspot(value)
-
 
 @app.route("/configure/send-logs/<value>", methods=["POST"])
 def toggle_send_logs_endpoint(value):

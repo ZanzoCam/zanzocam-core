@@ -6,7 +6,7 @@ from typing import OrderedDict
 
 from flask import render_template
 
-from zanzocam.web_ui.utils import read_network_data, read_setup_data_file, read_flag_file, read_log_file, clear_logs, get_available_wifis
+from zanzocam.web_ui.utils import read_network_data, read_setup_data_file, read_flag_file, read_log_file, clear_logs
 from zanzocam.webcam.system import get_wifi_data
 from zanzocam.constants import *
 
@@ -22,16 +22,6 @@ def home_page():
                             version=VERSION, 
                             network_data=network_data,
                             server_data=server_data)
-
-def network_page():
-    """ The page with the network forms """
-    network_data = read_network_data()
-    wifi_list = get_available_wifis()
-    return render_template("network.html", 
-                            title="Setup Rete", 
-                            version=VERSION,
-                            network_data=network_data,
-                            wifi_list=wifi_list)
 
 def server_page():
     """ The page with the server data forms """
