@@ -20,22 +20,6 @@ def clear_logs(logs_path: Path):
 
 
 def read_network_data():
-    # Extend for non wifi network types
-    ssid = ""
-    password = ""
-
-    if os.path.isfile("/etc/wpa_supplicant/wpa_supplicant.conf"):
-        with open("/etc/wpa_supplicant/wpa_supplicant.conf", 'r') as conf:
-            for line in conf.readlines():
-                if ssid == "":
-                    match = re.findall(r'ssid="(.*)"', line)
-                    if match:
-                        ssid = match[0]
-                if password == "":
-                    match = re.findall(r'psk="(.*)"', line)
-                    if match:
-                        password = match[0]
-        return {"type": "WiFi", "ssid": ssid, "password": password}
     return {"type": "Ethernet"}
 
 
