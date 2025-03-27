@@ -57,7 +57,7 @@ def report_general_status() -> Dict:
     """
     status = {}
     status["version"] = VERSION
-    status["current time"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    status["current time"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     status["last reboot"] = get_last_reboot_time()
     status["uptime"] = get_uptime()
 
