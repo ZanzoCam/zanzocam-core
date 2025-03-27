@@ -7,7 +7,6 @@ from typing import OrderedDict
 from flask import render_template
 
 from zanzocam.web_ui.utils import read_network_data, read_setup_data_file, read_flag_file, read_log_file, clear_logs
-from zanzocam.webcam.system import get_wifi_data
 from zanzocam.constants import *
 
 
@@ -15,7 +14,6 @@ from zanzocam.constants import *
 def home_page():
     """ The initial page with the summary """
     network_data = read_network_data()
-    network_data["wifi_data"] = get_wifi_data()
     server_data = read_setup_data_file(CONFIGURATION_FILE).get('server', {})
     return render_template("home.html", 
                             title="Setup", 

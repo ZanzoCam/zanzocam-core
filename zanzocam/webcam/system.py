@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional
 
 import os
-import re
 import sys
 import math
 import shutil
@@ -10,7 +9,6 @@ import requests
 import datetime
 import subprocess
 from pathlib import Path
-from textwrap import dedent
 
 from zanzocam.constants import *
 from zanzocam.webcam.utils import log, log_error
@@ -45,7 +43,6 @@ def log_general_status() -> bool:
         log(report)
     
     return return_value
-        
 
 
 def report_general_status() -> Dict:
@@ -61,16 +58,8 @@ def report_general_status() -> Dict:
     status["last reboot"] = get_last_reboot_time()
     status["uptime"] = get_uptime()
 
-    autohotspot_status = run_autohotspot()
-    if autohotspot_status is None:
-        status["hotspot status"] = "FAILED (see stacktrace)"
-    else:
-        if autohotspot_status:
-            status["hotspot status"] = "OFF (connected to WiFi)"
-        else: 
-            status["hotspot status"] = "ON (no known WiFi in range)"
-
-    status['wifi data'] = get_wifi_data()
+    status["hotspot status"] = "n/a (connected to Ethernet)"
+    status['wifi data'] = "n/a (connected to Ethernet)"
     status['internet access'] = check_internet_connectivity()
     status['max upload wait'] = get_max_random_upload_interval()
 
@@ -116,7 +105,6 @@ def get_last_reboot_time() -> Optional[datetime.datetime]:
     return None
 
 
-
 def get_uptime() -> Optional[datetime.timedelta]:
     """ 
     Read the uptime of ZANZOCAM as a timedelta object.
@@ -129,91 +117,6 @@ def get_uptime() -> Optional[datetime.timedelta]:
     except Exception as e:
         log_error("Could not get uptime information", e)
     return None
-
-
-def run_autohotspot() -> Optional[bool]:
-    """
-    Executes the autohotspot script to make sure to connect 
-    to a new WiFi if so required.
-    Returns True if connected to WiFi, False if on hotspot mode, 
-    None if error.
-    """
-    try:
-        hotspot_proc = subprocess.Popen([
-            "/usr/bin/sudo", AUTOHOTSPOT_BINARY_PATH], 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT)
-        stdout, stderr = hotspot_proc.communicate()
-        stdout = stdout.decode("utf-8")
-        
-        if hotspot_proc.returncode != 0:
-            raise RuntimeError("The hotspot script returned with "
-                                f"exit code {hotspot_proc.returncode}.")
-            
-        wifi_is_active = [
-            "Wifi already connected to a network",
-            "Hotspot Deactivated, Bringing Wifi Up",
-            "Connecting to the WiFi Network"
-        ]
-        if any(msg in stdout for msg in wifi_is_active):
-            return True
-            
-        hotspot_is_active = [
-            "No SSID, activating Hotspot",
-            "Cleaning wifi files and Activating Hotspot",
-            "Hostspot already active"
-        ]
-        if any(msg in stdout for msg in hotspot_is_active):
-            return False
-            
-    except Exception as e:
-        log_error("The hotspot script failed to run", e)
-    return None
-
-
-
-def get_wifi_data() -> Optional[Dict[str, str]]:
-    """
-    Get the SSID of the WiFi it is connected to.
-    Returns None if an error occurs and "" if the device is not connected
-    to any WiFi network.
-    """
-    try:
-        iwconfig_proc = subprocess.Popen(['/usr/sbin/iwconfig', 'wlan0'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        stdout, stderr = iwconfig_proc.communicate()
-        
-        if iwconfig_proc.returncode > 0:
-            raise Exception(f"Process failed with return code "
-                            f"{iwconfig_proc.returncode}. "
-                            f"Stdout: {stdout}"
-                            f"Stderr: {stderr}")
-
-        wifi_stats_raw = stdout.decode('utf-8').strip()
-        wifi_stats = {}
-        for key, regex in [
-            ("ssid", r"ESSID:\"(.*)\""),
-            ("frequency", r"Frequency:(\S+\s?\S*)"),
-            ("access point", r"Access Point: (\S*)"),
-            ("bit rate", r"Bit Rate=(\S+\s?\S*)"),
-            ("tx power", r"Tx-Power=(\S+\s?\S*)"),
-            ("link quality", r"Link Quality=(\S+)"),
-            ("signal level", r"Signal level=(\S+\s?\S*)")
-        ]:
-            value = re.findall(regex, wifi_stats_raw)
-            if value:
-                value = value[0].strip()
-            else:
-                value = "n/a"
-            wifi_stats[key] = value
-    
-        return wifi_stats
-
-    except Exception as e:
-        log_error("Could not retrieve WiFi information", e)
-    return None
-
 
 
 def check_internet_connectivity() -> Optional[bool]:
@@ -231,7 +134,6 @@ def check_internet_connectivity() -> Optional[bool]:
         log_error("Could not check if there is Internet access", e)
     return None
     
-    
 
 def get_filesystem_size() -> Optional[str]:
     """
@@ -244,7 +146,6 @@ def get_filesystem_size() -> Optional[str]:
     except Exception as e:
         log_error("Could not retrieve the size of the filesystem", e)
     return None
-    
     
 
 def get_free_space_on_disk() -> Optional[str]:

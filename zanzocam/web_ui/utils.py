@@ -8,7 +8,6 @@ import subprocess
 from pathlib import Path
 from textwrap import dedent
 from flask import send_from_directory
-from zanzocam.webcam.utils import log_error
 
 
 def clear_logs(logs_path: Path):

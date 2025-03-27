@@ -10,59 +10,6 @@ from zanzocam.web_ui.utils import read_log_file, write_json_file, write_text_fil
 from zanzocam.constants import *
 
 
-
-def configure_network(form_data: Dict[str, str]):
-    """ 
-    Save the network data, write wpa_supplicant.conf 
-    and run the hotspot script if necessary.
-    """
-    # Gather network data
-    network_type = form_data.get("network_type", "WiFi").lower()
-
-    # If the network is a WiFi network, 
-    # save the wpa_supplicant file and run the hotspot
-    if network_type == "wifi":
-        _configure_wifi(form_data.get("network_ssid", None), form_data.get("network_password", None))
-
-
-def _configure_wifi(ssid, password):
-    # Support passwordless wifi
-    if not password or password == "":
-        password_field = "key_mgmt=NONE"
-    else:
-        password_field = f'psk="{password}"'
-
-    # Write wpa_supplicant.conf
-    write_text_file(path=".tmp-wpa_supplicant",
-                    content=f"""
-                            ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-                            update_config=1
-
-                            network={{
-                                ssid="{ssid}"
-                                {password_field}
-                            }}
-                            """)
-    # Move wpa_supplicant.conf to its directory
-    create_wpa_conf = subprocess.run(
-        [
-            "/usr/bin/sudo",
-            "mv",
-            ".tmp-wpa_supplicant",
-            "/etc/wpa_supplicant/wpa_supplicant.conf"
-        ])
-    # Run the autohotspot script
-    try:
-        autohotspot = subprocess.Popen(["/usr/bin/autohotspot"])
-    except subprocess.CalledProcessError as e:
-        return f"Si e' verificato un errore: {e}"
-    return ""
-
-
-def _configure_modem(apn):
-    pass
-
-
 def configure_server(form_data: Dict[str, str]):
     """ 
     Save the server data as a minimal configuration.json to bootstrap the webcam
